@@ -9,7 +9,7 @@
 </div>
 
 <div align="center">
-  <img src="https://github.com/MR-PR0G/ProGrid/blob/main/Demos/ScreenShots.png" alt="ScreenShot" width="75%" style="">
+  <img src="https://github.com/MR-PR0G/ProGrid/blob/main/Demos/ScreenShots.png" alt="ScreenShot" width="90%" style="">
 </div>
 
 ---
