@@ -5,7 +5,7 @@ const DYNAMIC_WIDGET_LIST = ['shortcut', 'search', 'checklist', 'folder'];
 
 async function loadSystemWidgets() {
     for (const name of DYNAMIC_WIDGET_LIST) {
-        try { await import(`../widgets/${name}.js`); } catch (e) {}
+        try { await import(`../widgets/${name}.js`); } catch (e) { console.error(e); }
     }
 }
 
@@ -13,12 +13,7 @@ let state = { editMode: false, blurValue: 27, presetBg: '1', theme: 'dark', cust
 window.appState = state;
 
 const grid = new GridEngine();
-const container = document.getElementById('grid-container');
-const blurOverlay = document.getElementById('blur-overlay');
-const ghost = document.getElementById('ghost-guide');
-const deleteZone = document.getElementById('delete-zone');
-const folderOverlay = document.getElementById('folder-overlay-view');
-const dynamicBgLayer = document.getElementById('dynamic-bg-layer');
+let container, blurOverlay, ghost, deleteZone, folderOverlay, dynamicBgLayer;
 
 let initialWidgetsState = null;
 let currentShapeSelection = '20px';
@@ -31,6 +26,13 @@ let rAFActive = false;
 let currentColumnsCount = 8;
 
 async function init() {
+    container = document.getElementById('grid-container');
+    blurOverlay = document.getElementById('blur-overlay');
+    ghost = document.getElementById('ghost-guide');
+    deleteZone = document.getElementById('delete-zone');
+    folderOverlay = document.getElementById('folder-overlay-view');
+    dynamicBgLayer = document.getElementById('dynamic-bg-layer');
+
     await loadSystemWidgets();
     const loaded = StorageEngine.load();
     
@@ -247,6 +249,8 @@ function attachInteractionEngine(el, w, instance) {
             el.classList.add('resizing');
             startW = el.offsetWidth;
             startH = el.offsetHeight;
+            if (ghost) ghost.classList.add('active');
+            updateGhost(w);
         } else {
             isDragging = true;
             el.classList.add('dragging');
@@ -285,11 +289,9 @@ function attachInteractionEngine(el, w, instance) {
 
                 if (checkCollisionWithDeleteZone(e.clientX, e.clientY)) {
                     if (deleteZone) deleteZone.classList.add('hovered');
-                    el.classList.add('burn-effect');
                     if (ghost) ghost.classList.remove('active');
                 } else {
                     if (deleteZone) deleteZone.classList.remove('hovered');
-                    el.classList.remove('burn-effect');
                     if (ghost) ghost.classList.add('active');
                 }
 
@@ -351,17 +353,14 @@ function attachInteractionEngine(el, w, instance) {
                 const deltaX = e.clientX - initialX;
                 const deltaY = e.clientY - initialY;
                 
-                let currentW = startW + deltaX;
-                let currentH = startH + deltaY;
+                let rawW = startW + deltaX;
+                let rawH = startH + deltaY;
 
-                let maxAllowedPixelW = maxW * grid.cellSize + (maxW - 1) * grid.gap;
-                let maxAllowedPixelH = maxH * grid.cellSize + (maxH - 1) * grid.gap;
+                el.style.width = `${Math.max(50, rawW)}px`;
+                el.style.height = `${Math.max(50, rawH)}px`;
 
-                if (currentW > maxAllowedPixelW) currentW = maxAllowedPixelW;
-                if (currentH > maxAllowedPixelH) currentH = maxAllowedPixelH;
-
-                let gridW = Math.max(minW, Math.min(maxW, Math.round((currentW - grid.gap) / (grid.cellSize + grid.gap))));
-                let gridH = Math.max(minH, Math.min(maxH, Math.round((currentH - grid.gap) / (grid.cellSize + grid.gap))));
+                let gridW = Math.max(minW, Math.min(maxW, Math.round((rawW - grid.gap) / (grid.cellSize + grid.gap))));
+                let gridH = Math.max(minH, Math.min(maxH, Math.round((rawH - grid.gap) / (grid.cellSize + grid.gap))));
 
                 if (w.x + gridW > grid.columns) gridW = grid.columns - w.x;
                 if (w.y + gridH > grid.rowsCount) gridH = grid.rowsCount - w.y;
@@ -374,11 +373,7 @@ function attachInteractionEngine(el, w, instance) {
                         activeInState.h = gridH;
                         const successfulPush = grid.omniMagnetPush(activeInState, tempWidgets);
                         if (successfulPush) {
-                            currentW = gridW * grid.cellSize + (gridW - 1) * grid.gap;
-                            currentH = gridH * grid.cellSize + (gridH - 1) * grid.gap;
-                            el.style.width = `${currentW}px`;
-                            el.style.height = `${currentH}px`;
-                            
+                            updateGhost({ id: w.id, x: activeInState.x, y: activeInState.y, w: gridW, h: gridH });
                             tempWidgets.forEach(tw => {
                                 if (tw.id !== w.id && !tw.isHidden) {
                                     const realEl = document.getElementById(tw.id);
@@ -388,6 +383,10 @@ function attachInteractionEngine(el, w, instance) {
                                     }
                                 }
                             });
+                        } else if (ghost) {
+                            const lastGhostW = Math.round((parseInt(ghost.style.width) + grid.gap) / (grid.cellSize + grid.gap));
+                            const lastGhostH = Math.round((parseInt(ghost.style.height) + grid.gap) / (grid.cellSize + grid.gap));
+                            updateGhost({ id: w.id, x: activeInState.x, y: activeInState.y, w: lastGhostW, h: lastGhostH });
                         }
                     }
                 }
@@ -441,18 +440,18 @@ function attachInteractionEngine(el, w, instance) {
 
         if (isDragging) {
             isDragging = false;
-            w.w = Math.max(minW, Math.min(w.w, grid.columns));
-            w.h = Math.max(minH, Math.min(w.h, grid.rowsCount));
             if (ghost) {
                 w.x = Math.round(parseInt(ghost.style.left) / (grid.cellSize + grid.gap));
                 w.y = Math.round(parseInt(ghost.style.top) / (grid.cellSize + grid.gap));
             }
         } else if (isResizing) {
             isResizing = false;
-            let finalW = Math.round((el.offsetWidth - grid.gap) / (grid.cellSize + grid.gap));
-            let finalH = Math.round((el.offsetHeight - grid.gap) / (grid.cellSize + grid.gap));
-            w.w = Math.max(minW, Math.min(maxW, finalW));
-            w.h = Math.max(minH, Math.min(maxH, finalH));
+            if (ghost) {
+                w.w = Math.round((parseInt(ghost.style.width) + grid.gap) / (grid.cellSize + grid.gap));
+                w.h = Math.round((parseInt(ghost.style.height) + grid.gap) / (grid.cellSize + grid.gap));
+                w.w = Math.max(minW, Math.min(maxW, w.w));
+                w.h = Math.max(minH, Math.min(maxH, w.h));
+            }
         }
 
         w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: grid.columns };
@@ -467,7 +466,7 @@ function attachInteractionEngine(el, w, instance) {
 function setupBackgroundActivationSensors() {
     window.addEventListener('mousedown', (e) => {
         if (state.editMode || (e.target !== container && e.target !== document.getElementById('app-container') && e.target !== document.getElementById('grid-scale-wrapper'))) return;
-        bgLongPressTimeout = setTimeout(() => { toggleEditMode(true); }, 750);
+        bgLongPressTimeout = setTimeout(() => { window.toggleEditMode(true); }, 750);
     });
     window.addEventListener('mouseup', () => { if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout); });
     
@@ -477,7 +476,7 @@ function setupBackgroundActivationSensors() {
             touchStartY = e.touches[0].clientY;
         }
         if (e.target === container || e.target === document.getElementById('app-container') || e.target === document.getElementById('grid-scale-wrapper')) {
-            bgLongPressTimeout = setTimeout(() => { toggleEditMode(true); }, 750);
+            bgLongPressTimeout = setTimeout(() => { window.toggleEditMode(true); }, 750);
         }
     }, { passive: true });
 
@@ -487,7 +486,7 @@ function setupBackgroundActivationSensors() {
             let diffY = touchStartY - e.touches[0].clientY;
             if (diffY > 80) {
                 if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout);
-                toggleEditMode(true);
+                window.toggleEditMode(true);
             }
         }
     }, { passive: true });
@@ -514,7 +513,7 @@ function setupGlobalEvents() {
     });
 
     const doneBtn = document.getElementById('done-btn');
-    if (doneBtn) doneBtn.addEventListener('click', () => toggleEditMode(false));
+    if (doneBtn) doneBtn.addEventListener('click', () => window.toggleEditMode(false));
 
     if (folderOverlay) {
         folderOverlay.addEventListener('click', (e) => {
