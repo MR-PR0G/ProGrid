@@ -9,7 +9,7 @@ async function loadSystemWidgets() {
     }
 }
 
-let state = { editMode: false, blurValue: 16, presetBg: '1', theme: 'dark', customBg: null, widgets: [] };
+let state = { editMode: false, blurValue: 27, presetBg: '1', theme: 'dark', customBg: null, widgets: [] };
 window.appState = state;
 
 const grid = new GridEngine();
@@ -28,21 +28,34 @@ let touchStartY = 0;
 let bgLongPressTimeout = null;
 let potentialMergeTargetId = null;
 let rAFActive = false;
-let currentColumnsCount = 4;
+let currentColumnsCount = 8;
 
 async function init() {
     await loadSystemWidgets();
     const loaded = StorageEngine.load();
-    if (loaded) {
-        state.blurValue = loaded.blurValue ?? 16;
+    
+    if (loaded && loaded.widgets && loaded.widgets.length > 0) {
+        state.blurValue = loaded.blurValue ?? 27;
         state.presetBg = loaded.presetBg || '1';
         state.theme = loaded.theme || 'dark';
         state.customBg = loaded.customBg || null;
-        state.widgets = loaded.widgets || [];
+        state.widgets = loaded.widgets;
     } else {
+        state.blurValue = 27;
+        state.presetBg = "1";
+        state.theme = "dark";
         state.widgets = [
-            { id: 'w-1', type: 'shortcut', x: 0, y: 0, w: 1, h: 1, title: 'Google', url: 'https://google.com', icon: '', iconBg: 'transparent', shape: '20px', isGlass: true, bg: '#ffffff' },
-            { id: 'w-2', type: 'search', x: 1, y: 0, w: 2, h: 1, engine: 'google', placeholder: 'Search...', isGlass: true, bg: '#ffffff' }
+            { id: "w-1781773568073", type: "search", x: 1, y: 1, w: 8, h: 1, engine: "google", placeholder: "Search...", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 1, w: 8, h: 1, baseCols: 8 }, isHidden: false, centerDist: 1 },
+            { id: "w-1781791807875", type: "shortcut", x: 6, y: 2, w: 2, h: 1, title: "Give Star This Project", url: "https://github.com/MR-PR0G", icon: "", iconBg: "#f6d32d", shape: "50%", isGlass: true, bg: "#f6d32d", idealLayout: { x: 5, y: 2, w: 2, h: 1, baseCols: 8 }, isHidden: false, centerDist: 2 },
+            { id: "w-1781791038045", type: "folder", x: 1, y: 3, w: 3, h: 2, title: "Google", url: "https://mail.google.com/mail/", icon: "", iconBg: "transparent", shape: "20px", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 3, w: 3, h: 2, baseCols: 8 }, isHidden: false, centerDist: 2.915, children: [
+                { id: "ch-1781791128373-2", type: "shortcut", title: "Youtube", url: "https://www.youtube.com/", icon: "", shape: "20px", iconBg: "transparent" },
+                { id: "ch-1781791401512", type: "shortcut", title: "Gmail", url: "https://mail.google.com/mail/", icon: "", shape: "20px", iconBg: "transparent" },
+                { id: "ch-1781791526637", type: "shortcut", title: "Gemini", url: "https://gemini.google.com/app", icon: "", shape: "20px", iconBg: "transparent" },
+                { id: "ch-1781791575443", type: "shortcut", title: "Drive", url: "https://drive.google.com/drive/", icon: "", shape: "20px", iconBg: "transparent" },
+                { id: "ch-1781791634325", type: "shortcut", title: "Translate", url: "https://translate.google.com/", icon: "", shape: "20px", iconBg: "transparent" },
+                { id: "ch-1781791711956", type: "shortcut", title: "Google", url: "https://google.com", icon: "", shape: "20px", iconBg: "transparent" },
+                { id: "ch-1781791800065", type: "shortcut", title: "Cloud", url: "https://cloud.google.com/appengine", icon: "", shape: "20px", iconBg: "transparent" }
+            ]}
         ];
     }
 
@@ -77,12 +90,16 @@ function applyGlobalStyles() {
     if (activeThumb) activeThumb.style.borderColor = 'var(--text-primary)';
 
     if (state.presetBg === 'custom' && state.customBg) {
-        dynamicBgLayer.className = 'bg-layer';
-        dynamicBgLayer.style.backgroundImage = `url(${state.customBg})`;
+        if (dynamicBgLayer) {
+            dynamicBgLayer.className = 'bg-layer';
+            dynamicBgLayer.style.backgroundImage = `url(${state.customBg})`;
+        }
     } else {
-        dynamicBgLayer.style.backgroundImage = 'none';
-        dynamicBgLayer.className = `bg-layer bg-dynamic`;
-        dynamicBgLayer.style.background = `var(--bg-preset-${state.presetBg})`;
+        if (dynamicBgLayer) {
+            dynamicBgLayer.style.backgroundImage = 'none';
+            dynamicBgLayer.className = `bg-layer bg-dynamic`;
+            dynamicBgLayer.style.background = `var(--bg-preset-${state.presetBg})`;
+        }
     }
 }
 
@@ -113,7 +130,9 @@ function renderGrid() {
 
     state.widgets.forEach(w => {
         if (w.isHidden) return;
-        if (window.WidgetGlobals && window.WidgetGlobals.get(w.type)) createWidgetDOM(w);
+        if (window.WidgetGlobals && window.WidgetGlobals.get(w.type)) {
+            createWidgetDOM(w);
+        }
     });
 }
 
@@ -160,7 +179,9 @@ function createWidgetDOM(w) {
     wrapper.appendChild(resizeHandle);
     container.appendChild(wrapper);
 
-    if (instance && instance.postRender) instance.postRender(wrapper);
+    if (instance && instance.postRender) {
+        instance.postRender(wrapper);
+    }
     attachInteractionEngine(wrapper, w, instance);
 }
 
@@ -177,38 +198,64 @@ function checkCollisionWithDeleteZone(clientX, clientY) {
     if (!deleteZone) return false;
     const dzRect = deleteZone.getBoundingClientRect();
     const fuzz = 15;
-    return (clientX >= (dzRect.left - fuzz) && clientX <= (dzRect.right + fuzz) && clientY >= (dzRect.top - fuzz) && clientY <= (dzRect.bottom + fuzz));
+    return (
+        clientX >= (dzRect.left - fuzz) &&
+        clientX <= (dzRect.right + fuzz) &&
+        clientY >= (dzRect.top - fuzz) &&
+        clientY <= (dzRect.bottom + fuzz)
+    );
 }
 
 function attachInteractionEngine(el, w, instance) {
     let initialX, initialY, startW, startH;
-    let dragOffsetX = 0, dragOffsetY = 0;
-    let isDragging = false, isResizing = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    let isDragging = false;
+    let isResizing = false;
 
     const meta = window.WidgetGlobals.getMetadata(w.type) || { minW: 1, minH: 1, maxW: 4, maxH: 4 };
-    if (w.type === 'search') { meta.minW = 2; meta.maxH = 1; meta.minH = 1; meta.maxW = 99; }
+    if (w.type === 'search') {
+        meta.minW = 2; meta.maxH = 1; meta.minH = 1; meta.maxW = 99;
+    }
+    
     let minW = meta.minW || 1; let minH = meta.minH || 1;
     let maxW = meta.maxW || 4; let maxH = meta.maxH || 4;
 
-    el.addEventListener('contextmenu', (e) => { e.preventDefault(); if (state.editMode) openModal(w); });
+    el.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        if (state.editMode) openModal(w);
+    });
 
     el.addEventListener('pointerdown', (e) => {
         if (!state.editMode) return;
-        if (w.type === 'checklist' && (e.target.closest('.checklist-item') || e.target.closest('.checklist-add'))) return;
-        if ((w.type === 'shortcut' || w.type === 'folder') && e.target.closest('a')) e.preventDefault();
+
+        if (w.type === 'checklist') {
+            if (e.target.closest('.checklist-item') || e.target.closest('.checklist-add') || e.target.closest('.checklist-input')) return;
+        }
+        
+        if (w.type === 'shortcut' || w.type === 'folder') {
+            if (e.target.closest('a')) e.preventDefault();
+        }
 
         el.setPointerCapture(e.pointerId);
         initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
-        initialX = e.clientX; initialY = e.clientY;
+        initialX = e.clientX;
+        initialY = e.clientY;
 
         if (e.target.classList.contains('resize-handle')) {
-            isResizing = true; el.classList.add('resizing');
-            startW = el.offsetWidth; startH = el.offsetHeight;
+            isResizing = true;
+            el.classList.add('resizing');
+            startW = el.offsetWidth;
+            startH = el.offsetHeight;
         } else {
-            isDragging = true; el.classList.add('dragging');
+            isDragging = true;
+            el.classList.add('dragging');
             if (ghost) ghost.classList.add('active');
+            
             const rect = el.getBoundingClientRect();
-            dragOffsetX = e.clientX - rect.left; dragOffsetY = e.clientY - rect.top;
+            dragOffsetX = e.clientX - rect.left;
+            dragOffsetY = e.clientY - rect.top;
+            
             updateGhost(w);
         }
         e.stopPropagation();
@@ -217,6 +264,7 @@ function attachInteractionEngine(el, w, instance) {
     el.addEventListener('pointermove', (e) => {
         if (!state.editMode) return;
         if (!isDragging && !isResizing) return;
+
         if (rAFActive) return;
         rAFActive = true;
 
@@ -225,25 +273,32 @@ function attachInteractionEngine(el, w, instance) {
             grid.updateMetrics();
             maxW = w.type === 'search' ? grid.columns : Math.min(meta.maxW || 4, grid.columns);
             maxH = Math.min(meta.maxH || 4, grid.rowsCount);
+
             const containerBounds = container.getBoundingClientRect();
 
             if (isDragging) {
                 const targetLeft = e.clientX - dragOffsetX - containerBounds.left;
                 const targetTop = e.clientY - dragOffsetY - containerBounds.top;
-                el.style.left = `${targetLeft}px`; el.style.top = `${targetTop}px`;
+
+                el.style.left = `${targetLeft}px`;
+                el.style.top = `${targetTop}px`;
 
                 if (checkCollisionWithDeleteZone(e.clientX, e.clientY)) {
                     if (deleteZone) deleteZone.classList.add('hovered');
+                    el.classList.add('burn-effect');
                     if (ghost) ghost.classList.remove('active');
                 } else {
                     if (deleteZone) deleteZone.classList.remove('hovered');
+                    el.classList.remove('burn-effect');
                     if (ghost) ghost.classList.add('active');
                 }
 
                 let liveX = Math.round(targetLeft / (grid.cellSize + grid.gap));
                 let liveY = Math.round(targetTop / (grid.cellSize + grid.gap));
+                
                 let effectiveW = Math.max(minW, Math.min(w.w, grid.columns));
                 let effectiveH = Math.max(minH, Math.min(w.h, grid.rowsCount));
+                
                 liveX = Math.max(0, Math.min(liveX, grid.columns - effectiveW));
                 liveY = Math.max(0, Math.min(liveY, grid.rowsCount - effectiveH));
 
@@ -265,10 +320,13 @@ function attachInteractionEngine(el, w, instance) {
                     let tempWidgets = JSON.parse(JSON.stringify(initialWidgetsState));
                     let activeInState = tempWidgets.find(item => item.id === w.id);
                     if (activeInState) {
-                        activeInState.w = effectiveW; activeInState.h = effectiveH;
-                        activeInState.x = liveX; activeInState.y = liveY;
+                        activeInState.w = effectiveW;
+                        activeInState.h = effectiveH;
+                        activeInState.x = liveX;
+                        activeInState.y = liveY;
                         
-                        if (grid.omniMagnetPush(activeInState, tempWidgets)) {
+                        const successfulPush = grid.omniMagnetPush(activeInState, tempWidgets);
+                        if (successfulPush) {
                             updateGhost({ id: w.id, x: liveX, y: liveY, w: effectiveW, h: effectiveH });
                             tempWidgets.forEach(tw => {
                                 if (tw.id !== w.id && !tw.isHidden) {
@@ -279,6 +337,10 @@ function attachInteractionEngine(el, w, instance) {
                                     }
                                 }
                             });
+                        } else if (ghost) {
+                            const lastGhostX = Math.round(parseInt(ghost.style.left) / (grid.cellSize + grid.gap));
+                            const lastGhostY = Math.round(parseInt(ghost.style.top) / (grid.cellSize + grid.gap));
+                            updateGhost({ id: w.id, x: lastGhostX, y: lastGhostY, w: effectiveW, h: effectiveH });
                         }
                     }
                 } else {
@@ -286,8 +348,12 @@ function attachInteractionEngine(el, w, instance) {
                 }
 
             } else if (isResizing) {
-                const deltaX = e.clientX - initialX; const deltaY = e.clientY - initialY;
-                let currentW = startW + deltaX; let currentH = startH + deltaY;
+                const deltaX = e.clientX - initialX;
+                const deltaY = e.clientY - initialY;
+                
+                let currentW = startW + deltaX;
+                let currentH = startH + deltaY;
+
                 let maxAllowedPixelW = maxW * grid.cellSize + (maxW - 1) * grid.gap;
                 let maxAllowedPixelH = maxH * grid.cellSize + (maxH - 1) * grid.gap;
 
@@ -296,6 +362,7 @@ function attachInteractionEngine(el, w, instance) {
 
                 let gridW = Math.max(minW, Math.min(maxW, Math.round((currentW - grid.gap) / (grid.cellSize + grid.gap))));
                 let gridH = Math.max(minH, Math.min(maxH, Math.round((currentH - grid.gap) / (grid.cellSize + grid.gap))));
+
                 if (w.x + gridW > grid.columns) gridW = grid.columns - w.x;
                 if (w.y + gridH > grid.rowsCount) gridH = grid.rowsCount - w.y;
 
@@ -303,11 +370,15 @@ function attachInteractionEngine(el, w, instance) {
                     let tempWidgets = JSON.parse(JSON.stringify(initialWidgetsState));
                     let activeInState = tempWidgets.find(item => item.id === w.id);
                     if (activeInState) {
-                        activeInState.w = gridW; activeInState.h = gridH;
-                        if (grid.omniMagnetPush(activeInState, tempWidgets)) {
+                        activeInState.w = gridW;
+                        activeInState.h = gridH;
+                        const successfulPush = grid.omniMagnetPush(activeInState, tempWidgets);
+                        if (successfulPush) {
                             currentW = gridW * grid.cellSize + (gridW - 1) * grid.gap;
                             currentH = gridH * grid.cellSize + (gridH - 1) * grid.gap;
-                            el.style.width = `${currentW}px`; el.style.height = `${currentH}px`;
+                            el.style.width = `${currentW}px`;
+                            el.style.height = `${currentH}px`;
+                            
                             tempWidgets.forEach(tw => {
                                 if (tw.id !== w.id && !tw.isHidden) {
                                     const realEl = document.getElementById(tw.id);
@@ -327,32 +398,44 @@ function attachInteractionEngine(el, w, instance) {
     el.addEventListener('pointerup', (e) => {
         if (!state.editMode) return;
         el.releasePointerCapture(e.pointerId);
-        el.classList.remove('dragging'); el.classList.remove('resizing');
+        
+        el.classList.remove('dragging');
+        el.classList.remove('resizing');
+        el.classList.remove('burn-effect');
         if (ghost) ghost.classList.remove('active');
 
         if (deleteZone && deleteZone.classList.contains('hovered')) {
             deleteZone.classList.remove('hovered');
             state.widgets = state.widgets.filter(item => item.id !== w.id);
-            StorageEngine.save(state); renderGrid(); return;
+            StorageEngine.save(state);
+            renderGrid();
+            return;
         }
 
         if (potentialMergeTargetId) {
             const target = state.widgets.find(item => item.id === potentialMergeTargetId);
             if (target) {
                 if (target.type === 'shortcut') {
-                    target.type = 'folder'; target.w = 2; target.h = 2; target.title = "Folder";
+                    target.type = 'folder';
+                    target.w = 2;
+                    target.h = 2;
+                    target.title = "Folder";
                     target.children = [
                         { id: `ch-${Date.now()}-1`, type: 'shortcut', title: target.title || 'Link', url: target.url, icon: target.icon || '', shape: target.shape || '20px', iconBg: target.iconBg || 'transparent' },
                         { id: `ch-${Date.now()}-2`, type: 'shortcut', title: w.title || 'Link', url: w.url, icon: w.icon || '', shape: w.shape || '20px', iconBg: w.iconBg || 'transparent' }
                     ];
                 } else if (target.type === 'folder') {
                     if (!target.children) target.children = [];
-                    target.children.push({ id: `ch-${Date.now()}`, type: 'shortcut', title: w.title || 'Link', url: w.url, icon: w.icon || '', shape: w.shape || '20px', iconBg: w.iconBg || 'transparent' });
+                    target.children.push({
+                        id: `ch-${Date.now()}`, type: 'shortcut', title: w.title || 'Link', url: w.url, icon: w.icon || '', shape: w.shape || '20px', iconBg: w.iconBg || 'transparent'
+                    });
                 }
                 state.widgets = state.widgets.filter(item => item.id !== w.id);
                 potentialMergeTargetId = null;
                 grid.resolveAllFinalOverlaps(state.widgets);
-                StorageEngine.save(state); renderGrid(); return;
+                StorageEngine.save(state);
+                renderGrid();
+                return;
             }
         }
 
@@ -373,9 +456,11 @@ function attachInteractionEngine(el, w, instance) {
         }
 
         w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: grid.columns };
+
         grid.omniMagnetPush(w, state.widgets);
         grid.resolveAllFinalOverlaps(state.widgets);
-        StorageEngine.save(state); renderGrid();
+        StorageEngine.save(state);
+        renderGrid();
     });
 }
 
@@ -388,7 +473,9 @@ function setupBackgroundActivationSensors() {
     
     window.addEventListener('touchstart', (e) => {
         if (state.editMode) return;
-        if(e.touches && e.touches[0]) touchStartY = e.touches[0].clientY;
+        if(e.touches && e.touches[0]) {
+            touchStartY = e.touches[0].clientY;
+        }
         if (e.target === container || e.target === document.getElementById('app-container') || e.target === document.getElementById('grid-scale-wrapper')) {
             bgLongPressTimeout = setTimeout(() => { toggleEditMode(true); }, 750);
         }
@@ -422,7 +509,9 @@ function updateColorUI(target, color) {
 }
 
 function setupGlobalEvents() {
-    window.addEventListener('resize', () => renderGrid());
+    window.addEventListener('resize', () => {
+        renderGrid();
+    });
 
     const doneBtn = document.getElementById('done-btn');
     if (doneBtn) doneBtn.addEventListener('click', () => toggleEditMode(false));
@@ -544,6 +633,16 @@ window.updateWidgetConfigDirectly = function(id, partialConfig) {
     }
 };
 
+window.toggleEditMode = function(forceState = null) {
+    state.editMode = forceState !== null ? forceState : !state.editMode;
+    document.body.classList.toggle('edit-mode', state.editMode);
+    if (!state.editMode) {
+        closeModal();
+        grid.resolveAllFinalOverlaps(state.widgets);
+    }
+    renderGrid();
+};
+
 function populateWidgetBottomStore() {
     const store = document.getElementById('tab-widgets');
     if (!store || !window.WidgetGlobals) return;
@@ -565,7 +664,10 @@ function setupStoreDrag(itemEl) {
     let type = itemEl.getAttribute('data-type');
     let meta = window.WidgetGlobals.getMetadata(type);
     if (!meta) return;
-    if (type === 'search') { meta.defaultW = 2; meta.defaultH = 1; }
+
+    if (type === 'search') {
+        meta.defaultW = 2; meta.defaultH = 1;
+    }
 
     let dummy = null;
 
@@ -601,12 +703,14 @@ function setupStoreDrag(itemEl) {
 
     itemEl.addEventListener('pointermove', (e) => {
         if (!dummy) return;
+        
         if (rAFActive) return;
         rAFActive = true;
 
         requestAnimationFrame(() => {
             if (!dummy) return;
             rAFActive = false;
+            
             const containerBounds = container.getBoundingClientRect();
             dummy.style.left = `${e.clientX - 46 - containerBounds.left}px`;
             dummy.style.top = `${e.clientY - 46 - containerBounds.top}px`;
@@ -649,22 +753,30 @@ function setupStoreDrag(itemEl) {
         let effectiveW = Math.min(meta.defaultW, grid.columns);
         let effectiveH = Math.min(meta.defaultH, grid.rowsCount);
 
-        let finalX = 0; let finalY = 0;
+        let finalX = 0;
+        let finalY = 0;
         if (ghost) {
             finalX = Math.round(parseInt(ghost.style.left) / (grid.cellSize + grid.gap));
             finalY = Math.round(parseInt(ghost.style.top) / (grid.cellSize + grid.gap));
         }
 
         if (!grid.canFit(effectiveW, effectiveH, state.widgets)) {
-            alert("No available space left!"); return;
+            alert("No available space left!");
+            return;
         }
 
         const newWidget = {
-            id: `w-${Date.now()}`, type: type, x: finalX, y: finalY, w: effectiveW, h: effectiveH,
+            id: `w-${Date.now()}`,
+            type: type,
+            x: finalX,
+            y: finalY,
+            w: effectiveW,
+            h: effectiveH,
             ...JSON.parse(JSON.stringify(meta.defaultConfig || {}))
         };
         
         newWidget.idealLayout = { x: newWidget.x, y: newWidget.y, w: newWidget.w, h: newWidget.h, baseCols: grid.columns };
+        
         state.widgets.push(newWidget);
         grid.resolveAllFinalOverlaps(state.widgets);
         StorageEngine.save(state);
@@ -718,7 +830,7 @@ window.openFolderPopup = function(folderId) {
 
                 pressTimer = setTimeout(() => {
                     isDragging = true;
-                    if (!state.editMode) toggleEditMode(true);
+                    if (!state.editMode) window.toggleEditMode(true);
                     if (folderOverlay) folderOverlay.style.display = 'none';
 
                     const parentFolder = state.widgets.find(w => w.id === folderConfig.id);
@@ -903,16 +1015,6 @@ function deleteCurrentWidget() {
     StorageEngine.save(state);
     renderGrid();
     closeModal();
-}
-
-function toggleEditMode(forceState = null) {
-    state.editMode = forceState !== null ? forceState : !state.editMode;
-    document.body.classList.toggle('edit-mode', state.editMode);
-    if (!state.editMode) {
-        closeModal();
-        grid.resolveAllFinalOverlaps(state.widgets);
-    }
-    renderGrid();
 }
 
 window.addEventListener('DOMContentLoaded', init);

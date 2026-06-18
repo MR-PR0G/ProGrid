@@ -35,14 +35,6 @@ export default class SearchWidget extends BaseWidget {
             </div>
         `;
     }
-
-    postRender(el) {
-        const form = el.querySelector('.search-form');
-        if (form) {
-            form.addEventListener('pointerdown', (e) => e.stopPropagation());
-            form.addEventListener('mousedown', (e) => e.stopPropagation());
-        }
-    }
 }
 
 window.WidgetGlobals.register(SearchWidget);
