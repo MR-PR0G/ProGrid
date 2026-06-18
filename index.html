@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WebHome Workspace</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div id="app-container">
+        <div id="blur-overlay"></div>
+        
+        <div id="grid-scale-wrapper">
+            <div id="grid-container">
+                <div id="ghost-guide"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="delete-zone">🗑️</div>
+    <button id="done-btn">Done Editing</button>
+
+    <div id="edit-panel">
+        <div class="panel-tabs">
+            <button class="panel-tab active" data-tab="widgets">Widgets</button>
+            <button class="panel-tab" data-tab="appearance">Appearance</button>
+        </div>
+        <div class="panel-content active" id="tab-widgets"></div>
+        <div class="panel-content" id="tab-appearance">
+            <div style="display: flex; gap: 16px; align-items: center; width: 100%;">
+                <div style="display: flex; gap: 8px;" id="bg-presets-list">
+                    <div class="bg-thumb" data-preset="1" style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-preset-1); cursor: pointer; border: 2px solid white;"></div>
+                    <div class="bg-thumb" data-preset="2" style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-preset-2); cursor: pointer;"></div>
+                    <div class="bg-thumb" data-preset="3" style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-preset-3); cursor: pointer;"></div>
+                </div>
+                <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
+                    <span style="color: white; font-size: 11px; font-weight: 600;">BLUR</span>
+                    <input type="range" id="blur-slider" min="0" max="40" value="16" style="flex: 1;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="folder-overlay-view">
+        <div class="folder-expanded-card">
+            <div class="folder-card-title" id="folder-popup-title">Folder</div>
+            <div class="folder-card-grid" id="folder-popup-grid"></div>
+        </div>
+    </div>
+
+    <div id="modal-overlay">
+        <div id="edit-modal">
+            <div class="modal-title">Edit Component</div>
+            
+            <input type="hidden" id="edit-w-id">
+            
+            <div class="form-group id-shortcut-only">
+                <label>Title</label>
+                <input type="text" id="edit-w-title">
+            </div>
+
+            <div class="form-group id-shortcut-only">
+                <label>URL</label>
+                <input type="text" id="edit-w-url">
+            </div>
+
+            <div class="form-group id-shortcut-only">
+                <label>Icon Identifier</label>
+                <input type="text" id="edit-w-icon">
+            </div>
+
+            <div class="form-group id-folder-only">
+                <label>Folder Title</label>
+                <input type="text" id="edit-folder-title">
+            </div>
+
+            <div class="form-group id-search-only">
+                <label>Search Engine</label>
+                <select id="edit-search-engine">
+                    <option value="google">Google</option>
+                    <option value="bing">Bing</option>
+                    <option value="duckduckgo">DuckDuckGo</option>
+                </select>
+            </div>
+
+            <div class="form-group id-search-only">
+                <label>Placeholder</label>
+                <input type="text" id="edit-search-placeholder">
+            </div>
+
+            <div class="form-group id-shortcut-only">
+                <label>Corner Radius</label>
+                <div class="shape-selector">
+                    <button class="shape-btn" data-shape="10px">Squircle</button>
+                    <button class="shape-btn" data-shape="20px">Rounded</button>
+                    <button class="shape-btn" data-shape="50%">Circle</button>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Background tint</label>
+                    <input type="color" id="edit-w-bg-color" style="width:100%; height:38px; border:none; background:none; cursor:pointer;">
+                </div>
+                <div class="form-group" style="justify-content: flex-end;">
+                    <div class="toggle-container">
+                        <span class="toggle-label">Frosted Glass</span>
+                        <input type="checkbox" id="edit-w-glass-toggle">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn" id="modal-save-btn">Save</button>
+                <button class="modal-btn" id="modal-cancel-btn">Cancel</button>
+                <button class="modal-btn" id="modal-delete-btn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        window.WidgetGlobals = {
+            _registry: new Map(),
+            register(cls) {
+                const meta = cls.getMetadata();
+                this._registry.set(meta.type, { cls, meta });
+            },
+            get(type) {
+                const item = this._registry.get(type);
+                return item ? item.cls : null;
+            },
+            getMetadata(type) {
+                const item = this._registry.get(type);
+                return item ? item.meta : null;
+            },
+            getAllMetadata() {
+                return Array.from(this._registry.values()).map(x => x.meta);
+            }
+        };
+    </script>
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

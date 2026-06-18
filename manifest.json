@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "ProGrid",
+  "version": "0.0.5",
+  "description": "Customizable New Tab Dashboard by MR Prog",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "short_name": "ProGrid",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://github.com/MR-PR0G&size=192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://github.com/MR-PR0G&size=512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
