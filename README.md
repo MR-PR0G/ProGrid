@@ -8,6 +8,10 @@
   <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Extension%20%7C%20PWA-success.svg" alt="Platform">
 </div>
 
+<div align="center">
+  <img src="https://github.com/MR-PR0G/ProGrid/blob/main/Demos/ScreenShots.png" alt="ScreenShot" width="75%" style="">
+</div>
+
 ---
 
 ## ✨ Key Features
