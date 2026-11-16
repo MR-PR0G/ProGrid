@@ -8,6 +8,7 @@
     <meta name="theme-color" content="#0f172a">
     <title>ProGrid Workspace</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
     <script>
@@ -61,6 +62,13 @@
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; width: 100%; border-top: 1px solid var(--panel-border); padding-top: 10px;">
+                <button id="pwa-install-btn" style="display: none; flex: 1; padding: 8px; background: #3b82f6; border: none; border-radius: 8px; color: white; font-size: 11px; font-weight: 600; cursor: pointer; align-items: center; justify-content: center; gap: 4px;">📲 Install App</button>
+                <button id="export-cfg-btn" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-primary); font-size: 11px; font-weight: 500; cursor: pointer;">📥 Backup</button>
+                <button id="import-cfg-btn" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-primary); font-size: 11px; font-weight: 500; cursor: pointer;">📤 Restore</button>
+                <input type="file" id="import-cfg-input" accept=".json" style="display: none;">
             </div>
         </div>
     </div>

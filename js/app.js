@@ -1,7 +1,7 @@
 import { GridEngine } from './grid.js';
 import { StorageEngine } from './storage.js';
 
-const DYNAMIC_WIDGET_LIST = ['shortcut', 'search', 'checklist', 'folder'];
+const DYNAMIC_WIDGET_LIST = ['shortcut', 'search', 'checklist', 'folder', 'clock', 'notes'];
 
 async function loadSystemWidgets() {
     for (const name of DYNAMIC_WIDGET_LIST) {
@@ -47,9 +47,10 @@ async function init() {
         state.presetBg = "1";
         state.theme = "dark";
         state.widgets = [
-            { id: "w-1781773568073", type: "search", x: 1, y: 1, w: 8, h: 1, engine: "google", placeholder: "Search...", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 1, w: 8, h: 1, baseCols: 8 }, isHidden: false, centerDist: 1 },
-            { id: "w-1781791807875", type: "shortcut", x: 6, y: 2, w: 2, h: 1, title: "Give Star This Project", url: "https://github.com/MR-PR0G", icon: "", iconBg: "#f6d32d", shape: "50%", isGlass: true, bg: "#f6d32d", idealLayout: { x: 5, y: 2, w: 2, h: 1, baseCols: 8 }, isHidden: false, centerDist: 2 },
-            { id: "w-1781791038045", type: "folder", x: 1, y: 3, w: 3, h: 2, title: "Google", url: "https://mail.google.com/mail/", icon: "", iconBg: "transparent", shape: "20px", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 3, w: 3, h: 2, baseCols: 8 }, isHidden: false, centerDist: 2.915, children: [
+            { id: "w-clock-default", type: "clock", x: 0, y: 0, w: 2, h: 1, format24: true, showDate: true, isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 0, w: 2, h: 1, baseCols: 8 }, isHidden: false, centerDist: 0.5 },
+            { id: "w-1781773568073", type: "search", x: 2, y: 0, w: 6, h: 1, engine: "google", placeholder: "Search...", isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 0, w: 6, h: 1, baseCols: 8 }, isHidden: false, centerDist: 1 },
+            { id: "w-1781791807875", type: "shortcut", x: 0, y: 1, w: 2, h: 1, title: "Give Star This Project", url: "https://github.com/MR-PR0G", icon: "", iconBg: "#f6d32d", shape: "50%", isGlass: true, bg: "#f6d32d", idealLayout: { x: 0, y: 1, w: 2, h: 1, baseCols: 8 }, isHidden: false, centerDist: 2 },
+            { id: "w-1781791038045", type: "folder", x: 2, y: 1, w: 2, h: 2, title: "Google", url: "https://mail.google.com/mail/", icon: "", iconBg: "transparent", shape: "20px", isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 1, w: 2, h: 2, baseCols: 8 }, isHidden: false, centerDist: 2.915, children: [
                 { id: "ch-1781791128373-2", type: "shortcut", title: "Youtube", url: "https://www.youtube.com/", icon: "", shape: "20px", iconBg: "transparent" },
                 { id: "ch-1781791401512", type: "shortcut", title: "Gmail", url: "https://mail.google.com/mail/", icon: "", shape: "20px", iconBg: "transparent" },
                 { id: "ch-1781791526637", type: "shortcut", title: "Gemini", url: "https://gemini.google.com/app", icon: "", shape: "20px", iconBg: "transparent" },
@@ -710,6 +711,91 @@ function setupGlobalEvents() {
             currentShapeSelection = btn.getAttribute('data-shape');
             document.querySelectorAll('.shape-btn').forEach(b => b.classList.toggle('active', b === btn));
         });
+    });
+
+    // PWA Install Prompt Support
+    let deferredPrompt = null;
+    const pwaInstallBtn = document.getElementById('pwa-install-btn');
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (pwaInstallBtn) pwaInstallBtn.style.display = 'inline-flex';
+    });
+
+    if (pwaInstallBtn) {
+        pwaInstallBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) {
+                alert("To install on iOS: Tap the Share button and select 'Add to Home Screen'.");
+                return;
+            }
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                pwaInstallBtn.style.display = 'none';
+            }
+            deferredPrompt = null;
+        });
+    }
+
+    // Export / Backup JSON Configuration
+    const exportBtn = document.getElementById('export-cfg-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `progrid-backup-${new Date().toISOString().slice(0, 10)}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        });
+    }
+
+    // Import / Restore JSON Configuration
+    const importBtn = document.getElementById('import-cfg-btn');
+    const importInput = document.getElementById('import-cfg-input');
+    if (importBtn && importInput) {
+        importBtn.addEventListener('click', () => importInput.click());
+        importInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const parsed = JSON.parse(ev.target.result);
+                    if (parsed && Array.isArray(parsed.widgets)) {
+                        state.widgets = parsed.widgets;
+                        state.blurValue = parsed.blurValue ?? state.blurValue;
+                        state.presetBg = parsed.presetBg || state.presetBg;
+                        state.theme = parsed.theme || state.theme;
+                        state.customBg = parsed.customBg || null;
+                        StorageEngine.save(state);
+                        applyGlobalStyles();
+                        renderGrid();
+                        alert("Settings restored successfully!");
+                    } else {
+                        alert("Invalid backup file format!");
+                    }
+                } catch (err) {
+                    alert("Error parsing JSON file!");
+                }
+            };
+            reader.readAsText(file);
+        });
+    }
+
+    // Close Modals / Exit Edit Mode on Escape Key
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('modal-overlay');
+            if (modal && modal.style.display === 'flex') {
+                closeModal();
+            } else if (folderOverlay && folderOverlay.style.display === 'flex') {
+                folderOverlay.style.display = 'none';
+            } else if (state.editMode) {
+                window.toggleEditMode(false);
+            }
+        }
     });
 }
 
