@@ -68,6 +68,9 @@
 
     <div id="delete-zone">🗑️</div>
     <button id="done-btn">Done</button>
+    <div id="edit-mode-hint" class="edit-hint-pill">
+        <span>✨ Drag to organize • Resize from corner • Tap widget for options</span>
+    </div>
 
     <div id="edit-panel">
         <div class="panel-tabs">
@@ -199,10 +202,53 @@
         </div>
     </div>
 
-    <div id="folder-overlay-view" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 9999; align-items: center; justify-content: center;">
-        <div style="background: var(--panel-bg); border: 1px solid var(--panel-border); padding: 30px; border-radius: 24px; width: 440px; max-width: 90%;">
-            <h3 id="folder-popup-title" style="color: var(--text-primary); font-size: 20px; font-weight: 600; margin-bottom: 20px; text-align: center;">Folder</h3>
-            <div id="folder-popup-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; justify-items: center;"></div>
+    <!-- Folder Overlay View -->
+    <div id="folder-overlay-view">
+        <div id="folder-popup-card">
+            <h3 id="folder-popup-title">Folder</h3>
+            <div id="folder-popup-grid"></div>
+        </div>
+    </div>
+
+    <!-- Floating Quick Actions Menu on Long-Press -->
+    <div id="widget-quick-menu">
+        <button class="quick-menu-item" id="qm-edit-btn">
+            <span class="quick-menu-icon">✏️</span>
+            <span>Edit Widget</span>
+        </button>
+        <button class="quick-menu-item" id="qm-info-btn">
+            <span class="quick-menu-icon">ℹ️</span>
+            <span>Widget Info</span>
+        </button>
+        <button class="quick-menu-item" id="qm-layout-btn">
+            <span class="quick-menu-icon">📐</span>
+            <span>Move & Resize</span>
+        </button>
+        <div style="height: 1px; background: var(--panel-border); margin: 3px 0;"></div>
+        <button class="quick-menu-item danger" id="qm-delete-btn">
+            <span class="quick-menu-icon">🗑️</span>
+            <span>Delete</span>
+        </button>
+    </div>
+
+    <!-- Widget Information Modal -->
+    <div id="widget-info-modal">
+        <div class="info-modal-card">
+            <div class="info-header">
+                <div id="info-w-icon">📦</div>
+                <div>
+                    <h3 id="info-w-label">Widget Name</h3>
+                    <span id="info-w-type">type</span>
+                </div>
+            </div>
+            <div id="info-w-desc" class="info-desc">Widget details and description.</div>
+            <div class="info-rows">
+                <div class="info-row"><span class="info-label">Author:</span><span class="info-val">MR Prog</span></div>
+                <div class="info-row"><span class="info-label">Version:</span><span class="info-val">0.0.9</span></div>
+                <div class="info-row"><span class="info-label">Dimensions:</span><span id="info-w-size" class="info-val">2 × 1</span></div>
+                <div class="info-row"><span class="info-label">Engine:</span><span class="info-val">ProGrid Fluid Grid</span></div>
+            </div>
+            <button id="info-close-btn" class="info-btn">Got it</button>
         </div>
     </div>
 

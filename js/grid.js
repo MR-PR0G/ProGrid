@@ -14,7 +14,8 @@ export class GridEngine {
 
         const isMobile = width < 640;
         const availableW = isMobile ? Math.max(280, width - 28) : width * 0.85;
-        const availableH = height - (window.appState && window.appState.editMode ? (isMobile ? 180 : 260) : 40);
+        // ابعاد و مقیاس سلول‌های گرید پایدار است و در ادیت‌مود با زوم‌اوت نمایش داده می‌شود نه تغییر ساختار
+        const availableH = height - 40;
 
         let baseGap = isMobile ? 12 : 16;
         let baseCell = isMobile ? 74 : 96;

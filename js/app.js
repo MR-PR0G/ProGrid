@@ -24,6 +24,7 @@ let bgLongPressTimeout = null;
 let potentialMergeTargetId = null;
 let rAFActive = false;
 let currentColumnsCount = 8;
+let activeQuickMenuWidget = null;
 
 async function init() {
     container = document.getElementById('grid-container');
@@ -82,6 +83,7 @@ async function init() {
     applyGlobalStyles();
     populateWidgetBottomStore();
     setupSpotlightSearch();
+    setupQuickMenuListeners();
 }
 
 function applyGlobalStyles() {
@@ -258,7 +260,7 @@ function attachInteractionEngine(el, w, instance) {
             openModal(w);
         } else {
             if (navigator.vibrate) navigator.vibrate(50);
-            window.toggleEditMode(true);
+            showWidgetQuickMenu(w, el);
         }
     });
 
@@ -268,13 +270,13 @@ function attachInteractionEngine(el, w, instance) {
         isPointerMoved = false;
 
         if (!state.editMode) {
-            // پشتیبانی از لمس طولانی برای ورود هوشمند به ادیت‌مود در گوشی
+            // پشتیبانی از لمس طولانی برای باز کردن منوی گزینه‌های هوشمند ویجت
             widgetLongPressTimer = setTimeout(() => {
                 if (!isPointerMoved) {
                     if (navigator.vibrate) navigator.vibrate(50);
-                    window.toggleEditMode(true);
+                    showWidgetQuickMenu(w, el);
                 }
-            }, 550);
+            }, 480);
             return;
         }
 
@@ -539,6 +541,10 @@ function attachInteractionEngine(el, w, instance) {
         grid.resolveAllFinalOverlaps(state.widgets);
         StorageEngine.save(state);
         renderGrid();
+    });
+
+    el.addEventListener('pointercancel', () => {
+        if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
     });
 }
 
@@ -812,10 +818,16 @@ function setupGlobalEvents() {
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             const modal = document.getElementById('modal-overlay');
-            if (modal && modal.style.display === 'flex') {
+            const infoModal = document.getElementById('widget-info-modal');
+            const qmMenu = document.getElementById('widget-quick-menu');
+            if (qmMenu && qmMenu.style.display === 'flex') {
+                closeWidgetQuickMenu();
+            } else if (infoModal && infoModal.classList.contains('active')) {
+                closeWidgetInfo();
+            } else if (modal && modal.style.display === 'flex') {
                 closeModal();
-            } else if (folderOverlay && folderOverlay.style.display === 'flex') {
-                folderOverlay.style.display = 'none';
+            } else if (folderOverlay && folderOverlay.classList.contains('active')) {
+                window.closeFolderPopup();
             } else if (state.editMode) {
                 window.toggleEditMode(false);
             }
@@ -833,6 +845,8 @@ window.updateWidgetConfigDirectly = function(id, partialConfig) {
 };
 
 window.toggleEditMode = function(forceState = null) {
+    closeWidgetQuickMenu();
+    closeWidgetInfo();
     state.editMode = forceState !== null ? forceState : !state.editMode;
     document.body.classList.toggle('edit-mode', state.editMode);
     if (!state.editMode) {
@@ -1048,7 +1062,7 @@ window.openFolderPopup = function(folderId) {
             }
             
             item.innerHTML = `
-                <div style="width:56px; height:56px; border-radius:${shape}; background:${iconBg}; margin-bottom:8px; display:flex; align-items:center; justify-content:center; font-size:32px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">${iconHtml}</div>
+                <div class="folder-expanded-icon-box" style="border-radius:${shape}; background:${iconBg};">${iconHtml}</div>
                 <span class="folder-expanded-label">${ch.title}</span>
             `;
 
@@ -1174,7 +1188,20 @@ window.openFolderPopup = function(folderId) {
             gridEl.appendChild(item);
         });
     }
-    if (folderOverlay) folderOverlay.style.display = 'flex';
+    if (folderOverlay) {
+        folderOverlay.style.display = 'flex';
+        requestAnimationFrame(() => {
+            folderOverlay.classList.add('active');
+        });
+    }
+};
+
+window.closeFolderPopup = function() {
+    if (!folderOverlay) return;
+    folderOverlay.classList.remove('active');
+    setTimeout(() => {
+        folderOverlay.style.display = 'none';
+    }, 220);
 };
 
 function openModal(w) {
@@ -1306,6 +1333,144 @@ function setupSpotlightSearch() {
             closeSpotlight();
         }
     });
+}
+
+const widgetDescriptions = {
+    shortcut: 'Direct launcher for your favorite web link with custom icon styling and fast access.',
+    folder: 'Smart container organizing multiple bookmarks into an expandable grid collection.',
+    search: 'Integrated multi-engine search bar with instant query switching (Google, Bing, DuckDuckGo).',
+    clock: 'Aesthetic digital clock with live seconds, dynamic greeting, and system time synchronization.',
+    notes: 'Quick scratchpad for thoughts, memos, and checklists with instant local autosave.',
+    checklist: 'Interactive daily tasks checklist to prioritize and manage everyday todos.',
+    quote: 'Daily motivational wisdom to keep you inspired while working in your new tab.'
+};
+
+function showWidgetQuickMenu(w, el) {
+    activeQuickMenuWidget = w;
+    const menu = document.getElementById('widget-quick-menu');
+    if (!menu || !el) return;
+
+    const rect = el.getBoundingClientRect();
+    const menuWidth = 180;
+    const menuHeight = 175;
+
+    let top = rect.top - menuHeight - 10;
+    if (top < 16) {
+        top = rect.bottom + 10;
+    }
+    if (top + menuHeight > window.innerHeight - 16) {
+        top = Math.max(16, window.innerHeight - menuHeight - 16);
+    }
+
+    let left = rect.left + (rect.width / 2) - (menuWidth / 2);
+    left = Math.max(12, Math.min(window.innerWidth - menuWidth - 12, left));
+
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
+    menu.style.display = 'flex';
+}
+
+function closeWidgetQuickMenu() {
+    const menu = document.getElementById('widget-quick-menu');
+    if (menu) menu.style.display = 'none';
+    activeQuickMenuWidget = null;
+}
+
+function openWidgetInfo(w) {
+    if (!w) return;
+    const modal = document.getElementById('widget-info-modal');
+    if (!modal) return;
+
+    const meta = window.WidgetGlobals ? window.WidgetGlobals.getMetadata(w.type) : null;
+    const iconEl = document.getElementById('info-w-icon');
+    const labelEl = document.getElementById('info-w-label');
+    const typeEl = document.getElementById('info-w-type');
+    const sizeEl = document.getElementById('info-w-size');
+    const descEl = document.getElementById('info-w-desc');
+
+    if (iconEl) iconEl.innerHTML = (meta && meta.icon) ? meta.icon : '📦';
+    if (labelEl) labelEl.textContent = w.title || (meta && meta.label) || w.type;
+    if (typeEl) typeEl.textContent = `${w.type} widget`;
+    if (sizeEl) sizeEl.textContent = `${w.w || 1} × ${w.h || 1}`;
+    if (descEl) descEl.textContent = widgetDescriptions[w.type] || 'Modular ProGrid fluid widget component.';
+
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => {
+        modal.classList.add('active');
+    });
+}
+
+function closeWidgetInfo() {
+    const modal = document.getElementById('widget-info-modal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 220);
+}
+
+function setupQuickMenuListeners() {
+    const qmEdit = document.getElementById('qm-edit-btn');
+    const qmInfo = document.getElementById('qm-info-btn');
+    const qmLayout = document.getElementById('qm-layout-btn');
+    const qmDelete = document.getElementById('qm-delete-btn');
+    const qmMenu = document.getElementById('widget-quick-menu');
+
+    if (qmEdit) {
+        qmEdit.addEventListener('click', () => {
+            if (activeQuickMenuWidget) {
+                const target = activeQuickMenuWidget;
+                closeWidgetQuickMenu();
+                openModal(target);
+            }
+        });
+    }
+
+    if (qmInfo) {
+        qmInfo.addEventListener('click', () => {
+            if (activeQuickMenuWidget) {
+                const target = activeQuickMenuWidget;
+                closeWidgetQuickMenu();
+                openWidgetInfo(target);
+            }
+        });
+    }
+
+    if (qmLayout) {
+        qmLayout.addEventListener('click', () => {
+            closeWidgetQuickMenu();
+            window.toggleEditMode(true);
+        });
+    }
+
+    if (qmDelete) {
+        qmDelete.addEventListener('click', () => {
+            if (activeQuickMenuWidget) {
+                const targetId = activeQuickMenuWidget.id;
+                closeWidgetQuickMenu();
+                state.widgets = state.widgets.filter(item => item.id !== targetId);
+                StorageEngine.save(state);
+                renderGrid();
+            }
+        });
+    }
+
+    window.addEventListener('pointerdown', (e) => {
+        if (qmMenu && qmMenu.style.display === 'flex' && !qmMenu.contains(e.target)) {
+            closeWidgetQuickMenu();
+        }
+    });
+
+    const infoCloseBtn = document.getElementById('info-close-btn');
+    const infoModal = document.getElementById('widget-info-modal');
+    if (infoCloseBtn) {
+        infoCloseBtn.addEventListener('click', closeWidgetInfo);
+    }
+    if (infoModal) {
+        infoModal.addEventListener('click', (e) => {
+            if (e.target === infoModal) closeWidgetInfo();
+        });
+    }
 }
 
 window.addEventListener('DOMContentLoaded', init);

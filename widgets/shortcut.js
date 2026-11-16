@@ -47,11 +47,11 @@ export default class ShortcutWidget extends BaseWidget {
         }
 
         return `
-            <a href="${url}" target="_blank" class="shortcut-link-wrapper" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; box-sizing: border-box;">
-                <div class="shortcut-icon-container" style="width: ${iconSize}; height: ${iconSize}; border-radius: ${shape}; background: ${iconBg}; display: flex; align-items: center; justify-content: center; font-size: 24px; user-select: none; box-shadow: 0 3px 8px rgba(0,0,0,0.18); overflow: hidden;">
+            <a href="${url}" target="_blank" class="shortcut-link-wrapper" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; padding: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; box-sizing: border-box; text-align: center;">
+                <div class="shortcut-icon-container" style="width: ${iconSize}; height: ${iconSize}; margin: 0 auto; border-radius: ${shape}; background: ${iconBg}; display: flex; align-items: center; justify-content: center; font-size: 24px; user-select: none; box-shadow: 0 3px 8px rgba(0,0,0,0.18); overflow: hidden;">
                     ${iconContent}
                 </div>
-                <span class="shortcut-label-text" style="font-size: 11px; margin-top: 4px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); text-shadow: 0 1px 3px rgba(0,0,0,0.8); font-weight: 500; text-align: center; line-height: 1.2;">${title}</span>
+                <span class="shortcut-label-text" style="font-size: 11px; margin-top: 4px; margin-left: auto; margin-right: auto; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); text-shadow: 0 1px 3px rgba(0,0,0,0.8); font-weight: 500; text-align: center; line-height: 1.2; display: block;">${title}</span>
             </a>
         `;
     }

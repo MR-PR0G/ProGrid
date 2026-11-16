@@ -1,9 +1,9 @@
 <div align="center">
   <h1>🌟 ProGrid Workspace</h1>
-  <p><b>Version 0.0.6 | Developed by MR Prog</b></p>
+  <p><b>Version 0.0.9 | Developed by MR Prog</b></p>
   <p>A modern, modular, and fully customizable Liquid Glass workspace for your browser and mobile.</p>
 
-  <img src="https://img.shields.io/badge/Version-0.0.6-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.0.9-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Extension%20%7C%20PWA-success.svg" alt="Platform">
   <img src="https://img.shields.io/badge/Mobile-Optimized-brightgreen.svg" alt="Mobile Optimized">
 </div>
@@ -14,10 +14,15 @@
 
 ---
 
-## ✨ Key Features in v0.0.6
-- **📱 True Mobile & Touch Engine:** Complete scale-offset correction (`scale(0.95)` compensated), native Long Press to edit, Haptic feedback, and Safe Area (Notch / Dynamic Island) support.
+## ✨ Key Features in v0.0.9
+- **📱 True Mobile & Touch Engine:** Complete scale-offset correction, native Long Press to reveal quick action menus, Haptic feedback, and Safe Area (Notch / Dynamic Island) support.
+- **⚡ Floating Widget Quick Menu:** Long-press any widget on home screen to reveal glassmorphic context menu with instant options: *Edit*, *Widget Info*, *Move & Resize*, and *Delete*.
+- **🔎 Spotlight Quick Search:** Instant slide-down Spotlight search overlay (`/` or `Ctrl+K`) with engine chips (Google, Bing, DuckDuckGo) and floating trigger button.
+- **📁 Smooth Animated Folders:** Symmetrical 4-column layout, pixel-perfect centered shortcut icons, clean typography, and spring opening animation.
+- **📐 Stable Zoom-Out Edit Mode:** Entering edit mode zooms out the canvas (`scale(0.87)`) without altering grid cell metrics, keeping widget sizing constant across modes, with an interactive guidance pill banner.
+- **🛡️ Directional Drag Threshold:** Widget addition from bottom drawer requires upward drag gesture, preventing accidental additions during swipe/scroll.
+- **🚨 Max Limit Feedback:** Widgets pulse red when dragging/resizing reaches grid limits or max width/height boundaries.
 - **Fluid Grid Engine:** Intelligent top-to-bottom gravity grid with 4-column mobile adaptation and multi-column desktop responsiveness.
-- **Glassmorphism UI:** Stunning frosted glass, dynamic animated backgrounds, blur adjustment, and dark/light modes.
 - **Universal Install (PWA & New Tab):** 1-Click native app installation on Android, iOS, Windows, Mac, and Linux, plus Chrome/Edge/Brave extension support.
 - **Modular Widgets:** 
   - ⏰ **Digital Clock & Calendar:** Real-time clock with 12/24h toggle and date display.
