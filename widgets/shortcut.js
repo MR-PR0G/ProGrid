@@ -24,16 +24,17 @@ export default class ShortcutWidget extends BaseWidget {
         if (userIcon) {
             iconContent = userIcon;
         } else {
+            const firstLetter = title.charAt(0).toUpperCase() || '🔗';
             const favUrl = `https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(url)}&size=128`;
-            iconContent = `<img src="${favUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" onerror="this.outerHTML='🌐'" draggable="false" />`;
+            iconContent = `<img src="${favUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" onerror="this.outerHTML='<span style=\\'font-weight:700;font-size:24px;color:var(--text-primary);\\'>${firstLetter}</span>'" draggable="false" />`;
         }
 
         return `
-            <a href="${url}" target="_blank" class="shortcut-link-wrapper" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none;">
-                <div class="shortcut-icon-container" style="width: 56px; height: 56px; border-radius: ${shape}; background: ${iconBg}; display: flex; align-items: center; justify-content: center; font-size: 32px; user-select: none; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+            <a href="${url}" target="_blank" class="shortcut-link-wrapper" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; -webkit-tap-highlight-color: transparent;">
+                <div class="shortcut-icon-container" style="width: 56px; height: 56px; border-radius: ${shape}; background: ${iconBg}; display: flex; align-items: center; justify-content: center; font-size: 30px; user-select: none; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
                     ${iconContent}
                 </div>
-                <span class="shortcut-label-text" style="font-size: 12px; margin-top: 8px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.8); font-weight: 500;">${title}</span>
+                <span class="shortcut-label-text" style="font-size: 12px; margin-top: 8px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); text-shadow: 0 1px 3px rgba(0,0,0,0.8); font-weight: 500;">${title}</span>
             </a>
         `;
     }

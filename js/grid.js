@@ -12,25 +12,29 @@ export class GridEngine {
         const width = window.innerWidth;
         const height = window.innerHeight;
 
-        const availableW = width * 0.85;
-        const availableH = height - (window.appState && window.appState.editMode ? 260 : 40);
+        const isMobile = width < 640;
+        const availableW = isMobile ? Math.max(280, width - 28) : width * 0.85;
+        const availableH = height - (window.appState && window.appState.editMode ? (isMobile ? 180 : 260) : 40);
 
-        let calculatedCols = Math.floor((availableW + this.BASE_GAP) / (this.BASE_CELL_SIZE + this.BASE_GAP));
-        if (calculatedCols % 2 !== 0) calculatedCols--;
+        let baseGap = isMobile ? 12 : 16;
+        let baseCell = isMobile ? 74 : 96;
+
+        let calculatedCols = Math.floor((availableW + baseGap) / (baseCell + baseGap));
+        if (!isMobile && calculatedCols % 2 !== 0) calculatedCols--;
         
-        this.cols = Math.max(4, calculatedCols);
-        this.rows = Math.max(4, Math.floor((availableH + this.BASE_GAP) / (this.BASE_CELL_SIZE + this.BASE_GAP)));
+        this.cols = isMobile ? 4 : Math.max(4, calculatedCols);
+        this.rows = Math.max(isMobile ? 5 : 4, Math.floor((availableH + baseGap) / (baseCell + baseGap)));
 
-        const targetGridW = this.cols * this.BASE_CELL_SIZE + (this.cols - 1) * this.BASE_GAP;
-        const targetGridH = this.rows * this.BASE_CELL_SIZE + (this.rows - 1) * this.BASE_GAP;
+        const targetGridW = this.cols * baseCell + (this.cols - 1) * baseGap;
+        const targetGridH = this.rows * baseCell + (this.rows - 1) * baseGap;
 
         let scale = 1;
         if (targetGridW > availableW || targetGridH > availableH) {
             scale = Math.min(availableW / targetGridW, availableH / targetGridH);
         }
 
-        this.CELL_SIZE = this.BASE_CELL_SIZE * scale;
-        this.GAP = this.BASE_GAP * scale;
+        this.CELL_SIZE = Math.round(baseCell * scale);
+        this.GAP = Math.round(baseGap * scale);
 
         const finalGridW = this.cols * this.CELL_SIZE + (this.cols - 1) * this.GAP;
         const finalGridH = this.rows * this.CELL_SIZE + (this.rows - 1) * this.GAP;

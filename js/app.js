@@ -64,6 +64,13 @@ async function init() {
     grid.updateMetrics();
     currentColumnsCount = grid.columns;
     state.widgets.forEach(w => {
+        if (w.w > currentColumnsCount) {
+            w.w = currentColumnsCount;
+            w.x = 0;
+        }
+        if (w.x + w.w > currentColumnsCount) {
+            w.x = Math.max(0, currentColumnsCount - w.w);
+        }
         if (!w.idealLayout) w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: currentColumnsCount };
     });
 
@@ -114,7 +121,12 @@ function renderGrid() {
     grid.resolveAllFinalOverlaps(state.widgets, oldCols);
     
     Array.from(container.children).forEach(child => {
-        if (child.id !== 'ghost-guide' && !child.classList.contains('grid-cell-visual')) child.remove();
+        if (child.id !== 'ghost-guide' && !child.classList.contains('grid-cell-visual')) {
+            if (child._widgetInstance && child._widgetInstance.onDestroy) {
+                try { child._widgetInstance.onDestroy(child); } catch (e) { console.error(e); }
+            }
+            child.remove();
+        }
     });
 
     document.querySelectorAll('.grid-cell-visual').forEach(c => c.remove());
@@ -179,12 +191,25 @@ function createWidgetDOM(w) {
     const resizeHandle = document.createElement('div');
     resizeHandle.className = 'resize-handle';
     wrapper.appendChild(resizeHandle);
+    wrapper._widgetInstance = instance;
     container.appendChild(wrapper);
 
     if (instance && instance.postRender) {
         instance.postRender(wrapper);
     }
     attachInteractionEngine(wrapper, w, instance);
+}
+
+function getWrapperScale() {
+    const scaleWrapper = document.getElementById('grid-scale-wrapper');
+    if (!scaleWrapper) return 1;
+    const style = window.getComputedStyle(scaleWrapper);
+    const transform = style.transform || style.webkitTransform;
+    if (transform && transform !== 'none') {
+        const matrix = new DOMMatrixReadOnly(transform);
+        return matrix.a || 1;
+    }
+    return 1;
 }
 
 function updateGhost(pos) {
@@ -214,6 +239,8 @@ function attachInteractionEngine(el, w, instance) {
     let dragOffsetY = 0;
     let isDragging = false;
     let isResizing = false;
+    let widgetLongPressTimer = null;
+    let isPointerMoved = false;
 
     const meta = window.WidgetGlobals.getMetadata(w.type) || { minW: 1, minH: 1, maxW: 4, maxH: 4 };
     if (w.type === 'search') {
@@ -225,11 +252,29 @@ function attachInteractionEngine(el, w, instance) {
 
     el.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        if (state.editMode) openModal(w);
+        if (state.editMode) {
+            openModal(w);
+        } else {
+            if (navigator.vibrate) navigator.vibrate(50);
+            window.toggleEditMode(true);
+        }
     });
 
     el.addEventListener('pointerdown', (e) => {
-        if (!state.editMode) return;
+        initialX = e.clientX;
+        initialY = e.clientY;
+        isPointerMoved = false;
+
+        if (!state.editMode) {
+            // پشتیبانی از لمس طولانی برای ورود هوشمند به ادیت‌مود در گوشی
+            widgetLongPressTimer = setTimeout(() => {
+                if (!isPointerMoved) {
+                    if (navigator.vibrate) navigator.vibrate(50);
+                    window.toggleEditMode(true);
+                }
+            }, 550);
+            return;
+        }
 
         if (w.type === 'checklist') {
             if (e.target.closest('.checklist-item') || e.target.closest('.checklist-add') || e.target.closest('.checklist-input')) return;
@@ -241,8 +286,8 @@ function attachInteractionEngine(el, w, instance) {
 
         el.setPointerCapture(e.pointerId);
         initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
-        initialX = e.clientX;
-        initialY = e.clientY;
+
+        const scale = getWrapperScale();
 
         if (e.target.classList.contains('resize-handle')) {
             isResizing = true;
@@ -257,8 +302,8 @@ function attachInteractionEngine(el, w, instance) {
             if (ghost) ghost.classList.add('active');
             
             const rect = el.getBoundingClientRect();
-            dragOffsetX = e.clientX - rect.left;
-            dragOffsetY = e.clientY - rect.top;
+            dragOffsetX = (e.clientX - rect.left) / scale;
+            dragOffsetY = (e.clientY - rect.top) / scale;
             
             updateGhost(w);
         }
@@ -266,7 +311,14 @@ function attachInteractionEngine(el, w, instance) {
     });
 
     el.addEventListener('pointermove', (e) => {
-        if (!state.editMode) return;
+        if (!state.editMode) {
+            if (Math.hypot(e.clientX - initialX, e.clientY - initialY) > 10) {
+                isPointerMoved = true;
+                if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
+            }
+            return;
+        }
+
         if (!isDragging && !isResizing) return;
 
         if (rAFActive) return;
@@ -279,10 +331,11 @@ function attachInteractionEngine(el, w, instance) {
             maxH = Math.min(meta.maxH || 4, grid.rowsCount);
 
             const containerBounds = container.getBoundingClientRect();
+            const scale = getWrapperScale();
 
             if (isDragging) {
-                const targetLeft = e.clientX - dragOffsetX - containerBounds.left;
-                const targetTop = e.clientY - dragOffsetY - containerBounds.top;
+                const targetLeft = ((e.clientX - containerBounds.left) / scale) - dragOffsetX;
+                const targetTop = ((e.clientY - containerBounds.top) / scale) - dragOffsetY;
 
                 el.style.left = `${targetLeft}px`;
                 el.style.top = `${targetTop}px`;
@@ -350,8 +403,8 @@ function attachInteractionEngine(el, w, instance) {
                 }
 
             } else if (isResizing) {
-                const deltaX = e.clientX - initialX;
-                const deltaY = e.clientY - initialY;
+                const deltaX = (e.clientX - initialX) / scale;
+                const deltaY = (e.clientY - initialY) / scale;
                 
                 let rawW = startW + deltaX;
                 let rawH = startH + deltaY;
@@ -395,6 +448,7 @@ function attachInteractionEngine(el, w, instance) {
     });
 
     el.addEventListener('pointerup', (e) => {
+        if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
         if (!state.editMode) return;
         el.releasePointerCapture(e.pointerId);
         
@@ -464,33 +518,53 @@ function attachInteractionEngine(el, w, instance) {
 }
 
 function setupBackgroundActivationSensors() {
+    let touchStartedOnBg = false;
+
     window.addEventListener('mousedown', (e) => {
         if (state.editMode || (e.target !== container && e.target !== document.getElementById('app-container') && e.target !== document.getElementById('grid-scale-wrapper'))) return;
-        bgLongPressTimeout = setTimeout(() => { window.toggleEditMode(true); }, 750);
+        bgLongPressTimeout = setTimeout(() => {
+            if (navigator.vibrate) navigator.vibrate(50);
+            window.toggleEditMode(true);
+        }, 700);
     });
     window.addEventListener('mouseup', () => { if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout); });
     
     window.addEventListener('touchstart', (e) => {
         if (state.editMode) return;
-        if(e.touches && e.touches[0]) {
+        touchStartedOnBg = (
+            e.target === container ||
+            e.target === document.getElementById('app-container') ||
+            e.target === document.getElementById('grid-scale-wrapper') ||
+            e.target === dynamicBgLayer
+        );
+        if (e.touches && e.touches[0]) {
             touchStartY = e.touches[0].clientY;
         }
-        if (e.target === container || e.target === document.getElementById('app-container') || e.target === document.getElementById('grid-scale-wrapper')) {
-            bgLongPressTimeout = setTimeout(() => { window.toggleEditMode(true); }, 750);
+        if (touchStartedOnBg) {
+            bgLongPressTimeout = setTimeout(() => {
+                if (navigator.vibrate) navigator.vibrate(50);
+                window.toggleEditMode(true);
+            }, 650);
         }
     }, { passive: true });
 
     window.addEventListener('touchmove', (e) => {
         if (state.editMode) return;
-        if(e.touches && e.touches[0]) {
+        if (touchStartedOnBg && e.touches && e.touches[0]) {
             let diffY = touchStartY - e.touches[0].clientY;
-            if (diffY > 80) {
+            if (diffY > 90) {
                 if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout);
+                if (navigator.vibrate) navigator.vibrate(50);
                 window.toggleEditMode(true);
+                touchStartedOnBg = false;
             }
         }
     }, { passive: true });
-    window.addEventListener('touchend', () => { if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout); });
+
+    window.addEventListener('touchend', () => {
+        if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout);
+        touchStartedOnBg = false;
+    });
 }
 
 function updateColorUI(target, color) {
@@ -507,9 +581,25 @@ function updateColorUI(target, color) {
     }
 }
 
+let isInputActive = false;
+document.addEventListener('focusin', (e) => {
+    if (e.target.matches('input, textarea, select')) isInputActive = true;
+});
+document.addEventListener('focusout', (e) => {
+    if (e.target.matches('input, textarea, select')) {
+        setTimeout(() => { isInputActive = false; }, 350);
+    }
+});
+
 function setupGlobalEvents() {
+    let resizeTimer = null;
     window.addEventListener('resize', () => {
-        renderGrid();
+        // جلوگیری از تغییرات ناخواسته ساختار گرید هنگام بالا آمدن کیبورد در گوشی
+        if (isInputActive) return;
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            renderGrid();
+        }, 120);
     });
 
     const doneBtn = document.getElementById('done-btn');
@@ -711,8 +801,11 @@ function setupStoreDrag(itemEl) {
             rAFActive = false;
             
             const containerBounds = container.getBoundingClientRect();
-            dummy.style.left = `${e.clientX - 46 - containerBounds.left}px`;
-            dummy.style.top = `${e.clientY - 46 - containerBounds.top}px`;
+            const scale = getWrapperScale();
+            const posX = ((e.clientX - containerBounds.left) / scale) - 46;
+            const posY = ((e.clientY - containerBounds.top) / scale) - 46;
+            dummy.style.left = `${posX}px`;
+            dummy.style.top = `${posY}px`;
 
             grid.updateMetrics();
             let effectiveW = Math.min(meta.defaultW, grid.columns);
@@ -728,8 +821,8 @@ function setupStoreDrag(itemEl) {
                 if (ghost) ghost.classList.add('active');
             }
 
-            let liveX = Math.round((e.clientX - 46 - containerBounds.left) / (grid.cellSize + grid.gap));
-            let liveY = Math.round((e.clientY - 46 - containerBounds.top) / (grid.cellSize + grid.gap));
+            let liveX = Math.round(posX / (grid.cellSize + grid.gap));
+            let liveY = Math.round(posY / (grid.cellSize + grid.gap));
             liveX = Math.max(0, Math.min(liveX, grid.columns - effectiveW));
             liveY = Math.max(0, Math.min(liveY, grid.rowsCount - effectiveH));
             updateGhost({ x: liveX, y: liveY, w: effectiveW, h: effectiveH });
@@ -872,8 +965,11 @@ window.openFolderPopup = function(folderId) {
                     if (!dummy) return;
                     
                     const containerBounds = container.getBoundingClientRect();
-                    dummy.style.left = `${e.clientX - 46 - containerBounds.left}px`;
-                    dummy.style.top = `${e.clientY - 46 - containerBounds.top}px`;
+                    const scale = getWrapperScale();
+                    const posX = ((e.clientX - containerBounds.left) / scale) - (grid.cellSize / 2);
+                    const posY = ((e.clientY - containerBounds.top) / scale) - (grid.cellSize / 2);
+                    dummy.style.left = `${posX}px`;
+                    dummy.style.top = `${posY}px`;
 
                     if (checkCollisionWithDeleteZone(e.clientX, e.clientY)) {
                         if (deleteZone) deleteZone.classList.add('hovered');
@@ -885,8 +981,8 @@ window.openFolderPopup = function(folderId) {
                         if (ghost) ghost.classList.add('active');
                     }
 
-                    let liveX = Math.round((e.clientX - 46 - containerBounds.left) / (grid.cellSize + grid.gap));
-                    let liveY = Math.round((e.clientY - 46 - containerBounds.top) / (grid.cellSize + grid.gap));
+                    let liveX = Math.round(posX / (grid.cellSize + grid.gap));
+                    let liveY = Math.round(posY / (grid.cellSize + grid.gap));
                     liveX = Math.max(0, Math.min(liveX, grid.columns - 1));
                     liveY = Math.max(0, Math.min(liveY, grid.rowsCount - 1));
                     updateGhost({ x: liveX, y: liveY, w: 1, h: 1 });
