@@ -1,5 +1,7 @@
 import { GridEngine } from './grid.js';
 import { StorageEngine } from './storage.js';
+import { widgetHub } from './hub.js';
+import { WALLPAPER_COLLECTION } from './wallpapers.js';
 
 const DYNAMIC_WIDGET_LIST = ['shortcut', 'search', 'checklist', 'folder', 'clock', 'notes'];
 
@@ -7,6 +9,7 @@ async function loadSystemWidgets() {
     for (const name of DYNAMIC_WIDGET_LIST) {
         try { await import(`../widgets/${name}.js`); } catch (e) { console.error(e); }
     }
+    try { await widgetHub.bootInstalledWidgets(); } catch (e) { console.error(e); }
 }
 
 let state = { editMode: false, blurValue: 27, presetBg: '1', theme: 'dark', customBg: null, widgets: [] };
@@ -81,7 +84,8 @@ async function init() {
     setupGlobalEvents();
     setupBackgroundActivationSensors();
     applyGlobalStyles();
-    populateWidgetBottomStore();
+    setupWidgetDrawer();
+    setupWallpaperGallery();
     setupSpotlightSearch();
     setupQuickMenuListeners();
 }
@@ -856,21 +860,276 @@ window.toggleEditMode = function(forceState = null) {
     renderGrid();
 };
 
-function populateWidgetBottomStore() {
-    const store = document.getElementById('tab-widgets');
-    if (!store || !window.WidgetGlobals) return;
+let currentDrawerSearch = '';
+let activeDrawerSubtab = 'installed';
+
+function addWidgetDirectly(type) {
+    const meta = window.WidgetGlobals ? window.WidgetGlobals.getMetadata(type) : null;
+    if (!meta) return;
+
+    grid.updateMetrics();
+    const effW = type === 'search' ? 2 : Math.min(meta.defaultW || 1, grid.columns);
+    const effH = type === 'search' ? 1 : Math.min(meta.defaultH || 1, grid.rowsCount);
+
+    const pos = grid.findFirstAvailablePos(effW, effH, state.widgets);
+    if (!pos) {
+        alert("No space available on grid! Rearrange or resize existing widgets.");
+        return;
+    }
+
+    const newWidget = {
+        id: `w-${Date.now()}`,
+        type: type,
+        x: pos.x,
+        y: pos.y,
+        w: effW,
+        h: effH,
+        ...JSON.parse(JSON.stringify(meta.defaultConfig || {}))
+    };
+    newWidget.idealLayout = { x: newWidget.x, y: newWidget.y, w: newWidget.w, h: newWidget.h, baseCols: grid.columns };
+    
+    state.widgets.push(newWidget);
+    grid.resolveAllFinalOverlaps(state.widgets);
+    StorageEngine.save(state);
+    renderGrid();
+
+    if (navigator.vibrate) navigator.vibrate(35);
+}
+
+function renderInstalledDrawerList() {
+    const listEl = document.getElementById('store-installed-list');
+    const badgeEl = document.getElementById('installed-count-pill');
+    if (!listEl || !window.WidgetGlobals) return;
+
+    const allMetas = window.WidgetGlobals.getAllMetadata().filter(m => m.type !== 'folder');
+    if (badgeEl) badgeEl.textContent = allMetas.length;
+
+    const q = currentDrawerSearch.toLowerCase().trim();
+    const filtered = allMetas.filter(m => {
+        if (!q) return true;
+        const name = (m.label || m.name || '').toLowerCase();
+        const type = (m.type || '').toLowerCase();
+        const desc = (m.description || '').toLowerCase();
+        return name.includes(q) || type.includes(q) || desc.includes(q);
+    });
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `
+            <div style="padding: 16px; font-size: 12px; color: var(--text-secondary); text-align: center; width: 100%;">
+                No installed widgets matching "${currentDrawerSearch}".
+            </div>
+        `;
+        return;
+    }
+
     let html = '';
-    window.WidgetGlobals.getAllMetadata().forEach(meta => {
-        if (meta.type === 'folder') return;
+    filtered.forEach(m => {
         html += `
-            <div class="store-item" data-type="${meta.type}">
-                <span class="store-item-icon">${meta.icon || '📦'}</span>
-                <span class="store-item-label">${meta.label}</span>
+            <div class="store-card" data-type="${m.type}">
+                <div class="store-card-header">
+                    <div class="store-card-icon">${m.icon || '📦'}</div>
+                    <div class="store-card-meta">
+                        <span class="store-card-title">${m.label || m.name}</span>
+                        <span class="store-card-size">${m.defaultW || 1}×${m.defaultH || 1}</span>
+                    </div>
+                </div>
+                <div class="store-card-actions">
+                    <button class="store-add-btn" data-type="${m.type}">
+                        <span>+ Add</span>
+                    </button>
+                </div>
             </div>
         `;
     });
-    store.innerHTML = html;
-    store.querySelectorAll('.store-item').forEach(item => setupStoreDrag(item));
+
+    listEl.innerHTML = html;
+
+    listEl.querySelectorAll('.store-card').forEach(card => {
+        setupStoreDrag(card);
+    });
+
+    listEl.querySelectorAll('.store-add-btn').forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const type = btn.getAttribute('data-type');
+            addWidgetDirectly(type);
+        });
+    });
+}
+
+async function renderMarketplaceDrawerList() {
+    const listEl = document.getElementById('store-marketplace-list');
+    if (!listEl) return;
+
+    listEl.innerHTML = `
+        <div style="padding: 14px; font-size: 12px; color: var(--text-secondary); text-align: center; width: 100%;">
+            Loading verified online widgets...
+        </div>
+    `;
+
+    const items = await widgetHub.fetchRegistry();
+    const q = currentDrawerSearch.toLowerCase().trim();
+    const filtered = items.filter(m => {
+        if (!q) return true;
+        const name = (m.name || '').toLowerCase();
+        const desc = (m.description || '').toLowerCase();
+        const author = (m.author || '').toLowerCase();
+        return name.includes(q) || desc.includes(q) || author.includes(q);
+    });
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `
+            <div style="padding: 16px; font-size: 12px; color: var(--text-secondary); text-align: center; width: 100%;">
+                No online widgets matching "${currentDrawerSearch}".
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    filtered.forEach(item => {
+        const isInstalled = widgetHub.isInstalled(item.id);
+        html += `
+            <div class="market-card" data-id="${item.id}">
+                <div class="market-card-top">
+                    <div class="store-card-icon">${item.icon || '🧩'}</div>
+                    <div class="market-card-info">
+                        <span class="market-card-name">${item.name}</span>
+                        <span class="market-card-author">by ${item.author}</span>
+                    </div>
+                </div>
+                <div class="market-card-desc">${item.description}</div>
+                <div class="market-card-footer">
+                    <span class="market-downloads-tag">↓ ${item.downloads}</span>
+                    <button class="market-install-btn ${isInstalled ? 'installed' : ''}" data-id="${item.id}">
+                        ${isInstalled ? '✓ Added' : 'Install'}
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    listEl.innerHTML = html;
+
+    listEl.querySelectorAll('.market-install-btn:not(.installed)').forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const id = btn.getAttribute('data-id');
+            const targetItem = items.find(x => x.id === id);
+            if (!targetItem) return;
+
+            btn.textContent = 'Installing...';
+            const ok = await widgetHub.installWidget(targetItem);
+            if (ok) {
+                btn.textContent = '✓ Added';
+                btn.classList.add('installed');
+                renderInstalledDrawerList();
+                if (navigator.vibrate) navigator.vibrate(30);
+            } else {
+                btn.textContent = 'Retry';
+            }
+        });
+    });
+}
+
+function setupWidgetDrawer() {
+    const searchInput = document.getElementById('widget-store-search');
+    const searchClear = document.getElementById('widget-store-search-clear');
+    const installedList = document.getElementById('store-installed-list');
+    const marketList = document.getElementById('store-marketplace-list');
+    const pillInstalled = document.getElementById('subtab-installed-btn');
+    const pillMarket = document.getElementById('subtab-marketplace-btn');
+
+    if (pillInstalled && pillMarket) {
+        pillInstalled.addEventListener('click', () => {
+            activeDrawerSubtab = 'installed';
+            pillInstalled.classList.add('active');
+            pillMarket.classList.remove('active');
+            if (installedList) installedList.style.display = 'flex';
+            if (marketList) marketList.style.display = 'none';
+        });
+
+        pillMarket.addEventListener('click', () => {
+            activeDrawerSubtab = 'marketplace';
+            pillMarket.classList.add('active');
+            pillInstalled.classList.remove('active');
+            if (marketList) marketList.style.display = 'flex';
+            if (installedList) installedList.style.display = 'none';
+            renderMarketplaceDrawerList();
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            currentDrawerSearch = e.target.value;
+            if (searchClear) searchClear.style.display = currentDrawerSearch ? 'block' : 'none';
+            if (activeDrawerSubtab === 'installed') {
+                renderInstalledDrawerList();
+            } else {
+                renderMarketplaceDrawerList();
+            }
+        });
+    }
+
+    if (searchClear && searchInput) {
+        searchClear.addEventListener('click', () => {
+            searchInput.value = '';
+            currentDrawerSearch = '';
+            searchClear.style.display = 'none';
+            if (activeDrawerSubtab === 'installed') {
+                renderInstalledDrawerList();
+            } else {
+                renderMarketplaceDrawerList();
+            }
+        });
+    }
+
+    renderInstalledDrawerList();
+}
+
+function setupWallpaperGallery() {
+    const galleryContainer = document.getElementById('wallpaper-gallery-container');
+    const resetBgBtn = document.getElementById('reset-bg-btn');
+    if (!galleryContainer) return;
+
+    let html = '';
+    WALLPAPER_COLLECTION.forEach(wp => {
+        const isCurrent = state.presetBg === 'custom' && state.customBg === wp.full;
+        html += `
+            <div class="wallpaper-thumb-card ${isCurrent ? 'active' : ''}" data-url="${wp.full}" data-id="${wp.id}" title="${wp.name}">
+                <img src="${wp.thumb}" alt="${wp.name}" loading="lazy" />
+                <span class="wp-label">${wp.name}</span>
+            </div>
+        `;
+    });
+
+    galleryContainer.innerHTML = html;
+
+    galleryContainer.querySelectorAll('.wallpaper-thumb-card').forEach(card => {
+        card.addEventListener('click', () => {
+            galleryContainer.querySelectorAll('.wallpaper-thumb-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            const url = card.getAttribute('data-url');
+            state.presetBg = 'custom';
+            state.customBg = url;
+            applyGlobalStyles();
+            StorageEngine.save(state);
+            if (navigator.vibrate) navigator.vibrate(25);
+        });
+    });
+
+    if (resetBgBtn) {
+        resetBgBtn.addEventListener('click', () => {
+            galleryContainer.querySelectorAll('.wallpaper-thumb-card').forEach(c => c.classList.remove('active'));
+            state.presetBg = '1';
+            state.customBg = null;
+            applyGlobalStyles();
+            StorageEngine.save(state);
+            if (navigator.vibrate) navigator.vibrate(25);
+        });
+    }
 }
 
 function setupStoreDrag(itemEl) {

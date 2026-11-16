@@ -66,17 +66,21 @@ export class GridEngine {
     }
 
     canFit(w, h, widgets, excludeId = null) {
-        if (w > this.cols || h > this.rows) return false;
+        return this.findFirstAvailablePos(w, h, widgets, excludeId) !== null;
+    }
+
+    findFirstAvailablePos(w, h, widgets, excludeId = null) {
+        if (w > this.cols || h > this.rows) return null;
         for (let r = 0; r <= this.rows - h; r++) {
             for (let c = 0; c <= this.cols - w; c++) {
                 let overlap = widgets.some(widget => 
                     widget.id !== excludeId && !widget.isHidden &&
                     !(c + w <= widget.x || c >= widget.x + widget.w || r + h <= widget.y || r >= widget.y + widget.h)
                 );
-                if (!overlap) return true;
+                if (!overlap) return { x: c, y: r };
             }
         }
-        return false;
+        return null;
     }
 
     resolveAllFinalOverlaps(widgets) {

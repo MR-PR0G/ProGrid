@@ -13,7 +13,7 @@
     <link rel="manifest" href="manifest.json">
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=0.0.9').then(reg => {
+            navigator.serviceWorker.register('sw.js?v=0.1.0').then(reg => {
                 reg.update();
             });
             let refreshing = false;
@@ -77,17 +77,59 @@
             <button class="panel-tab active" data-tab="widgets">Widgets</button>
             <button class="panel-tab" data-tab="appearance">Appearance</button>
         </div>
-        <div class="panel-content active" id="tab-widgets"></div>
-        <div class="panel-content" id="tab-appearance" style="flex-direction: column; gap: 16px;">
-            <div style="display: flex; gap: 16px; align-items: center; width: 100%;">
-                <div style="display: flex; gap: 8px;" id="bg-presets-list">
-                    <div class="bg-thumb" data-preset="1" style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-preset-1); border: 2px solid white; cursor: pointer;"></div>
-                    <div class="bg-thumb bg-dynamic" data-preset="2" style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-preset-2); border: 2px solid transparent; cursor: pointer;"></div>
-                    <div class="bg-thumb bg-dynamic" data-preset="3" style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-preset-3); border: 2px solid transparent; cursor: pointer;"></div>
+
+        <!-- Widgets Drawer Tab -->
+        <div class="panel-content active" id="tab-widgets">
+            <div class="store-search-bar">
+                <div class="store-search-field">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.7; flex-shrink: 0;">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="widget-store-search" placeholder="Search widgets (Clock, Notes, Calc...)" autocomplete="off" spellcheck="false">
+                    <button id="widget-store-search-clear" style="display: none;">✕</button>
+                </div>
+                <div class="store-subnav-pills">
+                    <button class="subnav-pill active" id="subtab-installed-btn" data-sub="installed">
+                        <span>Installed</span>
+                        <span class="subnav-pill-badge" id="installed-count-pill">6</span>
+                    </button>
+                    <button class="subnav-pill" id="subtab-marketplace-btn" data-sub="marketplace">
+                        <span>Online Hub</span>
+                        <span class="subnav-pill-badge hub">Online</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Installed Widgets Scroll List -->
+            <div class="store-list-container" id="store-installed-list"></div>
+
+            <!-- Online Hub Marketplace List -->
+            <div class="store-list-container" id="store-marketplace-list" style="display: none;"></div>
+        </div>
+
+        <!-- Appearance & Wallpaper Gallery Tab -->
+        <div class="panel-content" id="tab-appearance" style="flex-direction: column; gap: 14px;">
+            <!-- Wallpaper Gallery Header -->
+            <div class="appearance-section-title">
+                <span style="font-size: 13px; font-weight: 700;">Curated HD Wallpapers</span>
+                <span style="font-size: 11px; color: var(--text-secondary);">1-Click Apply</span>
+            </div>
+            
+            <div class="wallpaper-gallery-scroll" id="wallpaper-gallery-container">
+                <!-- Dynamically populated from WALLPAPER_COLLECTION -->
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: center; width: 100%; border-top: 1px solid var(--panel-border); padding-top: 10px;">
+                <div style="display: flex; gap: 8px; align-items: center;" id="bg-presets-list">
+                    <div class="bg-thumb" data-preset="1" title="Gradient 1" style="width: 30px; height: 30px; border-radius: 50%; background: var(--bg-preset-1); border: 2px solid white; cursor: pointer;"></div>
+                    <div class="bg-thumb bg-dynamic" data-preset="2" title="Gradient 2" style="width: 30px; height: 30px; border-radius: 50%; background: var(--bg-preset-2); border: 2px solid transparent; cursor: pointer;"></div>
+                    <div class="bg-thumb bg-dynamic" data-preset="3" title="Gradient 3" style="width: 30px; height: 30px; border-radius: 50%; background: var(--bg-preset-3); border: 2px solid transparent; cursor: pointer;"></div>
                     
-                    <button id="custom-bg-btn" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(128,128,128,0.2); border: 1px dashed var(--text-secondary); cursor: pointer; color: var(--text-primary); font-size: 16px; display: flex; align-items: center; justify-content: center;">+</button>
+                    <button id="custom-bg-btn" title="Upload custom wallpaper" style="width: 30px; height: 30px; border-radius: 50%; background: rgba(128,128,128,0.2); border: 1px dashed var(--text-secondary); cursor: pointer; color: var(--text-primary); font-size: 14px; display: flex; align-items: center; justify-content: center;">+</button>
                     <input type="file" id="custom-bg-input" accept="image/*" style="display: none;">
                 </div>
+                <button id="reset-bg-btn" style="padding: 5px 10px; background: rgba(255,255,255,0.06); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-secondary); font-size: 11px; cursor: pointer; margin-left: auto;">Reset Default</button>
             </div>
             
             <div style="display: flex; gap: 16px; align-items: center; width: 100%; justify-content: space-between;">
