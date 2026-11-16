@@ -86,7 +86,6 @@ async function init() {
     applyGlobalStyles();
     setupWidgetDrawer();
     setupWallpaperGallery();
-    setupSpotlightSearch();
     setupQuickMenuListeners();
 }
 
@@ -109,7 +108,10 @@ function applyGlobalStyles() {
     if (state.presetBg === 'custom' && state.customBg) {
         if (dynamicBgLayer) {
             dynamicBgLayer.className = 'bg-layer';
-            dynamicBgLayer.style.backgroundImage = `url(${state.customBg})`;
+            dynamicBgLayer.style.backgroundImage = `url("${state.customBg}")`;
+            dynamicBgLayer.style.backgroundSize = 'cover';
+            dynamicBgLayer.style.backgroundPosition = 'center center';
+            dynamicBgLayer.style.backgroundRepeat = 'no-repeat';
         }
     } else {
         if (dynamicBgLayer) {
@@ -264,7 +266,7 @@ function attachInteractionEngine(el, w, instance) {
             openModal(w);
         } else {
             if (navigator.vibrate) navigator.vibrate(50);
-            showWidgetQuickMenu(w, el);
+            showWidgetQuickMenu(w, el, { x: e.clientX, y: e.clientY });
         }
     });
 
@@ -278,9 +280,9 @@ function attachInteractionEngine(el, w, instance) {
             widgetLongPressTimer = setTimeout(() => {
                 if (!isPointerMoved) {
                     if (navigator.vibrate) navigator.vibrate(50);
-                    showWidgetQuickMenu(w, el);
+                    showWidgetQuickMenu(w, el, { x: initialX, y: initialY });
                 }
-            }, 480);
+            }, 460);
             return;
         }
 
@@ -853,8 +855,10 @@ window.toggleEditMode = function(forceState = null) {
     closeWidgetInfo();
     state.editMode = forceState !== null ? forceState : !state.editMode;
     document.body.classList.toggle('edit-mode', state.editMode);
+    const editPanel = document.getElementById('edit-panel');
     if (!state.editMode) {
         closeModal();
+        if (editPanel) editPanel.classList.remove('expanded');
         grid.resolveAllFinalOverlaps(state.widgets);
     }
     renderGrid();
@@ -1035,6 +1039,24 @@ async function renderMarketplaceDrawerList() {
 }
 
 function setupWidgetDrawer() {
+    const editPanel = document.getElementById('edit-panel');
+    const drawerToggleBtn = document.getElementById('drawer-toggle-btn');
+    const drawerPillHandle = document.getElementById('drawer-pill-handle');
+
+    const toggleDrawerExpand = () => {
+        if (!editPanel) return;
+        const isExp = editPanel.classList.toggle('expanded');
+        if (drawerToggleBtn) {
+            drawerToggleBtn.setAttribute('title', isExp ? 'Collapse Drawer' : 'Expand Drawer');
+            drawerToggleBtn.innerHTML = isExp 
+                ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>`
+                : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>`;
+        }
+    };
+
+    if (drawerToggleBtn) drawerToggleBtn.addEventListener('click', toggleDrawerExpand);
+    if (drawerPillHandle) drawerPillHandle.addEventListener('click', toggleDrawerExpand);
+
     const searchInput = document.getElementById('widget-store-search');
     const searchClear = document.getElementById('widget-store-search-clear');
     const installedList = document.getElementById('store-installed-list');
@@ -1541,59 +1563,6 @@ function deleteCurrentWidget() {
     closeModal();
 }
 
-function setupSpotlightSearch() {
-    const spotlightBtn = document.getElementById('spotlight-btn');
-    const spotlightOverlay = document.getElementById('spotlight-overlay');
-    const spotlightCloseBtn = document.getElementById('spotlight-close-btn');
-    const spotlightQuery = document.getElementById('spotlight-query');
-    const spotlightForm = document.getElementById('spotlight-form');
-    let currentEngine = 'google';
-
-    const openSpotlight = () => {
-        if (!spotlightOverlay) return;
-        spotlightOverlay.classList.add('active');
-        setTimeout(() => spotlightQuery?.focus(), 80);
-    };
-
-    const closeSpotlight = () => {
-        if (!spotlightOverlay) return;
-        spotlightOverlay.classList.remove('active');
-        if (spotlightQuery) spotlightQuery.value = '';
-    };
-
-    if (spotlightBtn) spotlightBtn.addEventListener('click', openSpotlight);
-    if (spotlightCloseBtn) spotlightCloseBtn.addEventListener('click', closeSpotlight);
-
-    if (spotlightOverlay) {
-        spotlightOverlay.addEventListener('click', (e) => {
-            if (e.target === spotlightOverlay) closeSpotlight();
-        });
-    }
-
-    document.querySelectorAll('.engine-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            document.querySelectorAll('.engine-chip').forEach(c => c.classList.remove('active'));
-            chip.classList.add('active');
-            currentEngine = chip.getAttribute('data-engine');
-            if (spotlightForm) {
-                if (currentEngine === 'google') spotlightForm.action = 'https://google.com/search';
-                if (currentEngine === 'bing') spotlightForm.action = 'https://bing.com/search';
-                if (currentEngine === 'duckduckgo') spotlightForm.action = 'https://duckduckgo.com/';
-            }
-            spotlightQuery?.focus();
-        });
-    });
-
-    window.addEventListener('keydown', (e) => {
-        if ((e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) && !isInputActive && !state.editMode) {
-            e.preventDefault();
-            openSpotlight();
-        } else if (e.key === 'Escape' && spotlightOverlay && spotlightOverlay.classList.contains('active')) {
-            closeSpotlight();
-        }
-    });
-}
-
 const widgetDescriptions = {
     shortcut: 'Direct launcher for your favorite web link with custom icon styling and fast access.',
     folder: 'Smart container organizing multiple bookmarks into an expandable grid collection.',
@@ -1604,29 +1573,33 @@ const widgetDescriptions = {
     quote: 'Daily motivational wisdom to keep you inspired while working in your new tab.'
 };
 
-function showWidgetQuickMenu(w, el) {
+function showWidgetQuickMenu(w, el, touchPos = null) {
     activeQuickMenuWidget = w;
     const menu = document.getElementById('widget-quick-menu');
     if (!menu || !el) return;
 
-    const rect = el.getBoundingClientRect();
-    const menuWidth = 180;
-    const menuHeight = 175;
-
-    let top = rect.top - menuHeight - 10;
-    if (top < 16) {
-        top = rect.bottom + 10;
-    }
-    if (top + menuHeight > window.innerHeight - 16) {
-        top = Math.max(16, window.innerHeight - menuHeight - 16);
-    }
-
-    let left = rect.left + (rect.width / 2) - (menuWidth / 2);
-    left = Math.max(12, Math.min(window.innerWidth - menuWidth - 12, left));
-
-    menu.style.top = `${top}px`;
-    menu.style.left = `${left}px`;
+    menu.style.visibility = 'hidden';
     menu.style.display = 'flex';
+    const menuWidth = menu.offsetWidth || 170;
+    const menuHeight = menu.offsetHeight || 160;
+
+    const rect = el.getBoundingClientRect();
+    // Position snugly 5px above widget; if tight on top, place 5px below
+    let top = rect.top - menuHeight - 5;
+    if (top < 12) {
+        top = rect.bottom + 5;
+    }
+    if (top + menuHeight > window.innerHeight - 12) {
+        top = Math.max(12, window.innerHeight - menuHeight - 12);
+    }
+
+    let anchorX = (touchPos && touchPos.x) ? touchPos.x : (rect.left + rect.width / 2);
+    let left = anchorX - (menuWidth / 2);
+    left = Math.max(10, Math.min(window.innerWidth - menuWidth - 10, left));
+
+    menu.style.top = `${Math.round(top)}px`;
+    menu.style.left = `${Math.round(left)}px`;
+    menu.style.visibility = 'visible';
 }
 
 function closeWidgetQuickMenu() {

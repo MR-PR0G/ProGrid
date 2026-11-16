@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ProGrid Workspace",
   "short_name": "ProGrid",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Customizable Liquid Glass Workspace & New Tab Dashboard by MR Prog",
   "start_url": "./index.html",
   "scope": "./",

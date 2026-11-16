@@ -13,7 +13,7 @@
     <link rel="manifest" href="manifest.json">
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=0.1.0').then(reg => {
+            navigator.serviceWorker.register('sw.js?v=0.1.1').then(reg => {
                 reg.update();
             });
             let refreshing = false;
@@ -38,34 +38,6 @@
         </div>
     </div>
 
-    <button id="spotlight-btn" aria-label="Quick Search" title="Search (Press / or Ctrl+K)">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-    </button>
-
-    <div id="spotlight-overlay">
-        <div class="spotlight-card">
-            <form id="spotlight-form" action="https://google.com/search" method="get" target="_blank">
-                <div class="spotlight-input-wrap">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.7;">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                    <input type="text" name="q" class="spotlight-input" id="spotlight-query" placeholder="Search the web or type URL..." autocomplete="off">
-                    <button type="button" id="spotlight-close-btn" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size:18px; padding:0 4px;">✕</button>
-                </div>
-                <div class="spotlight-engines" style="margin-top: 8px;">
-                    <span style="font-size: 11px; color: var(--text-secondary); margin-right: auto;">Engine:</span>
-                    <button type="button" class="engine-chip active" data-engine="google">Google</button>
-                    <button type="button" class="engine-chip" data-engine="bing">Bing</button>
-                    <button type="button" class="engine-chip" data-engine="duckduckgo">DuckDuckGo</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <div id="delete-zone">🗑️</div>
     <button id="done-btn">Done</button>
     <div id="edit-mode-hint" class="edit-hint-pill">
@@ -73,9 +45,20 @@
     </div>
 
     <div id="edit-panel">
-        <div class="panel-tabs">
-            <button class="panel-tab active" data-tab="widgets">Widgets</button>
-            <button class="panel-tab" data-tab="appearance">Appearance</button>
+        <div class="drawer-header-bar">
+            <div class="drawer-pill-handle" id="drawer-pill-handle"></div>
+            <div class="panel-tabs">
+                <button class="panel-tab active" data-tab="widgets">Widgets</button>
+                <button class="panel-tab" data-tab="appearance">Appearance</button>
+            </div>
+            <button id="drawer-toggle-btn" class="drawer-toggle-btn" title="Expand / Collapse Drawer" aria-label="Toggle Expand">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <polyline points="9 21 3 21 3 15"></polyline>
+                    <line x1="21" y1="3" x2="14" y2="10"></line>
+                    <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+            </button>
         </div>
 
         <!-- Widgets Drawer Tab -->
@@ -255,20 +238,28 @@
     <!-- Floating Quick Actions Menu on Long-Press -->
     <div id="widget-quick-menu">
         <button class="quick-menu-item" id="qm-edit-btn">
-            <span class="quick-menu-icon">✏️</span>
+            <span class="quick-menu-icon">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            </span>
             <span>Edit Widget</span>
         </button>
         <button class="quick-menu-item" id="qm-info-btn">
-            <span class="quick-menu-icon">ℹ️</span>
+            <span class="quick-menu-icon">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </span>
             <span>Widget Info</span>
         </button>
         <button class="quick-menu-item" id="qm-layout-btn">
-            <span class="quick-menu-icon">📐</span>
+            <span class="quick-menu-icon">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+            </span>
             <span>Move & Resize</span>
         </button>
         <div style="height: 1px; background: var(--panel-border); margin: 3px 0;"></div>
         <button class="quick-menu-item danger" id="qm-delete-btn">
-            <span class="quick-menu-icon">🗑️</span>
+            <span class="quick-menu-icon">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </span>
             <span>Delete</span>
         </button>
     </div>

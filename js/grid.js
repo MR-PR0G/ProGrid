@@ -13,29 +13,40 @@ export class GridEngine {
         const height = window.innerHeight;
 
         const isMobile = width < 640;
-        const availableW = isMobile ? Math.max(280, width - 28) : width * 0.85;
-        // ابعاد و مقیاس سلول‌های گرید پایدار است و در ادیت‌مود با زوم‌اوت نمایش داده می‌شود نه تغییر ساختار
-        const availableH = height - 40;
 
-        let baseGap = isMobile ? 12 : 16;
-        let baseCell = isMobile ? 74 : 96;
+        if (isMobile) {
+            // در گوشی‌ها (حتی گوشی‌های کوچک مثل iPhone SE) چیدمان همیشه ۴ ستونه و اندازه سلول‌ها کاملاً ثابت و بهینه است
+            this.cols = 4;
+            this.GAP = 12;
+            const availableW = Math.max(280, width - 24);
+            // محاسبه اندازه سلول دقیقاً بر اساس عرض صفحه بدون کوچک شدن بی‌مورد ارتفاعی
+            const calculatedCell = Math.floor((availableW - (3 * this.GAP)) / 4);
+            this.CELL_SIZE = Math.max(72, Math.min(84, calculatedCell));
+            this.rows = Math.max(5, Math.ceil((height - 50) / (this.CELL_SIZE + this.GAP)));
+        } else {
+            const availableW = width * 0.85;
+            const availableH = height - 40;
 
-        let calculatedCols = Math.floor((availableW + baseGap) / (baseCell + baseGap));
-        if (!isMobile && calculatedCols % 2 !== 0) calculatedCols--;
-        
-        this.cols = isMobile ? 4 : Math.max(4, calculatedCols);
-        this.rows = Math.max(isMobile ? 5 : 4, Math.floor((availableH + baseGap) / (baseCell + baseGap)));
+            let baseGap = 16;
+            let baseCell = 96;
 
-        const targetGridW = this.cols * baseCell + (this.cols - 1) * baseGap;
-        const targetGridH = this.rows * baseCell + (this.rows - 1) * baseGap;
+            let calculatedCols = Math.floor((availableW + baseGap) / (baseCell + baseGap));
+            if (calculatedCols % 2 !== 0) calculatedCols--;
+            
+            this.cols = Math.max(4, calculatedCols);
+            this.rows = Math.max(4, Math.floor((availableH + baseGap) / (baseCell + baseGap)));
 
-        let scale = 1;
-        if (targetGridW > availableW || targetGridH > availableH) {
-            scale = Math.min(availableW / targetGridW, availableH / targetGridH);
+            const targetGridW = this.cols * baseCell + (this.cols - 1) * baseGap;
+            const targetGridH = this.rows * baseCell + (this.rows - 1) * baseGap;
+
+            let scale = 1;
+            if (targetGridW > availableW || targetGridH > availableH) {
+                scale = Math.min(availableW / targetGridW, availableH / targetGridH);
+            }
+
+            this.CELL_SIZE = Math.round(baseCell * scale);
+            this.GAP = Math.round(baseGap * scale);
         }
-
-        this.CELL_SIZE = Math.round(baseCell * scale);
-        this.GAP = Math.round(baseGap * scale);
 
         const finalGridW = this.cols * this.CELL_SIZE + (this.cols - 1) * this.GAP;
         const finalGridH = this.rows * this.CELL_SIZE + (this.rows - 1) * this.GAP;
