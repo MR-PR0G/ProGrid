@@ -17,9 +17,10 @@
 ## ✨ Key Features in v0.1.1
 - **📱 Solid Mobile Grid (iPhone SE & Compact Phones):** Fixed 4-column gravity layout with stable 74–82px cell metrics. Grid dimensions never shrink vertically or compress widgets into unusable sizes on small screens.
 - **📐 High-Clearance Edit Mode Zoom-Out:** Entering edit mode now zooms out the canvas cleanly (`scale(0.68) translateY(-95px)` on mobile) with optimal top origin, preventing the bottom drawer from ever colliding with or occluding active widgets.
-- **✨ Expandable Bottom Sheet Widget Drawer:**
-  - Integrated drag handle pill and expand/collapse action button (`#drawer-toggle-btn`).
-  - Expands smoothly from compact preview to full-screen sheet (up to 75vh) with multi-column grid layout for installed cards, community hub, and HD wallpaper gallery.
+- **✨ Minimalist Glass Widget Drawer:**
+  - Sleek, compact bottom shelf with centered segmented tabs (`Widgets`, `Appearance`).
+  - Integrated real-time widget search and subnav pills (`Installed`, `Online Hub`).
+  - Seamless horizontal browsing with 1-tap "+ Add" button and directional upward drag-to-grid.
 - **🎯 Snug SVG Context Menu:** Long-pressing any widget opens an ultra-crisp SVG vector menu placed snugly (5px offset) directly over the widget or touch target, eliminating excessive floating gaps.
 - **🖼️ 100% Full-Cover HD Wallpapers:** Full-screen coverage (`position: fixed; inset: 0; background-size: cover !important`) without tiling, skewing, or distortion.
 - **🧹 Cleaned Home Interface:** Removed unnecessary floating search overlay button from home canvas—integrated search is neatly centralized in the widget drawer.

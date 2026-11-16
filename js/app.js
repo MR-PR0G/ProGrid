@@ -158,6 +158,8 @@ function renderGrid() {
             createWidgetDOM(w);
         }
     });
+
+    updateEditModeScale();
 }
 
 function hexToRgba(hex, alpha = 0.1) {
@@ -208,6 +210,33 @@ function createWidgetDOM(w) {
         instance.postRender(wrapper);
     }
     attachInteractionEngine(wrapper, w, instance);
+}
+
+function updateEditModeScale() {
+    const scaleWrapper = document.getElementById('grid-scale-wrapper');
+    const container = document.getElementById('grid-container');
+    if (!scaleWrapper || !container) return;
+
+    if (!state.editMode) {
+        scaleWrapper.style.transform = '';
+        return;
+    }
+
+    const isMobile = window.innerWidth < 640;
+    const topMargin = isMobile ? 50 : 56;
+    const bottomMargin = isMobile ? 220 : 236;
+    const availH = Math.max(180, window.innerHeight - (topMargin + bottomMargin));
+    const availW = Math.max(260, window.innerWidth - (isMobile ? 20 : 36));
+
+    const gridW = container.offsetWidth || 1;
+    const gridH = container.offsetHeight || 1;
+
+    const scaleX = availW / gridW;
+    const scaleY = availH / gridH;
+    let targetScale = Math.min(scaleX, scaleY, 0.82);
+    targetScale = Math.max(0.40, Math.min(0.82, targetScale));
+
+    scaleWrapper.style.transform = `scale(${targetScale.toFixed(3)})`;
 }
 
 function getWrapperScale() {
@@ -855,13 +884,12 @@ window.toggleEditMode = function(forceState = null) {
     closeWidgetInfo();
     state.editMode = forceState !== null ? forceState : !state.editMode;
     document.body.classList.toggle('edit-mode', state.editMode);
-    const editPanel = document.getElementById('edit-panel');
     if (!state.editMode) {
         closeModal();
-        if (editPanel) editPanel.classList.remove('expanded');
         grid.resolveAllFinalOverlaps(state.widgets);
     }
     renderGrid();
+    updateEditModeScale();
 };
 
 let currentDrawerSearch = '';
@@ -1039,24 +1067,6 @@ async function renderMarketplaceDrawerList() {
 }
 
 function setupWidgetDrawer() {
-    const editPanel = document.getElementById('edit-panel');
-    const drawerToggleBtn = document.getElementById('drawer-toggle-btn');
-    const drawerPillHandle = document.getElementById('drawer-pill-handle');
-
-    const toggleDrawerExpand = () => {
-        if (!editPanel) return;
-        const isExp = editPanel.classList.toggle('expanded');
-        if (drawerToggleBtn) {
-            drawerToggleBtn.setAttribute('title', isExp ? 'Collapse Drawer' : 'Expand Drawer');
-            drawerToggleBtn.innerHTML = isExp 
-                ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>`
-                : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>`;
-        }
-    };
-
-    if (drawerToggleBtn) drawerToggleBtn.addEventListener('click', toggleDrawerExpand);
-    if (drawerPillHandle) drawerPillHandle.addEventListener('click', toggleDrawerExpand);
-
     const searchInput = document.getElementById('widget-store-search');
     const searchClear = document.getElementById('widget-store-search-clear');
     const installedList = document.getElementById('store-installed-list');
