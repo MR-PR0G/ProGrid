@@ -13,7 +13,16 @@
     <link rel="manifest" href="manifest.json">
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            navigator.serviceWorker.register('sw.js?v=0.0.8').then(reg => {
+                reg.update();
+            });
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
+            });
         }
     </script>
 </head>

@@ -29,12 +29,26 @@ export default class ShortcutWidget extends BaseWidget {
             iconContent = `<img src="${favUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" onerror="this.outerHTML='<span style=\\'font-weight:700;font-size:24px;color:var(--text-primary);\\'>${firstLetter}</span>'" draggable="false" />`;
         }
 
+        const isHorizontal = (this.config.w || 1) >= 2 && (this.config.h || 1) === 1;
+        const iconSize = isHorizontal ? '38px' : '42px';
+
+        if (isHorizontal) {
+            return `
+                <a href="${url}" target="_blank" class="shortcut-link-wrapper" style="width: 100%; height: 100%; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; padding: 0 14px; gap: 10px; text-decoration: none; -webkit-tap-highlight-color: transparent; box-sizing: border-box;">
+                    <div class="shortcut-icon-container" style="width: ${iconSize}; height: ${iconSize}; min-width: ${iconSize}; border-radius: ${shape}; background: ${iconBg}; display: flex; align-items: center; justify-content: center; font-size: 22px; user-select: none; box-shadow: 0 3px 8px rgba(0,0,0,0.18); overflow: hidden;">
+                        ${iconContent}
+                    </div>
+                    <span class="shortcut-label-text" style="font-size: 13px; max-width: calc(100% - 50px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); text-shadow: 0 1px 3px rgba(0,0,0,0.8); font-weight: 600;">${title}</span>
+                </a>
+            `;
+        }
+
         return `
-            <a href="${url}" target="_blank" class="shortcut-link-wrapper" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; -webkit-tap-highlight-color: transparent;">
-                <div class="shortcut-icon-container" style="width: 56px; height: 56px; border-radius: ${shape}; background: ${iconBg}; display: flex; align-items: center; justify-content: center; font-size: 30px; user-select: none; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+            <a href="${url}" target="_blank" class="shortcut-link-wrapper" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; text-decoration: none; -webkit-tap-highlight-color: transparent; box-sizing: border-box;">
+                <div class="shortcut-icon-container" style="width: ${iconSize}; height: ${iconSize}; border-radius: ${shape}; background: ${iconBg}; display: flex; align-items: center; justify-content: center; font-size: 24px; user-select: none; box-shadow: 0 3px 8px rgba(0,0,0,0.18); overflow: hidden;">
                     ${iconContent}
                 </div>
-                <span class="shortcut-label-text" style="font-size: 12px; margin-top: 8px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); text-shadow: 0 1px 3px rgba(0,0,0,0.8); font-weight: 500;">${title}</span>
+                <span class="shortcut-label-text" style="font-size: 11px; margin-top: 4px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); text-shadow: 0 1px 3px rgba(0,0,0,0.8); font-weight: 500; text-align: center; line-height: 1.2;">${title}</span>
             </a>
         `;
     }
