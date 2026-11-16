@@ -1,12 +1,15 @@
 import { GridEngine } from './grid.js';
 import { StorageEngine } from './storage.js';
+import { widgetHub } from './hub.js';
+import { WALLPAPER_COLLECTION } from './wallpapers.js';
 
-const DYNAMIC_WIDGET_LIST = ['shortcut', 'search', 'checklist', 'folder'];
+const DYNAMIC_WIDGET_LIST = ['shortcut', 'search', 'checklist', 'folder', 'clock', 'notes'];
 
 async function loadSystemWidgets() {
     for (const name of DYNAMIC_WIDGET_LIST) {
         try { await import(`../widgets/${name}.js`); } catch (e) { console.error(e); }
     }
+    try { await widgetHub.bootInstalledWidgets(); } catch (e) { console.error(e); }
 }
 
 let state = { editMode: false, blurValue: 27, presetBg: '1', theme: 'dark', customBg: null, widgets: [] };
@@ -24,6 +27,7 @@ let bgLongPressTimeout = null;
 let potentialMergeTargetId = null;
 let rAFActive = false;
 let currentColumnsCount = 8;
+let activeQuickMenuWidget = null;
 
 async function init() {
     container = document.getElementById('grid-container');
@@ -47,9 +51,10 @@ async function init() {
         state.presetBg = "1";
         state.theme = "dark";
         state.widgets = [
-            { id: "w-1781773568073", type: "search", x: 1, y: 1, w: 8, h: 1, engine: "google", placeholder: "Search...", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 1, w: 8, h: 1, baseCols: 8 }, isHidden: false, centerDist: 1 },
-            { id: "w-1781791807875", type: "shortcut", x: 6, y: 2, w: 2, h: 1, title: "Give Star This Project", url: "https://github.com/MR-PR0G", icon: "", iconBg: "#f6d32d", shape: "50%", isGlass: true, bg: "#f6d32d", idealLayout: { x: 5, y: 2, w: 2, h: 1, baseCols: 8 }, isHidden: false, centerDist: 2 },
-            { id: "w-1781791038045", type: "folder", x: 1, y: 3, w: 3, h: 2, title: "Google", url: "https://mail.google.com/mail/", icon: "", iconBg: "transparent", shape: "20px", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 3, w: 3, h: 2, baseCols: 8 }, isHidden: false, centerDist: 2.915, children: [
+            { id: "w-clock-default", type: "clock", x: 0, y: 0, w: 2, h: 1, format24: true, showDate: true, isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 0, w: 2, h: 1, baseCols: 8 }, isHidden: false, centerDist: 0.5 },
+            { id: "w-1781773568073", type: "search", x: 2, y: 0, w: 6, h: 1, engine: "google", placeholder: "Search...", isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 0, w: 6, h: 1, baseCols: 8 }, isHidden: false, centerDist: 1 },
+            { id: "w-1781791807875", type: "shortcut", x: 0, y: 1, w: 2, h: 1, title: "Give Star This Project", url: "https://github.com/MR-PR0G", icon: "", iconBg: "#f6d32d", shape: "50%", isGlass: true, bg: "#f6d32d", idealLayout: { x: 0, y: 1, w: 2, h: 1, baseCols: 8 }, isHidden: false, centerDist: 2 },
+            { id: "w-1781791038045", type: "folder", x: 2, y: 1, w: 2, h: 2, title: "Google", url: "https://mail.google.com/mail/", icon: "", iconBg: "transparent", shape: "20px", isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 1, w: 2, h: 2, baseCols: 8 }, isHidden: false, centerDist: 2.915, children: [
                 { id: "ch-1781791128373-2", type: "shortcut", title: "Youtube", url: "https://www.youtube.com/", icon: "", shape: "20px", iconBg: "transparent" },
                 { id: "ch-1781791401512", type: "shortcut", title: "Gmail", url: "https://mail.google.com/mail/", icon: "", shape: "20px", iconBg: "transparent" },
                 { id: "ch-1781791526637", type: "shortcut", title: "Gemini", url: "https://gemini.google.com/app", icon: "", shape: "20px", iconBg: "transparent" },
@@ -64,6 +69,13 @@ async function init() {
     grid.updateMetrics();
     currentColumnsCount = grid.columns;
     state.widgets.forEach(w => {
+        if (w.w > currentColumnsCount) {
+            w.w = currentColumnsCount;
+            w.x = 0;
+        }
+        if (w.x + w.w > currentColumnsCount) {
+            w.x = Math.max(0, currentColumnsCount - w.w);
+        }
         if (!w.idealLayout) w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: currentColumnsCount };
     });
 
@@ -72,7 +84,9 @@ async function init() {
     setupGlobalEvents();
     setupBackgroundActivationSensors();
     applyGlobalStyles();
-    populateWidgetBottomStore();
+    setupWidgetDrawer();
+    setupWallpaperGallery();
+    setupQuickMenuListeners();
 }
 
 function applyGlobalStyles() {
@@ -94,7 +108,10 @@ function applyGlobalStyles() {
     if (state.presetBg === 'custom' && state.customBg) {
         if (dynamicBgLayer) {
             dynamicBgLayer.className = 'bg-layer';
-            dynamicBgLayer.style.backgroundImage = `url(${state.customBg})`;
+            dynamicBgLayer.style.backgroundImage = `url("${state.customBg}")`;
+            dynamicBgLayer.style.backgroundSize = 'cover';
+            dynamicBgLayer.style.backgroundPosition = 'center center';
+            dynamicBgLayer.style.backgroundRepeat = 'no-repeat';
         }
     } else {
         if (dynamicBgLayer) {
@@ -114,7 +131,12 @@ function renderGrid() {
     grid.resolveAllFinalOverlaps(state.widgets, oldCols);
     
     Array.from(container.children).forEach(child => {
-        if (child.id !== 'ghost-guide' && !child.classList.contains('grid-cell-visual')) child.remove();
+        if (child.id !== 'ghost-guide' && !child.classList.contains('grid-cell-visual')) {
+            if (child._widgetInstance && child._widgetInstance.onDestroy) {
+                try { child._widgetInstance.onDestroy(child); } catch (e) { console.error(e); }
+            }
+            child.remove();
+        }
     });
 
     document.querySelectorAll('.grid-cell-visual').forEach(c => c.remove());
@@ -136,6 +158,8 @@ function renderGrid() {
             createWidgetDOM(w);
         }
     });
+
+    updateEditModeScale();
 }
 
 function hexToRgba(hex, alpha = 0.1) {
@@ -179,12 +203,52 @@ function createWidgetDOM(w) {
     const resizeHandle = document.createElement('div');
     resizeHandle.className = 'resize-handle';
     wrapper.appendChild(resizeHandle);
+    wrapper._widgetInstance = instance;
     container.appendChild(wrapper);
 
     if (instance && instance.postRender) {
         instance.postRender(wrapper);
     }
     attachInteractionEngine(wrapper, w, instance);
+}
+
+function updateEditModeScale() {
+    const scaleWrapper = document.getElementById('grid-scale-wrapper');
+    const container = document.getElementById('grid-container');
+    if (!scaleWrapper || !container) return;
+
+    if (!state.editMode) {
+        scaleWrapper.style.transform = '';
+        return;
+    }
+
+    const isMobile = window.innerWidth < 640;
+    const topMargin = isMobile ? 50 : 56;
+    const bottomMargin = isMobile ? 220 : 236;
+    const availH = Math.max(180, window.innerHeight - (topMargin + bottomMargin));
+    const availW = Math.max(260, window.innerWidth - (isMobile ? 20 : 36));
+
+    const gridW = container.offsetWidth || 1;
+    const gridH = container.offsetHeight || 1;
+
+    const scaleX = availW / gridW;
+    const scaleY = availH / gridH;
+    let targetScale = Math.min(scaleX, scaleY, 0.82);
+    targetScale = Math.max(0.40, Math.min(0.82, targetScale));
+
+    scaleWrapper.style.transform = `scale(${targetScale.toFixed(3)})`;
+}
+
+function getWrapperScale() {
+    const scaleWrapper = document.getElementById('grid-scale-wrapper');
+    if (!scaleWrapper) return 1;
+    const style = window.getComputedStyle(scaleWrapper);
+    const transform = style.transform || style.webkitTransform;
+    if (transform && transform !== 'none') {
+        const matrix = new DOMMatrixReadOnly(transform);
+        return matrix.a || 1;
+    }
+    return 1;
 }
 
 function updateGhost(pos) {
@@ -214,6 +278,8 @@ function attachInteractionEngine(el, w, instance) {
     let dragOffsetY = 0;
     let isDragging = false;
     let isResizing = false;
+    let widgetLongPressTimer = null;
+    let isPointerMoved = false;
 
     const meta = window.WidgetGlobals.getMetadata(w.type) || { minW: 1, minH: 1, maxW: 4, maxH: 4 };
     if (w.type === 'search') {
@@ -225,11 +291,29 @@ function attachInteractionEngine(el, w, instance) {
 
     el.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        if (state.editMode) openModal(w);
+        if (state.editMode) {
+            openModal(w);
+        } else {
+            if (navigator.vibrate) navigator.vibrate(50);
+            showWidgetQuickMenu(w, el, { x: e.clientX, y: e.clientY });
+        }
     });
 
     el.addEventListener('pointerdown', (e) => {
-        if (!state.editMode) return;
+        initialX = e.clientX;
+        initialY = e.clientY;
+        isPointerMoved = false;
+
+        if (!state.editMode) {
+            // پشتیبانی از لمس طولانی برای باز کردن منوی گزینه‌های هوشمند ویجت
+            widgetLongPressTimer = setTimeout(() => {
+                if (!isPointerMoved) {
+                    if (navigator.vibrate) navigator.vibrate(50);
+                    showWidgetQuickMenu(w, el, { x: initialX, y: initialY });
+                }
+            }, 460);
+            return;
+        }
 
         if (w.type === 'checklist') {
             if (e.target.closest('.checklist-item') || e.target.closest('.checklist-add') || e.target.closest('.checklist-input')) return;
@@ -241,8 +325,8 @@ function attachInteractionEngine(el, w, instance) {
 
         el.setPointerCapture(e.pointerId);
         initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
-        initialX = e.clientX;
-        initialY = e.clientY;
+
+        const scale = getWrapperScale();
 
         if (e.target.classList.contains('resize-handle')) {
             isResizing = true;
@@ -257,8 +341,8 @@ function attachInteractionEngine(el, w, instance) {
             if (ghost) ghost.classList.add('active');
             
             const rect = el.getBoundingClientRect();
-            dragOffsetX = e.clientX - rect.left;
-            dragOffsetY = e.clientY - rect.top;
+            dragOffsetX = (e.clientX - rect.left) / scale;
+            dragOffsetY = (e.clientY - rect.top) / scale;
             
             updateGhost(w);
         }
@@ -266,7 +350,14 @@ function attachInteractionEngine(el, w, instance) {
     });
 
     el.addEventListener('pointermove', (e) => {
-        if (!state.editMode) return;
+        if (!state.editMode) {
+            if (Math.hypot(e.clientX - initialX, e.clientY - initialY) > 10) {
+                isPointerMoved = true;
+                if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
+            }
+            return;
+        }
+
         if (!isDragging && !isResizing) return;
 
         if (rAFActive) return;
@@ -279,10 +370,11 @@ function attachInteractionEngine(el, w, instance) {
             maxH = Math.min(meta.maxH || 4, grid.rowsCount);
 
             const containerBounds = container.getBoundingClientRect();
+            const scale = getWrapperScale();
 
             if (isDragging) {
-                const targetLeft = e.clientX - dragOffsetX - containerBounds.left;
-                const targetTop = e.clientY - dragOffsetY - containerBounds.top;
+                const targetLeft = ((e.clientX - containerBounds.left) / scale) - dragOffsetX;
+                const targetTop = ((e.clientY - containerBounds.top) / scale) - dragOffsetY;
 
                 el.style.left = `${targetLeft}px`;
                 el.style.top = `${targetTop}px`;
@@ -350,8 +442,8 @@ function attachInteractionEngine(el, w, instance) {
                 }
 
             } else if (isResizing) {
-                const deltaX = e.clientX - initialX;
-                const deltaY = e.clientY - initialY;
+                const deltaX = (e.clientX - initialX) / scale;
+                const deltaY = (e.clientY - initialY) / scale;
                 
                 let rawW = startW + deltaX;
                 let rawH = startH + deltaY;
@@ -361,6 +453,22 @@ function attachInteractionEngine(el, w, instance) {
 
                 let gridW = Math.max(minW, Math.min(maxW, Math.round((rawW - grid.gap) / (grid.cellSize + grid.gap))));
                 let gridH = Math.max(minH, Math.min(maxH, Math.round((rawH - grid.gap) / (grid.cellSize + grid.gap))));
+
+                let isAtLimit = false;
+                if ((rawW > (maxW * (grid.cellSize + grid.gap) - grid.gap + 15) && gridW >= maxW) ||
+                    (rawH > (maxH * (grid.cellSize + grid.gap) - grid.gap + 15) && gridH >= maxH) ||
+                    (w.x + gridW >= grid.columns && rawW > ((grid.columns - w.x) * (grid.cellSize + grid.gap) - grid.gap + 15)) ||
+                    (w.y + gridH >= grid.rowsCount && rawH > ((grid.rowsCount - w.y) * (grid.cellSize + grid.gap) - grid.gap + 15))) {
+                    isAtLimit = true;
+                }
+
+                if (isAtLimit) {
+                    el.classList.add('max-limit-reached');
+                    if (ghost) ghost.classList.add('max-limit-reached');
+                } else {
+                    el.classList.remove('max-limit-reached');
+                    if (ghost) ghost.classList.remove('max-limit-reached');
+                }
 
                 if (w.x + gridW > grid.columns) gridW = grid.columns - w.x;
                 if (w.y + gridH > grid.rowsCount) gridH = grid.rowsCount - w.y;
@@ -395,13 +503,18 @@ function attachInteractionEngine(el, w, instance) {
     });
 
     el.addEventListener('pointerup', (e) => {
+        if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
         if (!state.editMode) return;
         el.releasePointerCapture(e.pointerId);
         
         el.classList.remove('dragging');
         el.classList.remove('resizing');
         el.classList.remove('burn-effect');
-        if (ghost) ghost.classList.remove('active');
+        el.classList.remove('max-limit-reached');
+        if (ghost) {
+            ghost.classList.remove('active');
+            ghost.classList.remove('max-limit-reached');
+        }
 
         if (deleteZone && deleteZone.classList.contains('hovered')) {
             deleteZone.classList.remove('hovered');
@@ -452,6 +565,9 @@ function attachInteractionEngine(el, w, instance) {
                 w.w = Math.max(minW, Math.min(maxW, w.w));
                 w.h = Math.max(minH, Math.min(maxH, w.h));
             }
+            if (instance && instance.onResize) {
+                try { instance.onResize(w.w, w.h, el); } catch (err) { console.error(err); }
+            }
         }
 
         w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: grid.columns };
@@ -461,36 +577,60 @@ function attachInteractionEngine(el, w, instance) {
         StorageEngine.save(state);
         renderGrid();
     });
+
+    el.addEventListener('pointercancel', () => {
+        if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
+    });
 }
 
 function setupBackgroundActivationSensors() {
+    let touchStartedOnBg = false;
+
     window.addEventListener('mousedown', (e) => {
         if (state.editMode || (e.target !== container && e.target !== document.getElementById('app-container') && e.target !== document.getElementById('grid-scale-wrapper'))) return;
-        bgLongPressTimeout = setTimeout(() => { window.toggleEditMode(true); }, 750);
+        bgLongPressTimeout = setTimeout(() => {
+            if (navigator.vibrate) navigator.vibrate(50);
+            window.toggleEditMode(true);
+        }, 700);
     });
     window.addEventListener('mouseup', () => { if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout); });
     
     window.addEventListener('touchstart', (e) => {
         if (state.editMode) return;
-        if(e.touches && e.touches[0]) {
+        touchStartedOnBg = (
+            e.target === container ||
+            e.target === document.getElementById('app-container') ||
+            e.target === document.getElementById('grid-scale-wrapper') ||
+            e.target === dynamicBgLayer
+        );
+        if (e.touches && e.touches[0]) {
             touchStartY = e.touches[0].clientY;
         }
-        if (e.target === container || e.target === document.getElementById('app-container') || e.target === document.getElementById('grid-scale-wrapper')) {
-            bgLongPressTimeout = setTimeout(() => { window.toggleEditMode(true); }, 750);
+        if (touchStartedOnBg) {
+            bgLongPressTimeout = setTimeout(() => {
+                if (navigator.vibrate) navigator.vibrate(50);
+                window.toggleEditMode(true);
+            }, 650);
         }
     }, { passive: true });
 
     window.addEventListener('touchmove', (e) => {
         if (state.editMode) return;
-        if(e.touches && e.touches[0]) {
+        if (touchStartedOnBg && e.touches && e.touches[0]) {
             let diffY = touchStartY - e.touches[0].clientY;
-            if (diffY > 80) {
+            if (diffY > 90) {
                 if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout);
+                if (navigator.vibrate) navigator.vibrate(50);
                 window.toggleEditMode(true);
+                touchStartedOnBg = false;
             }
         }
     }, { passive: true });
-    window.addEventListener('touchend', () => { if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout); });
+
+    window.addEventListener('touchend', () => {
+        if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout);
+        touchStartedOnBg = false;
+    });
 }
 
 function updateColorUI(target, color) {
@@ -507,9 +647,25 @@ function updateColorUI(target, color) {
     }
 }
 
+let isInputActive = false;
+document.addEventListener('focusin', (e) => {
+    if (e.target.matches('input, textarea, select')) isInputActive = true;
+});
+document.addEventListener('focusout', (e) => {
+    if (e.target.matches('input, textarea, select')) {
+        setTimeout(() => { isInputActive = false; }, 350);
+    }
+});
+
 function setupGlobalEvents() {
+    let resizeTimer = null;
     window.addEventListener('resize', () => {
-        renderGrid();
+        // جلوگیری از تغییرات ناخواسته ساختار گرید هنگام بالا آمدن کیبورد در گوشی
+        if (isInputActive) return;
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            renderGrid();
+        }, 120);
     });
 
     const doneBtn = document.getElementById('done-btn');
@@ -621,6 +777,97 @@ function setupGlobalEvents() {
             document.querySelectorAll('.shape-btn').forEach(b => b.classList.toggle('active', b === btn));
         });
     });
+
+    // PWA Install Prompt Support
+    let deferredPrompt = null;
+    const pwaInstallBtn = document.getElementById('pwa-install-btn');
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (pwaInstallBtn) pwaInstallBtn.style.display = 'inline-flex';
+    });
+
+    if (pwaInstallBtn) {
+        pwaInstallBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) {
+                alert("To install on iOS: Tap the Share button and select 'Add to Home Screen'.");
+                return;
+            }
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                pwaInstallBtn.style.display = 'none';
+            }
+            deferredPrompt = null;
+        });
+    }
+
+    // Export / Backup JSON Configuration
+    const exportBtn = document.getElementById('export-cfg-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `progrid-backup-${new Date().toISOString().slice(0, 10)}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        });
+    }
+
+    // Import / Restore JSON Configuration
+    const importBtn = document.getElementById('import-cfg-btn');
+    const importInput = document.getElementById('import-cfg-input');
+    if (importBtn && importInput) {
+        importBtn.addEventListener('click', () => importInput.click());
+        importInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const parsed = JSON.parse(ev.target.result);
+                    if (parsed && Array.isArray(parsed.widgets)) {
+                        state.widgets = parsed.widgets;
+                        state.blurValue = parsed.blurValue ?? state.blurValue;
+                        state.presetBg = parsed.presetBg || state.presetBg;
+                        state.theme = parsed.theme || state.theme;
+                        state.customBg = parsed.customBg || null;
+                        StorageEngine.save(state);
+                        applyGlobalStyles();
+                        renderGrid();
+                        alert("Settings restored successfully!");
+                    } else {
+                        alert("Invalid backup file format!");
+                    }
+                } catch (err) {
+                    alert("Error parsing JSON file!");
+                }
+            };
+            reader.readAsText(file);
+        });
+    }
+
+    // Close Modals / Exit Edit Mode on Escape Key
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('modal-overlay');
+            const infoModal = document.getElementById('widget-info-modal');
+            const qmMenu = document.getElementById('widget-quick-menu');
+            if (qmMenu && qmMenu.style.display === 'flex') {
+                closeWidgetQuickMenu();
+            } else if (infoModal && infoModal.classList.contains('active')) {
+                closeWidgetInfo();
+            } else if (modal && modal.style.display === 'flex') {
+                closeModal();
+            } else if (folderOverlay && folderOverlay.classList.contains('active')) {
+                window.closeFolderPopup();
+            } else if (state.editMode) {
+                window.toggleEditMode(false);
+            }
+        }
+    });
 }
 
 window.updateWidgetConfigDirectly = function(id, partialConfig) {
@@ -633,6 +880,8 @@ window.updateWidgetConfigDirectly = function(id, partialConfig) {
 };
 
 window.toggleEditMode = function(forceState = null) {
+    closeWidgetQuickMenu();
+    closeWidgetInfo();
     state.editMode = forceState !== null ? forceState : !state.editMode;
     document.body.classList.toggle('edit-mode', state.editMode);
     if (!state.editMode) {
@@ -640,23 +889,279 @@ window.toggleEditMode = function(forceState = null) {
         grid.resolveAllFinalOverlaps(state.widgets);
     }
     renderGrid();
+    updateEditModeScale();
 };
 
-function populateWidgetBottomStore() {
-    const store = document.getElementById('tab-widgets');
-    if (!store || !window.WidgetGlobals) return;
+let currentDrawerSearch = '';
+let activeDrawerSubtab = 'installed';
+
+function addWidgetDirectly(type) {
+    const meta = window.WidgetGlobals ? window.WidgetGlobals.getMetadata(type) : null;
+    if (!meta) return;
+
+    grid.updateMetrics();
+    const effW = type === 'search' ? 2 : Math.min(meta.defaultW || 1, grid.columns);
+    const effH = type === 'search' ? 1 : Math.min(meta.defaultH || 1, grid.rowsCount);
+
+    const pos = grid.findFirstAvailablePos(effW, effH, state.widgets);
+    if (!pos) {
+        alert("No space available on grid! Rearrange or resize existing widgets.");
+        return;
+    }
+
+    const newWidget = {
+        id: `w-${Date.now()}`,
+        type: type,
+        x: pos.x,
+        y: pos.y,
+        w: effW,
+        h: effH,
+        ...JSON.parse(JSON.stringify(meta.defaultConfig || {}))
+    };
+    newWidget.idealLayout = { x: newWidget.x, y: newWidget.y, w: newWidget.w, h: newWidget.h, baseCols: grid.columns };
+    
+    state.widgets.push(newWidget);
+    grid.resolveAllFinalOverlaps(state.widgets);
+    StorageEngine.save(state);
+    renderGrid();
+
+    if (navigator.vibrate) navigator.vibrate(35);
+}
+
+function renderInstalledDrawerList() {
+    const listEl = document.getElementById('store-installed-list');
+    const badgeEl = document.getElementById('installed-count-pill');
+    if (!listEl || !window.WidgetGlobals) return;
+
+    const allMetas = window.WidgetGlobals.getAllMetadata().filter(m => m.type !== 'folder');
+    if (badgeEl) badgeEl.textContent = allMetas.length;
+
+    const q = currentDrawerSearch.toLowerCase().trim();
+    const filtered = allMetas.filter(m => {
+        if (!q) return true;
+        const name = (m.label || m.name || '').toLowerCase();
+        const type = (m.type || '').toLowerCase();
+        const desc = (m.description || '').toLowerCase();
+        return name.includes(q) || type.includes(q) || desc.includes(q);
+    });
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `
+            <div style="padding: 16px; font-size: 12px; color: var(--text-secondary); text-align: center; width: 100%;">
+                No installed widgets matching "${currentDrawerSearch}".
+            </div>
+        `;
+        return;
+    }
+
     let html = '';
-    window.WidgetGlobals.getAllMetadata().forEach(meta => {
-        if (meta.type === 'folder') return;
+    filtered.forEach(m => {
         html += `
-            <div class="store-item" data-type="${meta.type}">
-                <span class="store-item-icon">${meta.icon || '📦'}</span>
-                <span class="store-item-label">${meta.label}</span>
+            <div class="store-card" data-type="${m.type}">
+                <div class="store-card-header">
+                    <div class="store-card-icon">${m.icon || '📦'}</div>
+                    <div class="store-card-meta">
+                        <span class="store-card-title">${m.label || m.name}</span>
+                        <span class="store-card-size">${m.defaultW || 1}×${m.defaultH || 1}</span>
+                    </div>
+                </div>
+                <div class="store-card-actions">
+                    <button class="store-add-btn" data-type="${m.type}">
+                        <span>+ Add</span>
+                    </button>
+                </div>
             </div>
         `;
     });
-    store.innerHTML = html;
-    store.querySelectorAll('.store-item').forEach(item => setupStoreDrag(item));
+
+    listEl.innerHTML = html;
+
+    listEl.querySelectorAll('.store-card').forEach(card => {
+        setupStoreDrag(card);
+    });
+
+    listEl.querySelectorAll('.store-add-btn').forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const type = btn.getAttribute('data-type');
+            addWidgetDirectly(type);
+        });
+    });
+}
+
+async function renderMarketplaceDrawerList() {
+    const listEl = document.getElementById('store-marketplace-list');
+    if (!listEl) return;
+
+    listEl.innerHTML = `
+        <div style="padding: 14px; font-size: 12px; color: var(--text-secondary); text-align: center; width: 100%;">
+            Loading verified online widgets...
+        </div>
+    `;
+
+    const items = await widgetHub.fetchRegistry();
+    const q = currentDrawerSearch.toLowerCase().trim();
+    const filtered = items.filter(m => {
+        if (!q) return true;
+        const name = (m.name || '').toLowerCase();
+        const desc = (m.description || '').toLowerCase();
+        const author = (m.author || '').toLowerCase();
+        return name.includes(q) || desc.includes(q) || author.includes(q);
+    });
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = `
+            <div style="padding: 16px; font-size: 12px; color: var(--text-secondary); text-align: center; width: 100%;">
+                No online widgets matching "${currentDrawerSearch}".
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    filtered.forEach(item => {
+        const isInstalled = widgetHub.isInstalled(item.id);
+        html += `
+            <div class="market-card" data-id="${item.id}">
+                <div class="market-card-top">
+                    <div class="store-card-icon">${item.icon || '🧩'}</div>
+                    <div class="market-card-info">
+                        <span class="market-card-name">${item.name}</span>
+                        <span class="market-card-author">by ${item.author}</span>
+                    </div>
+                </div>
+                <div class="market-card-desc">${item.description}</div>
+                <div class="market-card-footer">
+                    <span class="market-downloads-tag">↓ ${item.downloads}</span>
+                    <button class="market-install-btn ${isInstalled ? 'installed' : ''}" data-id="${item.id}">
+                        ${isInstalled ? '✓ Added' : 'Install'}
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    listEl.innerHTML = html;
+
+    listEl.querySelectorAll('.market-install-btn:not(.installed)').forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const id = btn.getAttribute('data-id');
+            const targetItem = items.find(x => x.id === id);
+            if (!targetItem) return;
+
+            btn.textContent = 'Installing...';
+            const ok = await widgetHub.installWidget(targetItem);
+            if (ok) {
+                btn.textContent = '✓ Added';
+                btn.classList.add('installed');
+                renderInstalledDrawerList();
+                if (navigator.vibrate) navigator.vibrate(30);
+            } else {
+                btn.textContent = 'Retry';
+            }
+        });
+    });
+}
+
+function setupWidgetDrawer() {
+    const searchInput = document.getElementById('widget-store-search');
+    const searchClear = document.getElementById('widget-store-search-clear');
+    const installedList = document.getElementById('store-installed-list');
+    const marketList = document.getElementById('store-marketplace-list');
+    const pillInstalled = document.getElementById('subtab-installed-btn');
+    const pillMarket = document.getElementById('subtab-marketplace-btn');
+
+    if (pillInstalled && pillMarket) {
+        pillInstalled.addEventListener('click', () => {
+            activeDrawerSubtab = 'installed';
+            pillInstalled.classList.add('active');
+            pillMarket.classList.remove('active');
+            if (installedList) installedList.style.display = 'flex';
+            if (marketList) marketList.style.display = 'none';
+        });
+
+        pillMarket.addEventListener('click', () => {
+            activeDrawerSubtab = 'marketplace';
+            pillMarket.classList.add('active');
+            pillInstalled.classList.remove('active');
+            if (marketList) marketList.style.display = 'flex';
+            if (installedList) installedList.style.display = 'none';
+            renderMarketplaceDrawerList();
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            currentDrawerSearch = e.target.value;
+            if (searchClear) searchClear.style.display = currentDrawerSearch ? 'block' : 'none';
+            if (activeDrawerSubtab === 'installed') {
+                renderInstalledDrawerList();
+            } else {
+                renderMarketplaceDrawerList();
+            }
+        });
+    }
+
+    if (searchClear && searchInput) {
+        searchClear.addEventListener('click', () => {
+            searchInput.value = '';
+            currentDrawerSearch = '';
+            searchClear.style.display = 'none';
+            if (activeDrawerSubtab === 'installed') {
+                renderInstalledDrawerList();
+            } else {
+                renderMarketplaceDrawerList();
+            }
+        });
+    }
+
+    renderInstalledDrawerList();
+}
+
+function setupWallpaperGallery() {
+    const galleryContainer = document.getElementById('wallpaper-gallery-container');
+    const resetBgBtn = document.getElementById('reset-bg-btn');
+    if (!galleryContainer) return;
+
+    let html = '';
+    WALLPAPER_COLLECTION.forEach(wp => {
+        const isCurrent = state.presetBg === 'custom' && state.customBg === wp.full;
+        html += `
+            <div class="wallpaper-thumb-card ${isCurrent ? 'active' : ''}" data-url="${wp.full}" data-id="${wp.id}" title="${wp.name}">
+                <img src="${wp.thumb}" alt="${wp.name}" loading="lazy" />
+                <span class="wp-label">${wp.name}</span>
+            </div>
+        `;
+    });
+
+    galleryContainer.innerHTML = html;
+
+    galleryContainer.querySelectorAll('.wallpaper-thumb-card').forEach(card => {
+        card.addEventListener('click', () => {
+            galleryContainer.querySelectorAll('.wallpaper-thumb-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            const url = card.getAttribute('data-url');
+            state.presetBg = 'custom';
+            state.customBg = url;
+            applyGlobalStyles();
+            StorageEngine.save(state);
+            if (navigator.vibrate) navigator.vibrate(25);
+        });
+    });
+
+    if (resetBgBtn) {
+        resetBgBtn.addEventListener('click', () => {
+            galleryContainer.querySelectorAll('.wallpaper-thumb-card').forEach(c => c.classList.remove('active'));
+            state.presetBg = '1';
+            state.customBg = null;
+            applyGlobalStyles();
+            StorageEngine.save(state);
+            if (navigator.vibrate) navigator.vibrate(25);
+        });
+    }
 }
 
 function setupStoreDrag(itemEl) {
@@ -669,40 +1174,67 @@ function setupStoreDrag(itemEl) {
     }
 
     let dummy = null;
+    let isDraggingInitiated = false;
+    let startX = 0, startY = 0;
+    let effectiveW = 1, effectiveH = 1;
 
     itemEl.addEventListener('pointerdown', (e) => {
         if (!state.editMode) return;
         itemEl.setPointerCapture(e.pointerId);
-        initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
-        grid.updateMetrics();
-
-        let effectiveW = Math.min(meta.defaultW, grid.columns);
-        let effectiveH = Math.min(meta.defaultH, grid.rowsCount);
-
-        if (!grid.canFit(effectiveW, effectiveH, state.widgets)) {
-            alert("No available space to add this widget!");
-            return;
-        }
-
-        dummy = document.createElement('div');
-        dummy.className = 'widget-wrapper dragging';
-        dummy.style.width = `${effectiveW * grid.cellSize + (effectiveW - 1) * grid.gap}px`;
-        dummy.style.height = `${effectiveH * grid.cellSize + (effectiveH - 1) * grid.gap}px`;
-        dummy.style.left = `${e.clientX - 46}px`;
-        dummy.style.top = `${e.clientY - 46}px`;
-        dummy.style.background = 'rgba(255,255,255,0.15)';
-        dummy.style.backdropFilter = 'blur(10px)';
-        dummy.style.pointerEvents = 'none';
-        container.appendChild(dummy);
-
-        if (ghost) ghost.classList.add('active');
-        updateGhost({ x: 0, y: 0, w: effectiveW, h: effectiveH });
-        e.stopPropagation();
+        startX = e.clientX;
+        startY = e.clientY;
+        isDraggingInitiated = false;
+        itemEl.style.transform = 'scale(0.94)';
+        itemEl.style.opacity = '0.75';
     });
 
     itemEl.addEventListener('pointermove', (e) => {
+        if (!state.editMode) return;
+
+        // فقط در صورتی که کاربر دستش را به سمت بالا (به طرف گرید) کشید درگ فعال شود
+        if (!isDraggingInitiated) {
+            const diffY = startY - e.clientY;
+            const diffX = Math.abs(e.clientX - startX);
+            
+            if (diffY > 24 && diffY > diffX) {
+                grid.updateMetrics();
+                effectiveW = Math.min(meta.defaultW, grid.columns);
+                effectiveH = Math.min(meta.defaultH, grid.rowsCount);
+
+                if (!grid.canFit(effectiveW, effectiveH, state.widgets)) {
+                    itemEl.releasePointerCapture(e.pointerId);
+                    itemEl.style.transform = '';
+                    itemEl.style.opacity = '';
+                    return;
+                }
+
+                isDraggingInitiated = true;
+                if (navigator.vibrate) navigator.vibrate(40);
+                initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
+
+                const containerBounds = container.getBoundingClientRect();
+                const scale = getWrapperScale();
+                const posX = ((e.clientX - containerBounds.left) / scale) - 46;
+                const posY = ((e.clientY - containerBounds.top) / scale) - 46;
+
+                dummy = document.createElement('div');
+                dummy.className = 'widget-wrapper dragging';
+                dummy.style.width = `${effectiveW * grid.cellSize + (effectiveW - 1) * grid.gap}px`;
+                dummy.style.height = `${effectiveH * grid.cellSize + (effectiveH - 1) * grid.gap}px`;
+                dummy.style.left = `${posX}px`;
+                dummy.style.top = `${posY}px`;
+                dummy.style.background = 'rgba(255,255,255,0.18)';
+                dummy.style.backdropFilter = 'blur(10px)';
+                dummy.style.pointerEvents = 'none';
+                container.appendChild(dummy);
+
+                if (ghost) ghost.classList.add('active');
+                updateGhost({ x: 0, y: 0, w: effectiveW, h: effectiveH });
+            }
+            return;
+        }
+
         if (!dummy) return;
-        
         if (rAFActive) return;
         rAFActive = true;
 
@@ -711,12 +1243,15 @@ function setupStoreDrag(itemEl) {
             rAFActive = false;
             
             const containerBounds = container.getBoundingClientRect();
-            dummy.style.left = `${e.clientX - 46 - containerBounds.left}px`;
-            dummy.style.top = `${e.clientY - 46 - containerBounds.top}px`;
+            const scale = getWrapperScale();
+            const posX = ((e.clientX - containerBounds.left) / scale) - 46;
+            const posY = ((e.clientY - containerBounds.top) / scale) - 46;
+            dummy.style.left = `${posX}px`;
+            dummy.style.top = `${posY}px`;
 
             grid.updateMetrics();
-            let effectiveW = Math.min(meta.defaultW, grid.columns);
-            let effectiveH = Math.min(meta.defaultH, grid.rowsCount);
+            effectiveW = Math.min(meta.defaultW, grid.columns);
+            effectiveH = Math.min(meta.defaultH, grid.rowsCount);
 
             if (checkCollisionWithDeleteZone(e.clientX, e.clientY)) {
                 if (deleteZone) deleteZone.classList.add('hovered');
@@ -724,12 +1259,12 @@ function setupStoreDrag(itemEl) {
                 if (ghost) ghost.classList.remove('active');
             } else {
                 if (deleteZone) deleteZone.classList.remove('hovered');
-                dummy.style.background = 'rgba(255,255,255,0.15)';
+                dummy.style.background = 'rgba(255,255,255,0.18)';
                 if (ghost) ghost.classList.add('active');
             }
 
-            let liveX = Math.round((e.clientX - 46 - containerBounds.left) / (grid.cellSize + grid.gap));
-            let liveY = Math.round((e.clientY - 46 - containerBounds.top) / (grid.cellSize + grid.gap));
+            let liveX = Math.round(posX / (grid.cellSize + grid.gap));
+            let liveY = Math.round(posY / (grid.cellSize + grid.gap));
             liveX = Math.max(0, Math.min(liveX, grid.columns - effectiveW));
             liveY = Math.max(0, Math.min(liveY, grid.rowsCount - effectiveH));
             updateGhost({ x: liveX, y: liveY, w: effectiveW, h: effectiveH });
@@ -737,10 +1272,19 @@ function setupStoreDrag(itemEl) {
     });
 
     itemEl.addEventListener('pointerup', (e) => {
-        if (!dummy) return;
+        itemEl.style.transform = '';
+        itemEl.style.opacity = '';
+
+        // اگر انگشت فقط تپ شده بود و به سمت گرید کشیده نشده بود: هیچ کاری نکن و ویجت اضافه نکن
+        if (!isDraggingInitiated || !dummy) {
+            itemEl.releasePointerCapture(e.pointerId);
+            return;
+        }
+
         itemEl.releasePointerCapture(e.pointerId);
         dummy.remove();
         dummy = null;
+        isDraggingInitiated = false;
         if (ghost) ghost.classList.remove('active');
 
         if (deleteZone && deleteZone.classList.contains('hovered')) {
@@ -749,9 +1293,6 @@ function setupStoreDrag(itemEl) {
         }
 
         grid.updateMetrics();
-        let effectiveW = Math.min(meta.defaultW, grid.columns);
-        let effectiveH = Math.min(meta.defaultH, grid.rowsCount);
-
         let finalX = 0;
         let finalY = 0;
         if (ghost) {
@@ -812,7 +1353,7 @@ window.openFolderPopup = function(folderId) {
             }
             
             item.innerHTML = `
-                <div style="width:56px; height:56px; border-radius:${shape}; background:${iconBg}; margin-bottom:8px; display:flex; align-items:center; justify-content:center; font-size:32px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">${iconHtml}</div>
+                <div class="folder-expanded-icon-box" style="border-radius:${shape}; background:${iconBg};">${iconHtml}</div>
                 <span class="folder-expanded-label">${ch.title}</span>
             `;
 
@@ -872,8 +1413,11 @@ window.openFolderPopup = function(folderId) {
                     if (!dummy) return;
                     
                     const containerBounds = container.getBoundingClientRect();
-                    dummy.style.left = `${e.clientX - 46 - containerBounds.left}px`;
-                    dummy.style.top = `${e.clientY - 46 - containerBounds.top}px`;
+                    const scale = getWrapperScale();
+                    const posX = ((e.clientX - containerBounds.left) / scale) - (grid.cellSize / 2);
+                    const posY = ((e.clientY - containerBounds.top) / scale) - (grid.cellSize / 2);
+                    dummy.style.left = `${posX}px`;
+                    dummy.style.top = `${posY}px`;
 
                     if (checkCollisionWithDeleteZone(e.clientX, e.clientY)) {
                         if (deleteZone) deleteZone.classList.add('hovered');
@@ -885,8 +1429,8 @@ window.openFolderPopup = function(folderId) {
                         if (ghost) ghost.classList.add('active');
                     }
 
-                    let liveX = Math.round((e.clientX - 46 - containerBounds.left) / (grid.cellSize + grid.gap));
-                    let liveY = Math.round((e.clientY - 46 - containerBounds.top) / (grid.cellSize + grid.gap));
+                    let liveX = Math.round(posX / (grid.cellSize + grid.gap));
+                    let liveY = Math.round(posY / (grid.cellSize + grid.gap));
                     liveX = Math.max(0, Math.min(liveX, grid.columns - 1));
                     liveY = Math.max(0, Math.min(liveY, grid.rowsCount - 1));
                     updateGhost({ x: liveX, y: liveY, w: 1, h: 1 });
@@ -935,7 +1479,20 @@ window.openFolderPopup = function(folderId) {
             gridEl.appendChild(item);
         });
     }
-    if (folderOverlay) folderOverlay.style.display = 'flex';
+    if (folderOverlay) {
+        folderOverlay.style.display = 'flex';
+        requestAnimationFrame(() => {
+            folderOverlay.classList.add('active');
+        });
+    }
+};
+
+window.closeFolderPopup = function() {
+    if (!folderOverlay) return;
+    folderOverlay.classList.remove('active');
+    setTimeout(() => {
+        folderOverlay.style.display = 'none';
+    }, 220);
 };
 
 function openModal(w) {
@@ -1014,6 +1571,148 @@ function deleteCurrentWidget() {
     StorageEngine.save(state);
     renderGrid();
     closeModal();
+}
+
+const widgetDescriptions = {
+    shortcut: 'Direct launcher for your favorite web link with custom icon styling and fast access.',
+    folder: 'Smart container organizing multiple bookmarks into an expandable grid collection.',
+    search: 'Integrated multi-engine search bar with instant query switching (Google, Bing, DuckDuckGo).',
+    clock: 'Aesthetic digital clock with live seconds, dynamic greeting, and system time synchronization.',
+    notes: 'Quick scratchpad for thoughts, memos, and checklists with instant local autosave.',
+    checklist: 'Interactive daily tasks checklist to prioritize and manage everyday todos.',
+    quote: 'Daily motivational wisdom to keep you inspired while working in your new tab.'
+};
+
+function showWidgetQuickMenu(w, el, touchPos = null) {
+    activeQuickMenuWidget = w;
+    const menu = document.getElementById('widget-quick-menu');
+    if (!menu || !el) return;
+
+    menu.style.visibility = 'hidden';
+    menu.style.display = 'flex';
+    const menuWidth = menu.offsetWidth || 170;
+    const menuHeight = menu.offsetHeight || 160;
+
+    const rect = el.getBoundingClientRect();
+    // Position snugly 5px above widget; if tight on top, place 5px below
+    let top = rect.top - menuHeight - 5;
+    if (top < 12) {
+        top = rect.bottom + 5;
+    }
+    if (top + menuHeight > window.innerHeight - 12) {
+        top = Math.max(12, window.innerHeight - menuHeight - 12);
+    }
+
+    let anchorX = (touchPos && touchPos.x) ? touchPos.x : (rect.left + rect.width / 2);
+    let left = anchorX - (menuWidth / 2);
+    left = Math.max(10, Math.min(window.innerWidth - menuWidth - 10, left));
+
+    menu.style.top = `${Math.round(top)}px`;
+    menu.style.left = `${Math.round(left)}px`;
+    menu.style.visibility = 'visible';
+}
+
+function closeWidgetQuickMenu() {
+    const menu = document.getElementById('widget-quick-menu');
+    if (menu) menu.style.display = 'none';
+    activeQuickMenuWidget = null;
+}
+
+function openWidgetInfo(w) {
+    if (!w) return;
+    const modal = document.getElementById('widget-info-modal');
+    if (!modal) return;
+
+    const meta = window.WidgetGlobals ? window.WidgetGlobals.getMetadata(w.type) : null;
+    const iconEl = document.getElementById('info-w-icon');
+    const labelEl = document.getElementById('info-w-label');
+    const typeEl = document.getElementById('info-w-type');
+    const sizeEl = document.getElementById('info-w-size');
+    const descEl = document.getElementById('info-w-desc');
+
+    if (iconEl) iconEl.innerHTML = (meta && meta.icon) ? meta.icon : '📦';
+    if (labelEl) labelEl.textContent = w.title || (meta && meta.label) || w.type;
+    if (typeEl) typeEl.textContent = `${w.type} widget`;
+    if (sizeEl) sizeEl.textContent = `${w.w || 1} × ${w.h || 1}`;
+    if (descEl) descEl.textContent = widgetDescriptions[w.type] || 'Modular ProGrid fluid widget component.';
+
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => {
+        modal.classList.add('active');
+    });
+}
+
+function closeWidgetInfo() {
+    const modal = document.getElementById('widget-info-modal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 220);
+}
+
+function setupQuickMenuListeners() {
+    const qmEdit = document.getElementById('qm-edit-btn');
+    const qmInfo = document.getElementById('qm-info-btn');
+    const qmLayout = document.getElementById('qm-layout-btn');
+    const qmDelete = document.getElementById('qm-delete-btn');
+    const qmMenu = document.getElementById('widget-quick-menu');
+
+    if (qmEdit) {
+        qmEdit.addEventListener('click', () => {
+            if (activeQuickMenuWidget) {
+                const target = activeQuickMenuWidget;
+                closeWidgetQuickMenu();
+                openModal(target);
+            }
+        });
+    }
+
+    if (qmInfo) {
+        qmInfo.addEventListener('click', () => {
+            if (activeQuickMenuWidget) {
+                const target = activeQuickMenuWidget;
+                closeWidgetQuickMenu();
+                openWidgetInfo(target);
+            }
+        });
+    }
+
+    if (qmLayout) {
+        qmLayout.addEventListener('click', () => {
+            closeWidgetQuickMenu();
+            window.toggleEditMode(true);
+        });
+    }
+
+    if (qmDelete) {
+        qmDelete.addEventListener('click', () => {
+            if (activeQuickMenuWidget) {
+                const targetId = activeQuickMenuWidget.id;
+                closeWidgetQuickMenu();
+                state.widgets = state.widgets.filter(item => item.id !== targetId);
+                StorageEngine.save(state);
+                renderGrid();
+            }
+        });
+    }
+
+    window.addEventListener('pointerdown', (e) => {
+        if (qmMenu && qmMenu.style.display === 'flex' && !qmMenu.contains(e.target)) {
+            closeWidgetQuickMenu();
+        }
+    });
+
+    const infoCloseBtn = document.getElementById('info-close-btn');
+    const infoModal = document.getElementById('widget-info-modal');
+    if (infoCloseBtn) {
+        infoCloseBtn.addEventListener('click', closeWidgetInfo);
+    }
+    if (infoModal) {
+        infoModal.addEventListener('click', (e) => {
+            if (e.target === infoModal) closeWidgetInfo();
+        });
+    }
 }
 
 window.addEventListener('DOMContentLoaded', init);

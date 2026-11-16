@@ -2,13 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WebHome Workspace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
+    <title>ProGrid Workspace</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            navigator.serviceWorker.register('sw.js?v=0.1.1').then(reg => {
+                reg.update();
+            });
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
+            });
         }
     </script>
 </head>
@@ -26,23 +40,68 @@
 
     <div id="delete-zone">🗑️</div>
     <button id="done-btn">Done</button>
+    <div id="edit-mode-hint" class="edit-hint-pill">
+        <span>✨ Drag to organize • Resize from corner • Tap widget for options</span>
+    </div>
 
     <div id="edit-panel">
         <div class="panel-tabs">
             <button class="panel-tab active" data-tab="widgets">Widgets</button>
             <button class="panel-tab" data-tab="appearance">Appearance</button>
         </div>
-        <div class="panel-content active" id="tab-widgets"></div>
-        <div class="panel-content" id="tab-appearance" style="flex-direction: column; gap: 16px;">
-            <div style="display: flex; gap: 16px; align-items: center; width: 100%;">
-                <div style="display: flex; gap: 8px;" id="bg-presets-list">
-                    <div class="bg-thumb" data-preset="1" style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-preset-1); border: 2px solid white; cursor: pointer;"></div>
-                    <div class="bg-thumb bg-dynamic" data-preset="2" style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-preset-2); border: 2px solid transparent; cursor: pointer;"></div>
-                    <div class="bg-thumb bg-dynamic" data-preset="3" style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-preset-3); border: 2px solid transparent; cursor: pointer;"></div>
+
+        <!-- Widgets Drawer Tab -->
+        <div class="panel-content active" id="tab-widgets">
+            <div class="store-search-bar">
+                <div class="store-search-field">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.7; flex-shrink: 0;">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="widget-store-search" placeholder="Search widgets (Clock, Notes, Calc...)" autocomplete="off" spellcheck="false">
+                    <button id="widget-store-search-clear" style="display: none;">✕</button>
+                </div>
+                <div class="store-subnav-pills">
+                    <button class="subnav-pill active" id="subtab-installed-btn" data-sub="installed">
+                        <span>Installed</span>
+                        <span class="subnav-pill-badge" id="installed-count-pill">6</span>
+                    </button>
+                    <button class="subnav-pill" id="subtab-marketplace-btn" data-sub="marketplace">
+                        <span>Online Hub</span>
+                        <span class="subnav-pill-badge hub">Online</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Installed Widgets Scroll List -->
+            <div class="store-list-container" id="store-installed-list"></div>
+
+            <!-- Online Hub Marketplace List -->
+            <div class="store-list-container" id="store-marketplace-list" style="display: none;"></div>
+        </div>
+
+        <!-- Appearance & Wallpaper Gallery Tab -->
+        <div class="panel-content" id="tab-appearance" style="flex-direction: column; gap: 14px;">
+            <!-- Wallpaper Gallery Header -->
+            <div class="appearance-section-title">
+                <span style="font-size: 13px; font-weight: 700;">Curated HD Wallpapers</span>
+                <span style="font-size: 11px; color: var(--text-secondary);">1-Click Apply</span>
+            </div>
+            
+            <div class="wallpaper-gallery-scroll" id="wallpaper-gallery-container">
+                <!-- Dynamically populated from WALLPAPER_COLLECTION -->
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: center; width: 100%; border-top: 1px solid var(--panel-border); padding-top: 10px;">
+                <div style="display: flex; gap: 8px; align-items: center;" id="bg-presets-list">
+                    <div class="bg-thumb" data-preset="1" title="Gradient 1" style="width: 30px; height: 30px; border-radius: 50%; background: var(--bg-preset-1); border: 2px solid white; cursor: pointer;"></div>
+                    <div class="bg-thumb bg-dynamic" data-preset="2" title="Gradient 2" style="width: 30px; height: 30px; border-radius: 50%; background: var(--bg-preset-2); border: 2px solid transparent; cursor: pointer;"></div>
+                    <div class="bg-thumb bg-dynamic" data-preset="3" title="Gradient 3" style="width: 30px; height: 30px; border-radius: 50%; background: var(--bg-preset-3); border: 2px solid transparent; cursor: pointer;"></div>
                     
-                    <button id="custom-bg-btn" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(128,128,128,0.2); border: 1px dashed var(--text-secondary); cursor: pointer; color: var(--text-primary); font-size: 16px; display: flex; align-items: center; justify-content: center;">+</button>
+                    <button id="custom-bg-btn" title="Upload custom wallpaper" style="width: 30px; height: 30px; border-radius: 50%; background: rgba(128,128,128,0.2); border: 1px dashed var(--text-secondary); cursor: pointer; color: var(--text-primary); font-size: 14px; display: flex; align-items: center; justify-content: center;">+</button>
                     <input type="file" id="custom-bg-input" accept="image/*" style="display: none;">
                 </div>
+                <button id="reset-bg-btn" style="padding: 5px 10px; background: rgba(255,255,255,0.06); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-secondary); font-size: 11px; cursor: pointer; margin-left: auto;">Reset Default</button>
             </div>
             
             <div style="display: flex; gap: 16px; align-items: center; width: 100%; justify-content: space-between;">
@@ -57,6 +116,13 @@
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; width: 100%; border-top: 1px solid var(--panel-border); padding-top: 10px;">
+                <button id="pwa-install-btn" style="display: none; flex: 1; padding: 8px; background: #3b82f6; border: none; border-radius: 8px; color: white; font-size: 11px; font-weight: 600; cursor: pointer; align-items: center; justify-content: center; gap: 4px;">📲 Install App</button>
+                <button id="export-cfg-btn" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-primary); font-size: 11px; font-weight: 500; cursor: pointer;">📥 Backup</button>
+                <button id="import-cfg-btn" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-primary); font-size: 11px; font-weight: 500; cursor: pointer;">📤 Restore</button>
+                <input type="file" id="import-cfg-input" accept=".json" style="display: none;">
             </div>
         </div>
     </div>
@@ -150,10 +216,61 @@
         </div>
     </div>
 
-    <div id="folder-overlay-view" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 9999; align-items: center; justify-content: center;">
-        <div style="background: var(--panel-bg); border: 1px solid var(--panel-border); padding: 30px; border-radius: 24px; width: 440px; max-width: 90%;">
-            <h3 id="folder-popup-title" style="color: var(--text-primary); font-size: 20px; font-weight: 600; margin-bottom: 20px; text-align: center;">Folder</h3>
-            <div id="folder-popup-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; justify-items: center;"></div>
+    <!-- Folder Overlay View -->
+    <div id="folder-overlay-view">
+        <div id="folder-popup-card">
+            <h3 id="folder-popup-title">Folder</h3>
+            <div id="folder-popup-grid"></div>
+        </div>
+    </div>
+
+    <!-- Floating Quick Actions Menu on Long-Press -->
+    <div id="widget-quick-menu">
+        <button class="quick-menu-item" id="qm-edit-btn">
+            <span class="quick-menu-icon">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            </span>
+            <span>Edit Widget</span>
+        </button>
+        <button class="quick-menu-item" id="qm-info-btn">
+            <span class="quick-menu-icon">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </span>
+            <span>Widget Info</span>
+        </button>
+        <button class="quick-menu-item" id="qm-layout-btn">
+            <span class="quick-menu-icon">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+            </span>
+            <span>Move & Resize</span>
+        </button>
+        <div style="height: 1px; background: var(--panel-border); margin: 3px 0;"></div>
+        <button class="quick-menu-item danger" id="qm-delete-btn">
+            <span class="quick-menu-icon">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </span>
+            <span>Delete</span>
+        </button>
+    </div>
+
+    <!-- Widget Information Modal -->
+    <div id="widget-info-modal">
+        <div class="info-modal-card">
+            <div class="info-header">
+                <div id="info-w-icon">📦</div>
+                <div>
+                    <h3 id="info-w-label">Widget Name</h3>
+                    <span id="info-w-type">type</span>
+                </div>
+            </div>
+            <div id="info-w-desc" class="info-desc">Widget details and description.</div>
+            <div class="info-rows">
+                <div class="info-row"><span class="info-label">Author:</span><span class="info-val">MR Prog</span></div>
+                <div class="info-row"><span class="info-label">Version:</span><span class="info-val">0.0.9</span></div>
+                <div class="info-row"><span class="info-label">Dimensions:</span><span id="info-w-size" class="info-val">2 × 1</span></div>
+                <div class="info-row"><span class="info-label">Engine:</span><span class="info-val">ProGrid Fluid Grid</span></div>
+            </div>
+            <button id="info-close-btn" class="info-btn">Got it</button>
         </div>
     </div>
 

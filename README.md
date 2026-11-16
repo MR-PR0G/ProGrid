@@ -1,11 +1,11 @@
 <div align="center">
   <h1>🌟 ProGrid Workspace</h1>
-  <p><b>Version 0.0.5 | Developed by MR Prog</b></p>
-  <p>A modern, modular, and fully customizable Liquid Glass workspace for your browser.</p>
+  <p><b>Version 0.1.1 | Developed by MR Prog</b></p>
+  <p>A modern, modular, and fully customizable Liquid Glass workspace for your browser and mobile.</p>
 
-  <img src="https://img.shields.io/badge/Version-0.0.5-blue.svg" alt="Version">
-  
+  <img src="https://img.shields.io/badge/Version-0.1.1-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Extension%20%7C%20PWA-success.svg" alt="Platform">
+  <img src="https://img.shields.io/badge/Mobile-Optimized-brightgreen.svg" alt="Mobile Optimized">
 </div>
 
 <div align="center">
@@ -14,12 +14,27 @@
 
 ---
 
-## ✨ Key Features
-- **Fluid Grid Engine:** Intelligent top-to-bottom gravity grid with collision resolution.
-- **Glassmorphism UI:** Stunning frosted glass, dynamic animated backgrounds, and dark/light modes.
-- **Universal Install:** Run as a Chrome/Edge Extension, or install as a PWA on iOS, Android, and Desktop.
-- **Modular Widgets:** Shortcuts, Search bar, Checklist, and Smart Folders out of the box.
-- **Privacy First:** 100% local storage. No servers, no tracking.
+## ✨ Key Features in v0.1.1
+- **📱 Solid Mobile Grid (iPhone SE & Compact Phones):** Fixed 4-column gravity layout with stable 74–82px cell metrics. Grid dimensions never shrink vertically or compress widgets into unusable sizes on small screens.
+- **📐 High-Clearance Edit Mode Zoom-Out:** Entering edit mode now zooms out the canvas cleanly (`scale(0.68) translateY(-95px)` on mobile) with optimal top origin, preventing the bottom drawer from ever colliding with or occluding active widgets.
+- **✨ Minimalist Glass Widget Drawer:**
+  - Sleek, compact bottom shelf with centered segmented tabs (`Widgets`, `Appearance`).
+  - Integrated real-time widget search and subnav pills (`Installed`, `Online Hub`).
+  - Seamless horizontal browsing with 1-tap "+ Add" button and directional upward drag-to-grid.
+- **🎯 Snug SVG Context Menu:** Long-pressing any widget opens an ultra-crisp SVG vector menu placed snugly (5px offset) directly over the widget or touch target, eliminating excessive floating gaps.
+- **🖼️ 100% Full-Cover HD Wallpapers:** Full-screen coverage (`position: fixed; inset: 0; background-size: cover !important`) without tiling, skewing, or distortion.
+- **🧹 Cleaned Home Interface:** Removed unnecessary floating search overlay button from home canvas—integrated search is neatly centralized in the widget drawer.
+- **⚡ Hardware-Accelerated 60/120fps Fluidity:** GPU composition with `transform: translateZ(0)`, CSS `contain: layout style content`, and optimized touch-action handling for butter-smooth mobile performance.
+- **Fluid Grid Engine:** Intelligent top-to-bottom gravity grid with 4-column mobile adaptation and multi-column desktop responsiveness.
+- **Universal Install (PWA & New Tab):** 1-Click native app installation on Android, iOS, Windows, Mac, and Linux, plus Chrome/Edge/Brave extension support.
+- **Modular Widgets:** 
+  - ⏰ **Digital Clock & Calendar:** Real-time clock with 12/24h toggle and date display.
+  - 📝 **Quick Notes:** Auto-saving sticky notes with debounce storage.
+  - 🔗 **Shortcuts & Smart Folders:** Grouping, drag-to-merge, and drag-out capabilities.
+  - 🔍 **Search Bar:** Multi-engine instant web search.
+  - ✅ **Checklist / Tasks:** Interactive task tracking.
+- **📥 Backup & Restore:** 1-Click JSON export and import for seamless cross-device migration.
+- **🔒 Privacy First & 100% Offline:** Local caching with high-res local icons. Zero telemetry, zero external trackers.
 
 ## 🚀 Installation
 
@@ -52,15 +67,15 @@ export default class MyWidget extends BaseWidget {
         };
     }
 
-    render() {
-        return `
-            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                <h3 style="color: var(--text-primary);">${this.config.text}</h3>
-            </div>
-        `;
+    postRender(el) {
+        // Setup events or timers
+    }
+
+    onDestroy(el) {
+        // Cleanup timers or listeners
     }
 }
 
-window.WidgetGlobals.register(MyWidget);‍‍
+window.WidgetGlobals.register(MyWidget);
 ```
-Note: Do not forget to add your widget filename to the DYNAMIC_WIDGET_LIST array inside js/app.js.
+Note: Add your widget filename to the `DYNAMIC_WIDGET_LIST` array inside `js/app.js` and `sw.js`.

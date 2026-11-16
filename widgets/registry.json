@@ -1,0 +1,41 @@
+[
+  {
+    "id": "calculator",
+    "name": "Quick Calculator",
+    "author": "MR Prog",
+    "version": "1.0.0",
+    "downloads": "4.8k",
+    "category": "tools",
+    "defaultW": 2,
+    "defaultH": 2,
+    "verified": true,
+    "description": "Compact glassmorphic calculator for rapid computations.",
+    "scriptUrl": "./widgets/community/calculator.js"
+  },
+  {
+    "id": "quote",
+    "name": "Daily Quote",
+    "author": "ProGrid Studio",
+    "version": "1.0.0",
+    "downloads": "3.9k",
+    "category": "lifestyle",
+    "defaultW": 2,
+    "defaultH": 1,
+    "verified": true,
+    "description": "Handpicked daily inspiration and wisdom to keep you energized.",
+    "scriptUrl": "./widgets/community/quote.js"
+  },
+  {
+    "id": "pomodoro",
+    "name": "Pomodoro Timer",
+    "author": "FocusLab",
+    "version": "1.2.0",
+    "downloads": "5.1k",
+    "category": "productivity",
+    "defaultW": 2,
+    "defaultH": 1,
+    "verified": true,
+    "description": "25-minute focus session timer with audio chime and pause controls.",
+    "scriptUrl": "./widgets/community/pomodoro.js"
+  }
+]

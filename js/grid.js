@@ -12,25 +12,41 @@ export class GridEngine {
         const width = window.innerWidth;
         const height = window.innerHeight;
 
-        const availableW = width * 0.85;
-        const availableH = height - (window.appState && window.appState.editMode ? 260 : 40);
+        const isMobile = width < 640;
 
-        let calculatedCols = Math.floor((availableW + this.BASE_GAP) / (this.BASE_CELL_SIZE + this.BASE_GAP));
-        if (calculatedCols % 2 !== 0) calculatedCols--;
-        
-        this.cols = Math.max(4, calculatedCols);
-        this.rows = Math.max(4, Math.floor((availableH + this.BASE_GAP) / (this.BASE_CELL_SIZE + this.BASE_GAP)));
+        if (isMobile) {
+            // در گوشی‌ها (حتی گوشی‌های کوچک مثل iPhone SE) چیدمان همیشه ۴ ستونه و اندازه سلول‌ها کاملاً ثابت و بهینه است
+            this.cols = 4;
+            this.GAP = 12;
+            const availableW = Math.max(280, width - 24);
+            // محاسبه اندازه سلول دقیقاً بر اساس عرض صفحه بدون کوچک شدن بی‌مورد ارتفاعی
+            const calculatedCell = Math.floor((availableW - (3 * this.GAP)) / 4);
+            this.CELL_SIZE = Math.max(72, Math.min(84, calculatedCell));
+            this.rows = Math.max(5, Math.ceil((height - 50) / (this.CELL_SIZE + this.GAP)));
+        } else {
+            const availableW = width * 0.85;
+            const availableH = height - 40;
 
-        const targetGridW = this.cols * this.BASE_CELL_SIZE + (this.cols - 1) * this.BASE_GAP;
-        const targetGridH = this.rows * this.BASE_CELL_SIZE + (this.rows - 1) * this.BASE_GAP;
+            let baseGap = 16;
+            let baseCell = 96;
 
-        let scale = 1;
-        if (targetGridW > availableW || targetGridH > availableH) {
-            scale = Math.min(availableW / targetGridW, availableH / targetGridH);
+            let calculatedCols = Math.floor((availableW + baseGap) / (baseCell + baseGap));
+            if (calculatedCols % 2 !== 0) calculatedCols--;
+            
+            this.cols = Math.max(4, calculatedCols);
+            this.rows = Math.max(4, Math.floor((availableH + baseGap) / (baseCell + baseGap)));
+
+            const targetGridW = this.cols * baseCell + (this.cols - 1) * baseGap;
+            const targetGridH = this.rows * baseCell + (this.rows - 1) * baseGap;
+
+            let scale = 1;
+            if (targetGridW > availableW || targetGridH > availableH) {
+                scale = Math.min(availableW / targetGridW, availableH / targetGridH);
+            }
+
+            this.CELL_SIZE = Math.round(baseCell * scale);
+            this.GAP = Math.round(baseGap * scale);
         }
-
-        this.CELL_SIZE = this.BASE_CELL_SIZE * scale;
-        this.GAP = this.BASE_GAP * scale;
 
         const finalGridW = this.cols * this.CELL_SIZE + (this.cols - 1) * this.GAP;
         const finalGridH = this.rows * this.CELL_SIZE + (this.rows - 1) * this.GAP;
@@ -61,17 +77,21 @@ export class GridEngine {
     }
 
     canFit(w, h, widgets, excludeId = null) {
-        if (w > this.cols || h > this.rows) return false;
+        return this.findFirstAvailablePos(w, h, widgets, excludeId) !== null;
+    }
+
+    findFirstAvailablePos(w, h, widgets, excludeId = null) {
+        if (w > this.cols || h > this.rows) return null;
         for (let r = 0; r <= this.rows - h; r++) {
             for (let c = 0; c <= this.cols - w; c++) {
                 let overlap = widgets.some(widget => 
                     widget.id !== excludeId && !widget.isHidden &&
                     !(c + w <= widget.x || c >= widget.x + widget.w || r + h <= widget.y || r >= widget.y + widget.h)
                 );
-                if (!overlap) return true;
+                if (!overlap) return { x: c, y: r };
             }
         }
-        return false;
+        return null;
     }
 
     resolveAllFinalOverlaps(widgets) {
