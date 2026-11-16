@@ -13,7 +13,7 @@
     <link rel="manifest" href="manifest.json">
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=0.0.8').then(reg => {
+            navigator.serviceWorker.register('sw.js?v=0.0.9').then(reg => {
                 reg.update();
             });
             let refreshing = false;
@@ -35,6 +35,34 @@
             <div id="grid-container">
                 <div id="ghost-guide"></div>
             </div>
+        </div>
+    </div>
+
+    <button id="spotlight-btn" aria-label="Quick Search" title="Search (Press / or Ctrl+K)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+    </button>
+
+    <div id="spotlight-overlay">
+        <div class="spotlight-card">
+            <form id="spotlight-form" action="https://google.com/search" method="get" target="_blank">
+                <div class="spotlight-input-wrap">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.7;">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" name="q" class="spotlight-input" id="spotlight-query" placeholder="Search the web or type URL..." autocomplete="off">
+                    <button type="button" id="spotlight-close-btn" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size:18px; padding:0 4px;">✕</button>
+                </div>
+                <div class="spotlight-engines" style="margin-top: 8px;">
+                    <span style="font-size: 11px; color: var(--text-secondary); margin-right: auto;">Engine:</span>
+                    <button type="button" class="engine-chip active" data-engine="google">Google</button>
+                    <button type="button" class="engine-chip" data-engine="bing">Bing</button>
+                    <button type="button" class="engine-chip" data-engine="duckduckgo">DuckDuckGo</button>
+                </div>
+            </form>
         </div>
     </div>
 

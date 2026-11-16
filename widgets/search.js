@@ -3,7 +3,10 @@ import { BaseWidget } from './base.js';
 export default class SearchWidget extends BaseWidget {
     static getMetadata() {
         return {
-            type: 'search', label: 'Search Bar', icon: '🔍', defaultW: 3, defaultH: 1,
+            type: 'search',
+            label: 'Search Bar',
+            icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`,
+            defaultW: 3, defaultH: 1,
             minW: 2, minH: 1, maxW: 8, maxH: 1,
             defaultConfig: { engine: 'google', placeholder: 'Search...', isGlass: true, bg: '#ffffff' }
         };

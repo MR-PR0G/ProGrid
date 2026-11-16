@@ -286,8 +286,121 @@ input:checked + .toggle-slider:before { transform: translateX(20px); background-
 
 .modal-input { background: var(--input-bg); border: 1px solid var(--panel-border); padding: 8px; border-radius: 8px; color: var(--text-primary); width: 100%; font-size: 14px; }
 
+/* Visual Feedback when resizing reaches maximum allowed size */
+@keyframes borderPulseRed {
+    0%, 100% {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 16px rgba(239, 68, 68, 0.75) !important;
+    }
+    50% {
+        border-color: rgba(239, 68, 68, 0.35) !important;
+        box-shadow: 0 0 4px rgba(239, 68, 68, 0.2) !important;
+    }
+}
+.widget-wrapper.max-limit-reached {
+    animation: borderPulseRed 0.35s ease-in-out infinite alternate !important;
+    border: 2px solid #ef4444 !important;
+}
+#ghost-guide.max-limit-reached {
+    border-color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Floating Spotlight Search Bar & Trigger */
+#spotlight-btn {
+    position: fixed;
+    top: max(20px, calc(env(safe-area-inset-top, 0px) + 12px));
+    right: max(20px, calc(env(safe-area-inset-right, 0px) + 16px));
+    width: 44px; height: 44px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+    border-radius: 50%;
+    color: var(--text-primary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 1500;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s, background 0.2s, opacity 0.3s;
+}
+#spotlight-btn:hover { transform: scale(1.08); background: rgba(255, 255, 255, 0.15); }
+#spotlight-btn:active { transform: scale(0.95); }
+body.edit-mode #spotlight-btn { opacity: 0; pointer-events: none; }
+
+#spotlight-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    z-index: 99999;
+    display: none; align-items: flex-start; justify-content: center;
+    padding-top: max(80px, calc(env(safe-area-inset-top, 0px) + 70px));
+    transition: opacity 0.25s ease;
+}
+#spotlight-overlay.active { display: flex; }
+
+.spotlight-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+    border-radius: 20px;
+    padding: 12px 16px;
+    width: 540px; max-width: calc(100vw - 32px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    display: flex; flex-direction: column; gap: 12px;
+    transform: translateY(-20px);
+    animation: spotlightSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes spotlightSlideDown {
+    to { transform: translateY(0); }
+}
+
+.spotlight-input-wrap {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 8px 14px;
+}
+.spotlight-input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text-primary); font-size: 16px; font-weight: 500;
+}
+.spotlight-input::placeholder { color: var(--text-secondary); opacity: 0.7; }
+
+.spotlight-engines {
+    display: flex; gap: 8px; align-items: center; justify-content: flex-end;
+}
+.engine-chip {
+    background: rgba(255, 255, 255, 0.08); border: 1px solid var(--panel-border);
+    border-radius: 8px; padding: 4px 10px; font-size: 11px; color: var(--text-secondary);
+    cursor: pointer; transition: all 0.2s;
+}
+.engine-chip.active {
+    background: #3b82f6; border-color: #3b82f6; color: white; font-weight: 600;
+}
+
 /* Mobile and Touch Responsive Enhancements */
 @media (max-width: 768px) {
+    body.edit-mode #grid-scale-wrapper {
+        height: calc(100% - 170px) !important;
+        transform: scale(0.96) !important;
+    }
+
+    #edit-panel {
+        padding: 10px 12px !important;
+        gap: 8px !important;
+        border-radius: 20px !important;
+        max-height: 180px !important;
+    }
+
+    .store-item {
+        min-width: 74px !important;
+        padding: 8px !important;
+    }
+    .store-item-icon svg {
+        width: 20px !important; height: 20px !important;
+    }
+
     /* Prevent iOS Safari auto-zoom on input focus */
     input[type="text"],
     input[type="search"],
@@ -295,7 +408,8 @@ input:checked + .toggle-slider:before { transform: translateX(20px); background-
     textarea,
     .modal-input,
     .checklist-input,
-    .search-input-field {
+    .search-input-field,
+    .spotlight-input {
         font-size: 16px !important;
     }
 
@@ -317,10 +431,5 @@ input:checked + .toggle-slider:before { transform: translateX(20px); background-
     #folder-popup-grid {
         grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)) !important;
         gap: 12px !important;
-    }
-
-    #edit-panel {
-        padding: 12px !important;
-        gap: 10px !important;
     }
 }

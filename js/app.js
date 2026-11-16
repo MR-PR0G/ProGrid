@@ -81,6 +81,7 @@ async function init() {
     setupBackgroundActivationSensors();
     applyGlobalStyles();
     populateWidgetBottomStore();
+    setupSpotlightSearch();
 }
 
 function applyGlobalStyles() {
@@ -416,6 +417,22 @@ function attachInteractionEngine(el, w, instance) {
                 let gridW = Math.max(minW, Math.min(maxW, Math.round((rawW - grid.gap) / (grid.cellSize + grid.gap))));
                 let gridH = Math.max(minH, Math.min(maxH, Math.round((rawH - grid.gap) / (grid.cellSize + grid.gap))));
 
+                let isAtLimit = false;
+                if ((rawW > (maxW * (grid.cellSize + grid.gap) - grid.gap + 15) && gridW >= maxW) ||
+                    (rawH > (maxH * (grid.cellSize + grid.gap) - grid.gap + 15) && gridH >= maxH) ||
+                    (w.x + gridW >= grid.columns && rawW > ((grid.columns - w.x) * (grid.cellSize + grid.gap) - grid.gap + 15)) ||
+                    (w.y + gridH >= grid.rowsCount && rawH > ((grid.rowsCount - w.y) * (grid.cellSize + grid.gap) - grid.gap + 15))) {
+                    isAtLimit = true;
+                }
+
+                if (isAtLimit) {
+                    el.classList.add('max-limit-reached');
+                    if (ghost) ghost.classList.add('max-limit-reached');
+                } else {
+                    el.classList.remove('max-limit-reached');
+                    if (ghost) ghost.classList.remove('max-limit-reached');
+                }
+
                 if (w.x + gridW > grid.columns) gridW = grid.columns - w.x;
                 if (w.y + gridH > grid.rowsCount) gridH = grid.rowsCount - w.y;
 
@@ -456,7 +473,11 @@ function attachInteractionEngine(el, w, instance) {
         el.classList.remove('dragging');
         el.classList.remove('resizing');
         el.classList.remove('burn-effect');
-        if (ghost) ghost.classList.remove('active');
+        el.classList.remove('max-limit-reached');
+        if (ghost) {
+            ghost.classList.remove('active');
+            ghost.classList.remove('max-limit-reached');
+        }
 
         if (deleteZone && deleteZone.classList.contains('hovered')) {
             deleteZone.classList.remove('hovered');
@@ -506,6 +527,9 @@ function attachInteractionEngine(el, w, instance) {
                 w.h = Math.round((parseInt(ghost.style.height) + grid.gap) / (grid.cellSize + grid.gap));
                 w.w = Math.max(minW, Math.min(maxW, w.w));
                 w.h = Math.max(minH, Math.min(maxH, w.h));
+            }
+            if (instance && instance.onResize) {
+                try { instance.onResize(w.w, w.h, el); } catch (err) { console.error(err); }
             }
         }
 
@@ -845,40 +869,67 @@ function setupStoreDrag(itemEl) {
     }
 
     let dummy = null;
+    let isDraggingInitiated = false;
+    let startX = 0, startY = 0;
+    let effectiveW = 1, effectiveH = 1;
 
     itemEl.addEventListener('pointerdown', (e) => {
         if (!state.editMode) return;
         itemEl.setPointerCapture(e.pointerId);
-        initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
-        grid.updateMetrics();
-
-        let effectiveW = Math.min(meta.defaultW, grid.columns);
-        let effectiveH = Math.min(meta.defaultH, grid.rowsCount);
-
-        if (!grid.canFit(effectiveW, effectiveH, state.widgets)) {
-            alert("No available space to add this widget!");
-            return;
-        }
-
-        dummy = document.createElement('div');
-        dummy.className = 'widget-wrapper dragging';
-        dummy.style.width = `${effectiveW * grid.cellSize + (effectiveW - 1) * grid.gap}px`;
-        dummy.style.height = `${effectiveH * grid.cellSize + (effectiveH - 1) * grid.gap}px`;
-        dummy.style.left = `${e.clientX - 46}px`;
-        dummy.style.top = `${e.clientY - 46}px`;
-        dummy.style.background = 'rgba(255,255,255,0.15)';
-        dummy.style.backdropFilter = 'blur(10px)';
-        dummy.style.pointerEvents = 'none';
-        container.appendChild(dummy);
-
-        if (ghost) ghost.classList.add('active');
-        updateGhost({ x: 0, y: 0, w: effectiveW, h: effectiveH });
-        e.stopPropagation();
+        startX = e.clientX;
+        startY = e.clientY;
+        isDraggingInitiated = false;
+        itemEl.style.transform = 'scale(0.94)';
+        itemEl.style.opacity = '0.75';
     });
 
     itemEl.addEventListener('pointermove', (e) => {
+        if (!state.editMode) return;
+
+        // فقط در صورتی که کاربر دستش را به سمت بالا (به طرف گرید) کشید درگ فعال شود
+        if (!isDraggingInitiated) {
+            const diffY = startY - e.clientY;
+            const diffX = Math.abs(e.clientX - startX);
+            
+            if (diffY > 24 && diffY > diffX) {
+                grid.updateMetrics();
+                effectiveW = Math.min(meta.defaultW, grid.columns);
+                effectiveH = Math.min(meta.defaultH, grid.rowsCount);
+
+                if (!grid.canFit(effectiveW, effectiveH, state.widgets)) {
+                    itemEl.releasePointerCapture(e.pointerId);
+                    itemEl.style.transform = '';
+                    itemEl.style.opacity = '';
+                    return;
+                }
+
+                isDraggingInitiated = true;
+                if (navigator.vibrate) navigator.vibrate(40);
+                initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
+
+                const containerBounds = container.getBoundingClientRect();
+                const scale = getWrapperScale();
+                const posX = ((e.clientX - containerBounds.left) / scale) - 46;
+                const posY = ((e.clientY - containerBounds.top) / scale) - 46;
+
+                dummy = document.createElement('div');
+                dummy.className = 'widget-wrapper dragging';
+                dummy.style.width = `${effectiveW * grid.cellSize + (effectiveW - 1) * grid.gap}px`;
+                dummy.style.height = `${effectiveH * grid.cellSize + (effectiveH - 1) * grid.gap}px`;
+                dummy.style.left = `${posX}px`;
+                dummy.style.top = `${posY}px`;
+                dummy.style.background = 'rgba(255,255,255,0.18)';
+                dummy.style.backdropFilter = 'blur(10px)';
+                dummy.style.pointerEvents = 'none';
+                container.appendChild(dummy);
+
+                if (ghost) ghost.classList.add('active');
+                updateGhost({ x: 0, y: 0, w: effectiveW, h: effectiveH });
+            }
+            return;
+        }
+
         if (!dummy) return;
-        
         if (rAFActive) return;
         rAFActive = true;
 
@@ -894,8 +945,8 @@ function setupStoreDrag(itemEl) {
             dummy.style.top = `${posY}px`;
 
             grid.updateMetrics();
-            let effectiveW = Math.min(meta.defaultW, grid.columns);
-            let effectiveH = Math.min(meta.defaultH, grid.rowsCount);
+            effectiveW = Math.min(meta.defaultW, grid.columns);
+            effectiveH = Math.min(meta.defaultH, grid.rowsCount);
 
             if (checkCollisionWithDeleteZone(e.clientX, e.clientY)) {
                 if (deleteZone) deleteZone.classList.add('hovered');
@@ -903,7 +954,7 @@ function setupStoreDrag(itemEl) {
                 if (ghost) ghost.classList.remove('active');
             } else {
                 if (deleteZone) deleteZone.classList.remove('hovered');
-                dummy.style.background = 'rgba(255,255,255,0.15)';
+                dummy.style.background = 'rgba(255,255,255,0.18)';
                 if (ghost) ghost.classList.add('active');
             }
 
@@ -916,10 +967,19 @@ function setupStoreDrag(itemEl) {
     });
 
     itemEl.addEventListener('pointerup', (e) => {
-        if (!dummy) return;
+        itemEl.style.transform = '';
+        itemEl.style.opacity = '';
+
+        // اگر انگشت فقط تپ شده بود و به سمت گرید کشیده نشده بود: هیچ کاری نکن و ویجت اضافه نکن
+        if (!isDraggingInitiated || !dummy) {
+            itemEl.releasePointerCapture(e.pointerId);
+            return;
+        }
+
         itemEl.releasePointerCapture(e.pointerId);
         dummy.remove();
         dummy = null;
+        isDraggingInitiated = false;
         if (ghost) ghost.classList.remove('active');
 
         if (deleteZone && deleteZone.classList.contains('hovered')) {
@@ -928,9 +988,6 @@ function setupStoreDrag(itemEl) {
         }
 
         grid.updateMetrics();
-        let effectiveW = Math.min(meta.defaultW, grid.columns);
-        let effectiveH = Math.min(meta.defaultH, grid.rowsCount);
-
         let finalX = 0;
         let finalY = 0;
         if (ghost) {
@@ -1196,6 +1253,59 @@ function deleteCurrentWidget() {
     StorageEngine.save(state);
     renderGrid();
     closeModal();
+}
+
+function setupSpotlightSearch() {
+    const spotlightBtn = document.getElementById('spotlight-btn');
+    const spotlightOverlay = document.getElementById('spotlight-overlay');
+    const spotlightCloseBtn = document.getElementById('spotlight-close-btn');
+    const spotlightQuery = document.getElementById('spotlight-query');
+    const spotlightForm = document.getElementById('spotlight-form');
+    let currentEngine = 'google';
+
+    const openSpotlight = () => {
+        if (!spotlightOverlay) return;
+        spotlightOverlay.classList.add('active');
+        setTimeout(() => spotlightQuery?.focus(), 80);
+    };
+
+    const closeSpotlight = () => {
+        if (!spotlightOverlay) return;
+        spotlightOverlay.classList.remove('active');
+        if (spotlightQuery) spotlightQuery.value = '';
+    };
+
+    if (spotlightBtn) spotlightBtn.addEventListener('click', openSpotlight);
+    if (spotlightCloseBtn) spotlightCloseBtn.addEventListener('click', closeSpotlight);
+
+    if (spotlightOverlay) {
+        spotlightOverlay.addEventListener('click', (e) => {
+            if (e.target === spotlightOverlay) closeSpotlight();
+        });
+    }
+
+    document.querySelectorAll('.engine-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('.engine-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            currentEngine = chip.getAttribute('data-engine');
+            if (spotlightForm) {
+                if (currentEngine === 'google') spotlightForm.action = 'https://google.com/search';
+                if (currentEngine === 'bing') spotlightForm.action = 'https://bing.com/search';
+                if (currentEngine === 'duckduckgo') spotlightForm.action = 'https://duckduckgo.com/';
+            }
+            spotlightQuery?.focus();
+        });
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if ((e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) && !isInputActive && !state.editMode) {
+            e.preventDefault();
+            openSpotlight();
+        } else if (e.key === 'Escape' && spotlightOverlay && spotlightOverlay.classList.contains('active')) {
+            closeSpotlight();
+        }
+    });
 }
 
 window.addEventListener('DOMContentLoaded', init);
