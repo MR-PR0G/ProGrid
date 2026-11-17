@@ -1,4 +1,4 @@
-const CACHE_NAME = 'progrid-cache-v0.1.1';
+const CACHE_NAME = 'progrid-cache-v0.1.2';
 const urlsToCache = [
   './',
   './index.html',
@@ -28,7 +28,15 @@ const urlsToCache = [
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME).then(async cache => {
+      for (const url of urlsToCache) {
+        try {
+          await cache.add(url);
+        } catch (err) {
+          console.warn('PWA Cache item failed:', url, err);
+        }
+      }
+    })
   );
 });
 
@@ -41,10 +49,18 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (!url.protocol.startsWith('http')) return;
+
   event.respondWith(
     caches.match(event.request).then(response => {
       if (response) return response;
-      return fetch(event.request).catch(() => caches.match('./index.html'));
+      return fetch(event.request).catch(() => {
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
+        }
+      });
     })
   );
 });

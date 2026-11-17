@@ -1,30 +1,41 @@
 {
-  "manifest_version": 3,
   "name": "ProGrid Workspace",
   "short_name": "ProGrid",
-  "version": "0.1.1",
+  "id": "progrid-workspace-app",
+  "version": "0.1.2",
   "description": "Customizable Liquid Glass Workspace & New Tab Dashboard by MR Prog",
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
   "orientation": "any",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
-  "chrome_url_overrides": {
-    "newtab": "index.html"
-  },
+  "background_color": "#1e2126",
+  "theme_color": "#1e2126",
+  "categories": ["productivity", "utilities"],
   "icons": [
     {
-      "src": "./icons/icon-192.png",
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "./icons/icon-512.png",
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

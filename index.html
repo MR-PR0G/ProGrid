@@ -4,24 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="ProGrid">
+    <meta name="apple-mobile-web-app-title" content="ProGrid">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#1e2126">
     <title>ProGrid Workspace</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
     <script>
+        // Early PWA install event interception
+        window.deferredPWAInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            window.deferredPWAInstallPrompt = e;
+            window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
+        });
+
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=0.1.1').then(reg => {
-                reg.update();
-            });
-            let refreshing = false;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (!refreshing) {
-                    refreshing = true;
-                    window.location.reload();
-                }
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    reg.update();
+                }).catch(err => console.warn('SW register issue:', err));
             });
         }
     </script>
@@ -119,7 +125,7 @@
             </div>
 
             <div style="display: flex; gap: 8px; width: 100%; border-top: 1px solid var(--panel-border); padding-top: 10px;">
-                <button id="pwa-install-btn" style="display: none; flex: 1; padding: 8px; background: #3b82f6; border: none; border-radius: 8px; color: white; font-size: 11px; font-weight: 600; cursor: pointer; align-items: center; justify-content: center; gap: 4px;">📲 Install App</button>
+                <button id="pwa-install-btn" style="flex: 1; padding: 8px; background: #3b82f6; border: none; border-radius: 8px; color: white; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">📲 Install App</button>
                 <button id="export-cfg-btn" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-primary); font-size: 11px; font-weight: 500; cursor: pointer;">📥 Backup</button>
                 <button id="import-cfg-btn" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-primary); font-size: 11px; font-weight: 500; cursor: pointer;">📤 Restore</button>
                 <input type="file" id="import-cfg-input" accept=".json" style="display: none;">
@@ -271,6 +277,26 @@
                 <div class="info-row"><span class="info-label">Engine:</span><span class="info-val">ProGrid Fluid Grid</span></div>
             </div>
             <button id="info-close-btn" class="info-btn">Got it</button>
+        </div>
+    </div>
+
+    <!-- PWA Installation Guide Modal -->
+    <div id="pwa-install-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); z-index: 10060; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
+        <div style="background: var(--modal-bg); border: 1px solid var(--panel-border); border-radius: 24px; padding: 22px 20px; width: 340px; max-width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px; text-align: center; box-sizing: border-box;">
+            <div style="width: 52px; height: 52px; border-radius: 16px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto;">📲</div>
+            <div>
+                <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 700; color: var(--text-primary);">Install ProGrid</h3>
+                <p id="pwa-install-subtitle" style="margin: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.4;">Add to your device home screen for a fast, standalone full-screen experience.</p>
+            </div>
+            <div id="pwa-install-instructions" style="background: rgba(255,255,255,0.04); border: 1px solid var(--panel-border); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
+                <!-- Filled dynamically by JS -->
+            </div>
+            <button id="pwa-prompt-trigger-btn" style="padding: 11px; background: #3b82f6; border: none; border-radius: 12px; color: white; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s;">
+                Install Now
+            </button>
+            <button id="pwa-modal-close-btn" style="padding: 9px; background: rgba(255,255,255,0.06); border: 1px solid var(--panel-border); border-radius: 12px; color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer;">
+                Close
+            </button>
         </div>
     </div>
 

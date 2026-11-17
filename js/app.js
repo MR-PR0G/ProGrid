@@ -52,17 +52,8 @@ async function init() {
         state.theme = "dark";
         state.widgets = [
             { id: "w-clock-default", type: "clock", x: 0, y: 0, w: 2, h: 1, format24: true, showDate: true, isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 0, w: 2, h: 1, baseCols: 8 }, isHidden: false, centerDist: 0.5 },
-            { id: "w-1781773568073", type: "search", x: 2, y: 0, w: 6, h: 1, engine: "google", placeholder: "Search...", isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 0, w: 6, h: 1, baseCols: 8 }, isHidden: false, centerDist: 1 },
-            { id: "w-1781791807875", type: "shortcut", x: 0, y: 1, w: 2, h: 1, title: "Give Star This Project", url: "https://github.com/MR-PR0G", icon: "", iconBg: "#f6d32d", shape: "50%", isGlass: true, bg: "#f6d32d", idealLayout: { x: 0, y: 1, w: 2, h: 1, baseCols: 8 }, isHidden: false, centerDist: 2 },
-            { id: "w-1781791038045", type: "folder", x: 2, y: 1, w: 2, h: 2, title: "Google", url: "https://mail.google.com/mail/", icon: "", iconBg: "transparent", shape: "20px", isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 1, w: 2, h: 2, baseCols: 8 }, isHidden: false, centerDist: 2.915, children: [
-                { id: "ch-1781791128373-2", type: "shortcut", title: "Youtube", url: "https://www.youtube.com/", icon: "", shape: "20px", iconBg: "transparent" },
-                { id: "ch-1781791401512", type: "shortcut", title: "Gmail", url: "https://mail.google.com/mail/", icon: "", shape: "20px", iconBg: "transparent" },
-                { id: "ch-1781791526637", type: "shortcut", title: "Gemini", url: "https://gemini.google.com/app", icon: "", shape: "20px", iconBg: "transparent" },
-                { id: "ch-1781791575443", type: "shortcut", title: "Drive", url: "https://drive.google.com/drive/", icon: "", shape: "20px", iconBg: "transparent" },
-                { id: "ch-1781791634325", type: "shortcut", title: "Translate", url: "https://translate.google.com/", icon: "", shape: "20px", iconBg: "transparent" },
-                { id: "ch-1781791711956", type: "shortcut", title: "Google", url: "https://google.com", icon: "", shape: "20px", iconBg: "transparent" },
-                { id: "ch-1781791800065", type: "shortcut", title: "Cloud", url: "https://cloud.google.com/appengine", icon: "", shape: "20px", iconBg: "transparent" }
-            ]}
+            { id: "w-search-default", type: "search", x: 2, y: 0, w: 6, h: 1, engine: "google", placeholder: "Search...", isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 0, w: 6, h: 1, baseCols: 8 }, isHidden: false, centerDist: 1 },
+            { id: "w-shortcut-default", type: "shortcut", x: 0, y: 1, w: 1, h: 1, title: "GitHub", url: "https://github.com/MR-PR0G/ProGrid", icon: "", iconBg: "#3b82f6", shape: "50%", isGlass: true, bg: "#3b82f6", idealLayout: { x: 0, y: 1, w: 1, h: 1, baseCols: 8 }, isHidden: false, centerDist: 2 }
         ];
     }
 
@@ -116,7 +107,7 @@ function applyGlobalStyles() {
     } else {
         if (dynamicBgLayer) {
             dynamicBgLayer.style.backgroundImage = 'none';
-            dynamicBgLayer.className = `bg-layer bg-dynamic`;
+            dynamicBgLayer.className = state.presetBg === '2' ? 'bg-layer bg-dynamic' : 'bg-layer';
             dynamicBgLayer.style.background = `var(--bg-preset-${state.presetBg})`;
         }
     }
@@ -778,29 +769,122 @@ function setupGlobalEvents() {
         });
     });
 
-    // PWA Install Prompt Support
-    let deferredPrompt = null;
+    // PWA Install Engine & Multi-Platform Guide
     const pwaInstallBtn = document.getElementById('pwa-install-btn');
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        if (pwaInstallBtn) pwaInstallBtn.style.display = 'inline-flex';
-    });
+    const pwaModal = document.getElementById('pwa-install-modal');
+    const pwaCloseBtn = document.getElementById('pwa-modal-close-btn');
+    const pwaTriggerBtn = document.getElementById('pwa-prompt-trigger-btn');
+    const pwaInstructions = document.getElementById('pwa-install-instructions');
+    const pwaSubtitle = document.getElementById('pwa-install-subtitle');
 
-    if (pwaInstallBtn) {
-        pwaInstallBtn.addEventListener('click', async () => {
-            if (!deferredPrompt) {
-                alert("To install on iOS: Tap the Share button and select 'Add to Home Screen'.");
-                return;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+    if (isStandalone && pwaInstallBtn) {
+        pwaInstallBtn.textContent = '✓ Installed';
+        pwaInstallBtn.style.opacity = '0.6';
+        pwaInstallBtn.style.pointerEvents = 'none';
+    }
+
+    const openInstallModal = () => {
+        if (!pwaModal) return;
+
+        // If native prompt is available right now, trigger immediately!
+        if (window.deferredPWAInstallPrompt) {
+            window.deferredPWAInstallPrompt.prompt();
+            window.deferredPWAInstallPrompt.userChoice.then(({ outcome }) => {
+                if (outcome === 'accepted') {
+                    if (pwaInstallBtn) {
+                        pwaInstallBtn.textContent = '✓ Installed';
+                        pwaInstallBtn.style.opacity = '0.6';
+                    }
+                }
+                window.deferredPWAInstallPrompt = null;
+            }).catch(() => {});
+            return;
+        }
+
+        // Otherwise display step-by-step modal guide tailored to user device
+        if (pwaInstructions) {
+            if (isIOS) {
+                if (pwaSubtitle) pwaSubtitle.textContent = 'Follow these simple steps in Safari to add ProGrid to your iPhone / iPad home screen:';
+                pwaInstructions.innerHTML = `
+                    <div class="pwa-step-item">
+                        <span class="pwa-step-num">1</span>
+                        <span class="pwa-step-text">Tap the <strong>Share</strong> button (📤) in Safari toolbar at the bottom.</span>
+                    </div>
+                    <div class="pwa-step-item">
+                        <span class="pwa-step-num">2</span>
+                        <span class="pwa-step-text">Scroll down and tap <strong>Add to Home Screen</strong> (➕).</span>
+                    </div>
+                    <div class="pwa-step-item">
+                        <span class="pwa-step-num">3</span>
+                        <span class="pwa-step-text">Tap <strong>Add</strong> in the top right corner to finish.</span>
+                    </div>
+                `;
+                if (pwaTriggerBtn) pwaTriggerBtn.style.display = 'none';
+            } else {
+                if (pwaSubtitle) pwaSubtitle.textContent = 'Install ProGrid for instant offline access and native app mode:';
+                pwaInstructions.innerHTML = `
+                    <div class="pwa-step-item">
+                        <span class="pwa-step-num">1</span>
+                        <span class="pwa-step-text">Tap the browser menu (<strong>⋮</strong>) in the top-right corner.</span>
+                    </div>
+                    <div class="pwa-step-item">
+                        <span class="pwa-step-num">2</span>
+                        <span class="pwa-step-text">Select <strong>Install app</strong> or <strong>Add to Home screen</strong>.</span>
+                    </div>
+                    <div class="pwa-step-item">
+                        <span class="pwa-step-num">3</span>
+                        <span class="pwa-step-text">Confirm installation to launch ProGrid anytime from your apps list.</span>
+                    </div>
+                `;
+                if (pwaTriggerBtn) {
+                    pwaTriggerBtn.style.display = 'block';
+                    pwaTriggerBtn.textContent = 'Try Direct Install';
+                }
             }
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                pwaInstallBtn.style.display = 'none';
-            }
-            deferredPrompt = null;
+        }
+
+        pwaModal.style.display = 'flex';
+    };
+
+    const closeInstallModal = () => {
+        if (pwaModal) pwaModal.style.display = 'none';
+    };
+
+    if (pwaInstallBtn) pwaInstallBtn.addEventListener('click', openInstallModal);
+    if (pwaCloseBtn) pwaCloseBtn.addEventListener('click', closeInstallModal);
+    if (pwaModal) {
+        pwaModal.addEventListener('click', (e) => {
+            if (e.target === pwaModal) closeInstallModal();
         });
     }
+
+    if (pwaTriggerBtn) {
+        pwaTriggerBtn.addEventListener('click', async () => {
+            if (window.deferredPWAInstallPrompt) {
+                window.deferredPWAInstallPrompt.prompt();
+                const { outcome } = await window.deferredPWAInstallPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    closeInstallModal();
+                    if (pwaInstallBtn) {
+                        pwaInstallBtn.textContent = '✓ Installed';
+                        pwaInstallBtn.style.opacity = '0.6';
+                    }
+                }
+                window.deferredPWAInstallPrompt = null;
+            } else {
+                alert("Direct prompt is ready via browser menu (⋮) -> 'Install app' or 'Add to Home screen'.");
+            }
+        });
+    }
+
+    window.addEventListener('pwa-prompt-ready', () => {
+        if (pwaInstallBtn && !isStandalone) {
+            pwaInstallBtn.classList.add('ready');
+        }
+    });
 
     // Export / Backup JSON Configuration
     const exportBtn = document.getElementById('export-cfg-btn');

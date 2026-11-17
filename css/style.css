@@ -1,17 +1,18 @@
 :root {
-    --bg-preset-1: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    --bg-preset-1: radial-gradient(circle at 50% 25%, #2c3038 0%, #1a1d22 60%, #111316 100%);
     --bg-preset-2: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
     --bg-preset-3: radial-gradient(circle at 50% 50%, #2a0845 0%, #6441A5 50%, #2a0845 100%);
     
-    --panel-bg: rgba(20, 20, 35, 0.6);
+    --panel-bg: rgba(22, 24, 30, 0.65);
     --panel-border: rgba(255, 255, 255, 0.08);
     --text-primary: #ffffff;
     --text-secondary: #a7a7a7;
     --input-bg: rgba(0, 0, 0, 0.3);
-    --modal-bg: #1e1e2e;
+    --modal-bg: #181a1f;
 }
 
 body.light-mode {
+    --bg-preset-1: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 50%, #9ca3af 100%);
     --panel-bg: rgba(255, 255, 255, 0.6);
     --panel-border: rgba(0, 0, 0, 0.1);
     --text-primary: #1e1e2e;
@@ -846,4 +847,44 @@ body.edit-mode .edit-hint-pill {
 }
 .info-btn:active {
     transform: scale(0.98);
+}
+
+/* PWA Install Guide Modal Styles */
+.pwa-step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+    text-align: left;
+}
+.pwa-step-item:last-child {
+    margin-bottom: 0;
+}
+.pwa-step-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #3b82f6;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+.pwa-step-text {
+    flex: 1;
+    color: var(--text-primary);
+    font-size: 12px;
+    line-height: 1.45;
+}
+#pwa-install-btn.ready {
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
+    animation: pwaReadyPulse 2s infinite alternate;
+}
+@keyframes pwaReadyPulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.02); }
 }
