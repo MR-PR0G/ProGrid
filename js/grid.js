@@ -22,7 +22,8 @@ export class GridEngine {
             // محاسبه اندازه سلول دقیقاً بر اساس عرض صفحه بدون کوچک شدن بی‌مورد ارتفاعی
             const calculatedCell = Math.floor((availableW - (3 * this.GAP)) / 4);
             this.CELL_SIZE = Math.max(72, Math.min(84, calculatedCell));
-            this.rows = Math.max(5, Math.ceil((height - 50) / (this.CELL_SIZE + this.GAP)));
+            const availableH = Math.max(300, height - (height < 700 ? 80 : 100));
+            this.rows = Math.max(4, Math.floor((availableH + this.GAP) / (this.CELL_SIZE + this.GAP)));
         } else {
             const availableW = width * 0.85;
             const availableH = height - 40;

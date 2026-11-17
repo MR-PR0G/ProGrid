@@ -213,9 +213,12 @@ function updateEditModeScale() {
         return;
     }
 
+    const editPanel = document.getElementById('edit-panel');
+    const isCollapsed = editPanel && editPanel.classList.contains('collapsed');
+
     const isMobile = window.innerWidth < 640;
     const topMargin = isMobile ? 50 : 56;
-    const bottomMargin = isMobile ? 220 : 236;
+    const bottomMargin = isCollapsed ? (isMobile ? 68 : 72) : 280;
     const availH = Math.max(180, window.innerHeight - (topMargin + bottomMargin));
     const availW = Math.max(260, window.innerWidth - (isMobile ? 20 : 36));
 
@@ -224,8 +227,8 @@ function updateEditModeScale() {
 
     const scaleX = availW / gridW;
     const scaleY = availH / gridH;
-    let targetScale = Math.min(scaleX, scaleY, 0.82);
-    targetScale = Math.max(0.40, Math.min(0.82, targetScale));
+    let targetScale = Math.min(scaleX, scaleY, isCollapsed ? 0.95 : 0.82);
+    targetScale = Math.max(0.40, Math.min(isCollapsed ? 0.95 : 0.82, targetScale));
 
     scaleWrapper.style.transform = `scale(${targetScale.toFixed(3)})`;
 }
@@ -668,8 +671,28 @@ function setupGlobalEvents() {
         });
     }
 
+    const collapseBtn = document.getElementById('panel-collapse-btn');
+    if (collapseBtn) {
+        collapseBtn.addEventListener('click', () => {
+            const editPanel = document.getElementById('edit-panel');
+            if (!editPanel) return;
+            const willCollapse = !editPanel.classList.contains('collapsed');
+            editPanel.classList.toggle('collapsed', willCollapse);
+            document.body.classList.toggle('shelf-collapsed', willCollapse);
+            collapseBtn.setAttribute('title', willCollapse ? 'Expand Shelf' : 'Collapse Shelf');
+            updateEditModeScale();
+        });
+    }
+
     document.querySelectorAll('.panel-tab').forEach(tab => {
         tab.addEventListener('click', (e) => {
+            const editPanel = document.getElementById('edit-panel');
+            if (editPanel && editPanel.classList.contains('collapsed')) {
+                editPanel.classList.remove('collapsed');
+                document.body.classList.remove('shelf-collapsed');
+                if (collapseBtn) collapseBtn.setAttribute('title', 'Collapse Shelf');
+                updateEditModeScale();
+            }
             document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.panel-content').forEach(c => c.classList.remove('active'));
             e.target.classList.add('active');
@@ -970,6 +993,11 @@ window.toggleEditMode = function(forceState = null) {
     document.body.classList.toggle('edit-mode', state.editMode);
     if (!state.editMode) {
         closeModal();
+        const editPanel = document.getElementById('edit-panel');
+        if (editPanel) editPanel.classList.remove('collapsed');
+        document.body.classList.remove('shelf-collapsed');
+        const collapseBtn = document.getElementById('panel-collapse-btn');
+        if (collapseBtn) collapseBtn.setAttribute('title', 'Collapse Shelf');
         grid.resolveAllFinalOverlaps(state.widgets);
     }
     renderGrid();
@@ -1800,3 +1828,10 @@ function setupQuickMenuListeners() {
 }
 
 window.addEventListener('DOMContentLoaded', init);
+
+// Global lock against mobile virtual keyboard viewport scrolling
+window.addEventListener('scroll', () => {
+    if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo(0, 0);
+    }
+}, { passive: false });

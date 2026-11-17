@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="ProGrid">
@@ -51,9 +51,16 @@
     </div>
 
     <div id="edit-panel">
-        <div class="panel-tabs">
-            <button class="panel-tab active" data-tab="widgets">Widgets</button>
-            <button class="panel-tab" data-tab="appearance">Appearance</button>
+        <div class="panel-header-row">
+            <div class="panel-tabs">
+                <button class="panel-tab active" data-tab="widgets">Widgets</button>
+                <button class="panel-tab" data-tab="appearance">Appearance</button>
+            </div>
+            <button id="panel-collapse-btn" class="panel-collapse-btn" title="Collapse Shelf" aria-label="Toggle Shelf">
+                <svg id="collapse-icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
         </div>
 
         <!-- Widgets Drawer Tab -->
