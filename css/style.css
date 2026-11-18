@@ -653,7 +653,26 @@ body.edit-mode #edit-panel {
 .folder-expanded-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--text-primary); width: 80px; text-align: center; touch-action: none; }
 .folder-expanded-label { font-size: 12px; margin-top: 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.shape-btn.active { border-color: #3b82f6 !important; background: rgba(59,130,246,0.15) !important; box-shadow: 0 0 12px rgba(59,130,246,0.4); }
+.search-shape-btn {
+    padding: 7px 4px;
+    background: var(--panel-border);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.search-shape-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+.search-shape-btn:active {
+    transform: scale(0.96);
+}
+.shape-btn.active, .search-shape-btn.active {
+    border-color: #3b82f6 !important;
+    background: rgba(59, 130, 246, 0.18) !important;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+}
 
 .color-swatch-container { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .color-swatch-btn { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: transform 0.2s; touch-action: none; }

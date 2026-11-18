@@ -20,6 +20,7 @@ let container, blurOverlay, ghost, deleteZone, folderOverlay, dynamicBgLayer;
 
 let initialWidgetsState = null;
 let currentShapeSelection = '20px';
+let currentSearchShapeSelection = 'pill';
 let currentIconBgSelection = 'transparent';
 let currentWidgetBgSelection = '#ffffff';
 let touchStartY = 0;
@@ -810,6 +811,13 @@ function setupGlobalEvents() {
         btn.addEventListener('click', () => {
             currentShapeSelection = btn.getAttribute('data-shape');
             document.querySelectorAll('.shape-btn').forEach(b => b.classList.toggle('active', b === btn));
+        });
+    });
+
+    document.querySelectorAll('.search-shape-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentSearchShapeSelection = btn.getAttribute('data-shape');
+            document.querySelectorAll('.search-shape-btn').forEach(b => b.classList.toggle('active', b === btn));
         });
     });
 
@@ -1756,6 +1764,10 @@ function openModal(w) {
         document.querySelectorAll('.id-search-only').forEach(el => el.style.display = 'flex');
         document.getElementById('edit-search-engine').value = w.engine || 'google';
         document.getElementById('edit-search-placeholder').value = w.placeholder || '';
+        document.getElementById('edit-search-suggestions').checked = w.showSuggestions !== false;
+
+        currentSearchShapeSelection = w.searchShape || 'pill';
+        document.querySelectorAll('.search-shape-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-shape') === currentSearchShapeSelection));
     }
     
     currentWidgetBgSelection = w.bg || '#ffffff';
@@ -1787,6 +1799,8 @@ function saveWidgetSettings() {
         } else if (w.type === 'search') {
             w.engine = document.getElementById('edit-search-engine').value;
             w.placeholder = document.getElementById('edit-search-placeholder').value;
+            w.searchShape = currentSearchShapeSelection || 'pill';
+            w.showSuggestions = document.getElementById('edit-search-suggestions').checked;
         }
         
         w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: grid.columns };
