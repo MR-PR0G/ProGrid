@@ -18,6 +18,9 @@ export default class SearchWidget extends BaseWidget {
         let engineName = 'Google';
         if (engine === 'bing') { actionUrl = 'https://bing.com/search'; engineName = 'Bing'; }
         if (engine === 'duckduckgo') { actionUrl = 'https://duckduckgo.com/'; engineName = 'DuckDuckGo'; }
+        if (engine === 'brave') { actionUrl = 'https://search.brave.com/search'; engineName = 'Brave'; }
+        if (engine === 'yandex') { actionUrl = 'https://yandex.com/search/'; engineName = 'Yandex'; }
+        if (engine === 'ecosia') { actionUrl = 'https://www.ecosia.org/search'; engineName = 'Ecosia'; }
 
         const placeholder = this.config.placeholder && this.config.placeholder !== 'Search...'
             ? this.config.placeholder

@@ -657,7 +657,10 @@ document.addEventListener('focusin', (e) => {
 });
 document.addEventListener('focusout', (e) => {
     if (e.target.matches('input, textarea, select')) {
-        setTimeout(() => { isInputActive = false; }, 350);
+        setTimeout(() => { 
+            isInputActive = false; 
+            window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        }, 150);
     }
 });
 
@@ -821,7 +824,12 @@ function setupGlobalEvents() {
         pwaInstallBtn.style.pointerEvents = 'none';
     }
 
+    const webBanner = document.getElementById('web-install-banner');
+    const webActionBtn = document.getElementById('web-install-action-btn');
+    const webDismissBtn = document.getElementById('web-install-dismiss-btn');
+
     const openInstallModal = () => {
+        if (webBanner) webBanner.style.display = 'none';
         if (!pwaModal) return;
 
         // If native prompt is available right now, trigger immediately!
@@ -833,6 +841,7 @@ function setupGlobalEvents() {
                         pwaInstallBtn.textContent = '✓ Installed';
                         pwaInstallBtn.style.opacity = '0.6';
                     }
+                    if (webBanner) webBanner.style.display = 'none';
                 }
                 window.deferredPWAInstallPrompt = null;
             }).catch(() => {});
@@ -889,10 +898,6 @@ function setupGlobalEvents() {
     };
 
     if (pwaInstallBtn) pwaInstallBtn.addEventListener('click', openInstallModal);
-    
-    const webBanner = document.getElementById('web-install-banner');
-    const webActionBtn = document.getElementById('web-install-action-btn');
-    const webDismissBtn = document.getElementById('web-install-dismiss-btn');
 
     if (webBanner && !isStandalone) {
         const dismissedAt = localStorage.getItem('progrid_install_banner_dismissed');

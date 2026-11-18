@@ -1,96 +1,88 @@
 <div align="center">
   <h1>🌟 ProGrid Workspace</h1>
   <p><b>Version 0.1.7 | Developed by MR Prog</b></p>
-  <p>A modern, modular, and fully customizable Liquid Glass workspace for your browser and mobile.</p>
+  <p>A high-performance, modular, and fully customizable Liquid Glass workspace & dashboard for web, mobile, and browser extensions.</p>
 
   <img src="https://img.shields.io/badge/Version-0.1.7-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Extension%20%7C%20PWA-success.svg" alt="Platform">
+  <img src="https://img.shields.io/badge/Performance-0ms%20Cached%20Start-emerald.svg" alt="0ms Start">
+  <img src="https://img.shields.io/badge/Offline-100%25%20First-purple.svg" alt="Offline First">
   <img src="https://img.shields.io/badge/Mobile-Optimized-brightgreen.svg" alt="Mobile Optimized">
 </div>
 
 <div align="center">
-  <img src="https://github.com/MR-PR0G/ProGrid/blob/main/Demos/ScreenShots.png" alt="ScreenShot" width="90%" style="">
+  <img src="https://github.com/MR-PR0G/ProGrid/blob/main/Demos/ScreenShots.png" alt="ScreenShot" width="90%">
 </div>
 
 ---
 
-## 🚀 What's New in v0.1.7
-- **🛡️ Fix Connection Security / Reset Error:**
-  - Resolved `ERR_CONNECTION_RESET` / "Secure Connection Failed" by eliminating `undefined` responses in the Service Worker's fetch handler.
-  - Bypassed cross-origin requests (e.g. Unsplash images, search engines) from Service Worker hijacking so they load natively without CORS or security errors.
-  - Implemented ultra-fast **Stale-While-Revalidate** strategy for local assets: cached assets render in **0ms**, and are updated smoothly in the background.
-  - Guaranteed offline and network fallback: navigation requests safely fall back to cached `index.html`.
-- **⚡ Preload & Performance Optimizations:**
-  - Added preconnect links for external CDNs and preloaded critical CSS & JavaScript bundles in `<head>` for instant paint.
-- **✨ Redesigned Modern Install Banner:**
-  - Replaced the awkward corner bubble with a native-style, glassmorphic bottom toast (`#web-install-banner`) featuring app icon, crisp typography, 1-click Install button, and a dismiss (`✕`) action that persists for 5 days.
-  - Hidden automatically in standalone PWA mode and edit mode.
+## ✨ Overview
 
-## ✨ Key Features in v0.1.5
-- **🔒 Strictly Fixed Viewport Grid (No Unwanted Row Expansion):**
-  - Completely resolved the grid expansion bug where dragging widgets downwards generated excess rows. The grid rows are strictly bounded by screen viewport metrics and remain 100% stable in both normal and edit modes.
-  - Implemented smart **Position Swap Fallback** (SpringBoard style): when widgets collide against grid boundaries, they gracefully swap positions instead of failing or pushing out of bounds.
-- **✨ Hover Clipping Fixed on Store Cards:**
-  - Removed clipping `translateY` offset on `.store-card:hover` in favor of a soft blue glow ring and internal container padding, preventing cards from being cut off at the top border.
-- **📱 Zero-Scroll Compact Appearance Tab:**
-  - Redesigned the Appearance drawer tab into a streamlined dock fitting comfortably within the 260px drawer without any vertical scrollbar:
-    - HD Wallpapers horizontal gallery with 1-click apply and offline storage.
-    - Compact controls dock with gradient presets, blur slider with real-time value label, and theme toggle.
-- **🔍 Responsive Search Toggle in Drawer:**
-  - Solved cramped search input on mobile: by default, wide subnav pills (`Installed` & `Online Hub`) are displayed with a sleek glass search lens button.
-  - Tapping the search icon smoothly expands a full-width search input with auto-focus and instant `✕` close action.
-- **🚀 60/120fps Buttery-Smooth Drag & Drop:**
-  - Eliminated forced layout reflows and cached scale/bounds at pointerdown.
-- **✨ Ergonomic Bottom Action Bar:**
-  - **Done** button and **Delete Zone** flank the top edge of the edit drawer and smoothly glide with shelf collapse.
-- **🧹 Clean Minimalist Guidance Typography:**
-  - Converted top hint pill to pure typography with subtle shadow and zero background box, harmonizing with the fluid wallpaper.
-- **📲 Floating Web Install Bubble:**
-  - Non-intrusive floating glass bubble (`#web-install-bubble`) shown only when visiting via browser. Completely hidden in standalone PWA mode.
-- **💾 100% Offline Wallpapers:**
-  - Selected gallery wallpapers are automatically downloaded and cached in device storage as offline base64 data, ensuring instant offline loading anytime.
-- **🛍️ Bespoke 142px Widget Store Cards:**
-  - Tailored card dimensions (135px width × 142px height) with 34px rounded glass icons, clean typography, and full-width actions filling the 260px drawer perfectly.
-- **🎯 3 Clean Core Modules on Default Home Screen:**
-  - Initial grid starts with only the 3 essential widgets: **Clock & Date**, **Search Bar**, and **Shortcut**.
-  - All other modules (Quick Notes, Checklist, Calculator, Daily Quote, Pomodoro Timer, Smart Folders) are neatly stored in the Widget Store / Online Hub for users to add on demand.
-- **🎨 Default Minimalist Graphite Gray Background:**
-  - Sophisticated neutral Space Gray / Graphite gradient (`--bg-preset-1`) as the default aesthetic background, perfectly complementing liquid glass translucency.
-- **📲 Fixed & Robust PWA "Add to Home Screen":**
-  - Fully compliant W3C Web App Manifest with proper standalone, maskable and standard icons, and `id` identity.
-  - Interactive multi-platform install guide modal tailored for iOS Safari, Android Chrome/Edge, and Desktop.
-- **🎯 Snug SVG Context Menu:** Long-pressing any widget opens an ultra-crisp SVG vector menu placed snugly (5px offset) directly over the widget or touch target.
-- **🖼️ 100% Full-Cover HD Wallpapers:** Full-screen coverage (`position: fixed; inset: 0; background-size: cover !important`) without tiling, skewing, or distortion.
-- **⚡ Hardware-Accelerated 60/120fps Fluidity:** GPU composition with `transform: translateZ(0)`, CSS `contain: layout style content`, and optimized touch-action handling for butter-smooth mobile performance.
-- **Fluid Grid Engine:** Intelligent top-to-bottom gravity grid with 4-column mobile adaptation and multi-column desktop responsiveness.
-- **Universal Install (PWA & New Tab):** 1-Click native app installation on Android, iOS, Windows, Mac, and Linux, plus Chrome/Edge/Brave extension support.
-- **Modular Widgets:** 
-  - ⏰ **Digital Clock & Calendar:** Real-time clock with 12/24h toggle and date display.
-  - 📝 **Quick Notes:** Auto-saving sticky notes with debounce storage.
-  - 🔗 **Shortcuts & Smart Folders:** Grouping, drag-to-merge, and drag-out capabilities.
-  - 🔍 **Search Bar:** Multi-engine instant web search.
-  - ✅ **Checklist / Tasks:** Interactive task tracking.
-- **📥 Backup & Restore:** 1-Click JSON export and import for seamless cross-device migration.
-- **🔒 Privacy First & 100% Offline:** Local caching with high-res local icons. Zero telemetry, zero external trackers.
+**ProGrid Workspace** is a next-generation new-tab dashboard and progressive web application (PWA) inspired by Apple Liquid Glass aesthetics and modern desktop ergonomics. Built from the ground up with zero external framework dependencies, it provides an ultra-fluid 60/120fps customizable workspace with instant offline persistence.
 
-## 🚀 Installation
+---
 
-### 1. Web App (PWA) - Mobile & Desktop
-Simply visit the live GitHub Pages link. Your browser will prompt you to **"Install App"** or **"Add to Home Screen"**. Accept it to install as a standalone native app!
+## 💎 Key Features & Architecture
 
-### 2. Browser Extension - Chrome, Edge & Brave
-Replace your boring New Tab page with ProGrid:
-1. Download this repository as a `.zip` file and extract it.
-2. Open your browser and go to `chrome://extensions/` (or `edge://extensions/`).
-3. Enable **Developer mode** in the top right corner.
-4. Click **Load unpacked** and select the extracted folder.
+### ⚡ 0ms Instant Startup & Resilient Offline Caching
+- **Stale-While-Revalidate Engine:** High-efficiency Service Worker delivers cached assets locally in **0ms**, performing silent background synchronization without network lag.
+- **Offline-First Security & Isolation:** Dedicated origin boundary protection for all app assets, guaranteeing safe navigation fallbacks and native cross-origin search execution.
+- **Preload Acceleration:** Strategic preconnect and asset preloading for immediate DOM paint.
 
-## 🛠️ Create Custom Widgets
+### 🧩 Physics-Driven Fluid Grid
+- **Strict Viewport Geometry:** Dimensioned dynamically against available viewport height with automatic aspect-ratio scaling.
+- **SpringBoard Collision Physics:** iOS-style magnetic drag, drop, and automatic position swapping when widgets encounter grid boundaries.
+- **Dynamic Scale Compensation:** Matrix scaling preserves pixel-perfect touch and drag coordinates across varying DPI and mobile displays.
 
-<details>
-<summary><b>Click here to view the developer guide</b></summary>
+### 🎨 Liquid Glass Design System
+- **Deep Glassmorphism:** Translucent multi-layered surfaces with dynamic backdrop blur (`28px`), tonal specular highlights, and chromatic borders.
+- **Minimalist Default Theme:** Subtle Space Gray / Graphite gradient paired with a curated 3-widget starter layout (Clock & Date, Search, and Shortcuts).
+- **HD Offline Wallpapers:** Horizontal zero-scroll wallpaper gallery with 1-click apply and automated local storage persistence.
 
-Every widget is an independent class. Create a new file in the `widgets/` folder (e.g., `mywidget.js`):
+### 📱 Mobile-First Ergonomics
+- **Retractable Bottom Shelf:** Expandable widget drawer and appearance dock tucked at the bottom edge for effortless single-hand thumb navigation.
+- **Responsive Search Toggle:** Smooth expandable search lens inside the store drawer that preserves screen real estate on mobile devices.
+- **Quick Vector Context Menu:** Long-press or right-click any widget for an instant SVG menu positioned snugly above the target.
+
+### 📲 Modern Native PWA Installation
+- **Dismissible Bottom Toast:** Elegant glassmorphic banner (`#web-install-banner`) offering single-tap installation on supported browsers, with persistent 5-day snooze memory.
+- **Cross-Platform Compatibility:** Full support for Android (Chrome/Edge), iOS (Safari Add-to-Home-Screen), and Desktop standalone windows.
+
+---
+
+## 📦 Core Widgets & Online Hub
+
+| Widget | Description | Capabilities |
+| :--- | :--- | :--- |
+| ⏰ **Clock & Date** | High-precision digital clock | 12h/24h formats, live calendar date, sleek typography |
+| 🔍 **Multi-Search** | Instant web search bar | Google, Bing, DuckDuckGo, Brave, Yandex & Ecosia |
+| 🔗 **Smart Shortcuts** | Fluid web bookmarks | Custom icons, automatic high-res favicons, rounded shape scale |
+| 📁 **Smart Folders** | Grouped shortcut collections | Drag-to-merge, modal expansion, category tagging |
+| 📝 **Quick Notes** | Glass notepad | Markdown support, auto-save with debounce |
+| ✅ **Checklist** | Minimalist task tracker | Add, toggle, delete tasks with local sync |
+| 🧮 **Calculator** | Glass numeric calculator | Clean arithmetic evaluation with haptic feedback |
+| ⏳ **Pomodoro Timer** | Focus session manager | Work / break cycles with progress ring |
+| 💬 **Daily Quote** | Inspirational thoughts | Daily curated offline quotes |
+
+---
+
+## 🚀 Installation & Usage
+
+### 1. Progressive Web App (PWA)
+Visit the live deployment at **[mr-pr0g.github.io/ProGrid](https://mr-pr0g.github.io/ProGrid/)** and click **Install** on the bottom banner or through your browser menu.
+
+### 2. Browser Extension (Chrome, Edge & Brave)
+Transform your New Tab into ProGrid:
+1. Clone or download this repository as a `.zip` archive and extract it.
+2. Navigate to `chrome://extensions/` or `edge://extensions/`.
+3. Enable **Developer mode** in the top-right toolbar.
+4. Click **Load unpacked** and select the project folder.
+
+---
+
+## 🛠️ Custom Widget Development
+
+ProGrid features a modular plugin architecture. To create a new widget, create a file inside `widgets/` (e.g. `widgets/mywidget.js`):
 
 ```javascript
 import { BaseWidget } from './base.js';
@@ -98,21 +90,35 @@ import { BaseWidget } from './base.js';
 export default class MyWidget extends BaseWidget {
     static getMetadata() {
         return {
-            type: 'mywidget', label: 'My Widget', icon: '🚀',
-            defaultW: 2, defaultH: 2, minW: 1, minH: 1, maxW: 4, maxH: 4,
-            defaultConfig: { text: 'Hello from MR Prog', isGlass: true, bg: '#ffffff' }
+            type: 'mywidget',
+            label: 'My Widget',
+            icon: '🚀',
+            defaultW: 2, defaultH: 2,
+            minW: 1, minH: 1,
+            maxW: 4, maxH: 4,
+            defaultConfig: { text: 'Hello ProGrid', isGlass: true, bg: '#ffffff' }
         };
     }
 
-    postRender(el) {
-        // Setup events or timers
+    render() {
+        return `<div class="my-widget">${this.config.text}</div>`;
     }
 
-    onDestroy(el) {
-        // Cleanup timers or listeners
+    postRender(element) {
+        // Event listeners, animations, or intervals
+    }
+
+    onDestroy(element) {
+        // Resource cleanup
     }
 }
 
 window.WidgetGlobals.register(MyWidget);
 ```
-Note: Add your widget filename to the `DYNAMIC_WIDGET_LIST` array inside `js/app.js` and `sw.js`.
+
+Add your widget filename to `DYNAMIC_WIDGET_LIST` in `js/app.js` and `urlsToCache` in `sw.js`.
+
+---
+
+## 📄 License & Credits
+Developed with ❤️ by **MR Prog**. Distributed under the MIT License.
