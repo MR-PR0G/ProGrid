@@ -13,6 +13,7 @@ async function loadSystemWidgets() {
 }
 
 let state = { editMode: false, blurValue: 27, presetBg: '1', theme: 'dark', customBg: null, widgets: [] };
+window.state = state;
 window.appState = state;
 
 const grid = new GridEngine();
@@ -96,10 +97,12 @@ function applyGlobalStyles() {
     const activeThumb = document.querySelector(`.bg-thumb[data-preset="${state.presetBg}"]`);
     if (activeThumb) activeThumb.style.borderColor = 'var(--text-primary)';
 
-    if (state.presetBg === 'custom' && state.customBg) {
-        if (dynamicBgLayer) {
+    if (state.presetBg === 'custom') {
+        const cachedWp = localStorage.getItem('progrid_offline_wallpaper');
+        const bgUrl = cachedWp || state.customBg;
+        if (dynamicBgLayer && bgUrl) {
             dynamicBgLayer.className = 'bg-layer';
-            dynamicBgLayer.style.backgroundImage = `url("${state.customBg}")`;
+            dynamicBgLayer.style.backgroundImage = `url("${bgUrl}")`;
             dynamicBgLayer.style.backgroundSize = 'cover';
             dynamicBgLayer.style.backgroundPosition = 'center center';
             dynamicBgLayer.style.backgroundRepeat = 'no-repeat';
@@ -217,9 +220,9 @@ function updateEditModeScale() {
     const isCollapsed = editPanel && editPanel.classList.contains('collapsed');
 
     const isMobile = window.innerWidth < 640;
-    const topMargin = isMobile ? 50 : 56;
-    const bottomMargin = isCollapsed ? (isMobile ? 68 : 72) : 280;
-    const availH = Math.max(180, window.innerHeight - (topMargin + bottomMargin));
+    const topMargin = isMobile ? 44 : 50;
+    const bottomMargin = isCollapsed ? 76 : (isMobile ? 295 : 290);
+    const availH = Math.max(160, window.innerHeight - (topMargin + bottomMargin));
     const availW = Math.max(260, window.innerWidth - (isMobile ? 20 : 36));
 
     const gridW = container.offsetWidth || 1;
@@ -227,8 +230,10 @@ function updateEditModeScale() {
 
     const scaleX = availW / gridW;
     const scaleY = availH / gridH;
-    let targetScale = Math.min(scaleX, scaleY, isCollapsed ? 0.95 : 0.82);
-    targetScale = Math.max(0.40, Math.min(isCollapsed ? 0.95 : 0.82, targetScale));
+    // Scale slightly more compact so user has clear breathing space and full visibility above drawer
+    const maxAllowedScale = isCollapsed ? 0.95 : 0.76;
+    let targetScale = Math.min(scaleX, scaleY, maxAllowedScale);
+    targetScale = Math.max(0.35, Math.min(maxAllowedScale, targetScale));
 
     scaleWrapper.style.transform = `scale(${targetScale.toFixed(3)})`;
 }
@@ -257,7 +262,7 @@ function updateGhost(pos) {
 function checkCollisionWithDeleteZone(clientX, clientY) {
     if (!deleteZone) return false;
     const dzRect = deleteZone.getBoundingClientRect();
-    const fuzz = 15;
+    const fuzz = 22;
     return (
         clientX >= (dzRect.left - fuzz) &&
         clientX <= (dzRect.right + fuzz) &&
@@ -274,6 +279,8 @@ function attachInteractionEngine(el, w, instance) {
     let isResizing = false;
     let widgetLongPressTimer = null;
     let isPointerMoved = false;
+    let cachedContainerBounds = null;
+    let cachedScale = 1;
 
     const meta = window.WidgetGlobals.getMetadata(w.type) || { minW: 1, minH: 1, maxW: 4, maxH: 4 };
     if (w.type === 'search') {
@@ -320,7 +327,9 @@ function attachInteractionEngine(el, w, instance) {
         el.setPointerCapture(e.pointerId);
         initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
 
-        const scale = getWrapperScale();
+        grid.updateMetrics(state.widgets);
+        cachedScale = getWrapperScale() || 1;
+        cachedContainerBounds = container.getBoundingClientRect();
 
         if (e.target.classList.contains('resize-handle')) {
             isResizing = true;
@@ -335,8 +344,8 @@ function attachInteractionEngine(el, w, instance) {
             if (ghost) ghost.classList.add('active');
             
             const rect = el.getBoundingClientRect();
-            dragOffsetX = (e.clientX - rect.left) / scale;
-            dragOffsetY = (e.clientY - rect.top) / scale;
+            dragOffsetX = (e.clientX - rect.left) / cachedScale;
+            dragOffsetY = (e.clientY - rect.top) / cachedScale;
             
             updateGhost(w);
         }
@@ -359,12 +368,11 @@ function attachInteractionEngine(el, w, instance) {
 
         requestAnimationFrame(() => {
             rAFActive = false;
-            grid.updateMetrics();
+            const scale = cachedScale || 1;
+            const containerBounds = cachedContainerBounds || container.getBoundingClientRect();
+
             maxW = w.type === 'search' ? grid.columns : Math.min(meta.maxW || 4, grid.columns);
             maxH = Math.min(meta.maxH || 4, grid.rowsCount);
-
-            const containerBounds = container.getBoundingClientRect();
-            const scale = getWrapperScale();
 
             if (isDragging) {
                 const targetLeft = ((e.clientX - containerBounds.left) / scale) - dragOffsetX;
@@ -877,6 +885,17 @@ function setupGlobalEvents() {
     };
 
     if (pwaInstallBtn) pwaInstallBtn.addEventListener('click', openInstallModal);
+    
+    const webBubble = document.getElementById('web-install-bubble');
+    if (webBubble) {
+        if (!isStandalone) {
+            webBubble.style.display = 'flex';
+            webBubble.addEventListener('click', openInstallModal);
+        } else {
+            webBubble.style.display = 'none';
+        }
+    }
+
     if (pwaCloseBtn) pwaCloseBtn.addEventListener('click', closeInstallModal);
     if (pwaModal) {
         pwaModal.addEventListener('click', (e) => {
@@ -895,6 +914,7 @@ function setupGlobalEvents() {
                         pwaInstallBtn.textContent = '✓ Installed';
                         pwaInstallBtn.style.opacity = '0.6';
                     }
+                    if (webBubble) webBubble.style.display = 'none';
                 }
                 window.deferredPWAInstallPrompt = null;
             } else {
@@ -1233,6 +1253,30 @@ function setupWidgetDrawer() {
     renderInstalledDrawerList();
 }
 
+async function downloadAndCacheWallpaper(url) {
+    try {
+        const response = await fetch(url, { mode: 'cors' });
+        const blob = await response.blob();
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64 = reader.result;
+                try {
+                    localStorage.setItem('progrid_offline_wallpaper', base64);
+                } catch (e) {
+                    console.warn('LocalStorage wallpaper save overflow:', e);
+                }
+                resolve(base64);
+            };
+            reader.onerror = () => resolve(url);
+            reader.readAsDataURL(blob);
+        });
+    } catch (err) {
+        console.warn('Wallpaper offline caching failed:', err);
+        return url;
+    }
+}
+
 function setupWallpaperGallery() {
     const galleryContainer = document.getElementById('wallpaper-gallery-container');
     const resetBgBtn = document.getElementById('reset-bg-btn');
@@ -1240,7 +1284,7 @@ function setupWallpaperGallery() {
 
     let html = '';
     WALLPAPER_COLLECTION.forEach(wp => {
-        const isCurrent = state.presetBg === 'custom' && state.customBg === wp.full;
+        const isCurrent = state.presetBg === 'custom' && (state.customBg === wp.full || localStorage.getItem('progrid_offline_wallpaper'));
         html += `
             <div class="wallpaper-thumb-card ${isCurrent ? 'active' : ''}" data-url="${wp.full}" data-id="${wp.id}" title="${wp.name}">
                 <img src="${wp.thumb}" alt="${wp.name}" loading="lazy" />
@@ -1261,12 +1305,20 @@ function setupWallpaperGallery() {
             applyGlobalStyles();
             StorageEngine.save(state);
             if (navigator.vibrate) navigator.vibrate(25);
+
+            downloadAndCacheWallpaper(url).then(cached => {
+                if (cached && cached.startsWith('data:')) {
+                    state.customBg = cached;
+                    StorageEngine.save(state);
+                }
+            });
         });
     });
 
     if (resetBgBtn) {
         resetBgBtn.addEventListener('click', () => {
             galleryContainer.querySelectorAll('.wallpaper-thumb-card').forEach(c => c.classList.remove('active'));
+            localStorage.removeItem('progrid_offline_wallpaper');
             state.presetBg = '1';
             state.customBg = null;
             applyGlobalStyles();
@@ -1829,8 +1881,9 @@ function setupQuickMenuListeners() {
 
 window.addEventListener('DOMContentLoaded', init);
 
-// Global lock against mobile virtual keyboard viewport scrolling
+// Global lock against mobile virtual keyboard viewport scrolling (guarded during drag)
 window.addEventListener('scroll', () => {
+    if (document.querySelector('.widget-wrapper.dragging')) return;
     if (window.scrollY !== 0 || window.scrollX !== 0) {
         window.scrollTo(0, 0);
     }

@@ -8,11 +8,18 @@ export class GridEngine {
         this.rows = 4;
     }
 
-    updateMetrics() {
+    updateMetrics(widgets = null) {
         const width = window.innerWidth;
         const height = window.innerHeight;
 
         const isMobile = width < 640;
+
+        let contentMaxY = 4;
+        if (widgets && Array.isArray(widgets) && widgets.length) {
+            contentMaxY = Math.max(...widgets.map(w => (w.y || 0) + (w.h || 1)));
+        } else if (typeof window !== 'undefined' && window.state && window.state.widgets && window.state.widgets.length) {
+            contentMaxY = Math.max(...window.state.widgets.map(w => (w.y || 0) + (w.h || 1)));
+        }
 
         if (isMobile) {
             // در گوشی‌ها (حتی گوشی‌های کوچک مثل iPhone SE) چیدمان همیشه ۴ ستونه و اندازه سلول‌ها کاملاً ثابت و بهینه است
@@ -22,8 +29,9 @@ export class GridEngine {
             // محاسبه اندازه سلول دقیقاً بر اساس عرض صفحه بدون کوچک شدن بی‌مورد ارتفاعی
             const calculatedCell = Math.floor((availableW - (3 * this.GAP)) / 4);
             this.CELL_SIZE = Math.max(72, Math.min(84, calculatedCell));
-            const availableH = Math.max(300, height - (height < 700 ? 80 : 100));
-            this.rows = Math.max(4, Math.floor((availableH + this.GAP) / (this.CELL_SIZE + this.GAP)));
+            const screenRows = Math.max(5, Math.floor((height - 80) / (this.CELL_SIZE + this.GAP)));
+            // ایجاد ردیف‌های بافر کافی تا جابجایی و فشردن ویجت‌ها به سمت پایین هرگز قفل نشود
+            this.rows = Math.max(screenRows, contentMaxY + 3);
         } else {
             const availableW = width * 0.85;
             const availableH = height - 40;
@@ -35,7 +43,8 @@ export class GridEngine {
             if (calculatedCols % 2 !== 0) calculatedCols--;
             
             this.cols = Math.max(4, calculatedCols);
-            this.rows = Math.max(4, Math.floor((availableH + baseGap) / (baseCell + baseGap)));
+            const screenRows = Math.max(4, Math.floor((availableH + baseGap) / (baseCell + baseGap)));
+            this.rows = Math.max(screenRows, contentMaxY + 3);
 
             const targetGridW = this.cols * baseCell + (this.cols - 1) * baseGap;
             const targetGridH = this.rows * baseCell + (this.rows - 1) * baseGap;

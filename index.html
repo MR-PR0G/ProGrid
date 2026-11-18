@@ -45,10 +45,17 @@
     </div>
 
     <div id="delete-zone">🗑️</div>
-    <button id="done-btn">Done</button>
-    <div id="edit-mode-hint" class="edit-hint-pill">
-        <span>✨ Drag to organize • Resize from corner • Tap widget for options</span>
-    </div>
+    <button id="done-btn">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>Done</span>
+    </button>
+    <div id="edit-mode-hint" class="edit-hint-pill">✨ Drag to organize • Resize from corner • Tap widget for options</div>
+    
+    <!-- Floating Web Install Bubble (Shown only in browser, hidden in standalone PWA) -->
+    <button id="web-install-bubble" class="web-install-bubble" title="Install ProGrid" aria-label="Install ProGrid App">
+        <span>📲</span>
+        <span>Install App</span>
+    </button>
 
     <div id="edit-panel">
         <div class="panel-header-row">
@@ -131,12 +138,7 @@
                 </div>
             </div>
 
-            <div style="display: flex; gap: 8px; width: 100%; border-top: 1px solid var(--panel-border); padding-top: 10px;">
-                <button id="pwa-install-btn" style="flex: 1; padding: 8px; background: #3b82f6; border: none; border-radius: 8px; color: white; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">📲 Install App</button>
-                <button id="export-cfg-btn" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-primary); font-size: 11px; font-weight: 500; cursor: pointer;">📥 Backup</button>
-                <button id="import-cfg-btn" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text-primary); font-size: 11px; font-weight: 500; cursor: pointer;">📤 Restore</button>
-                <input type="file" id="import-cfg-input" accept=".json" style="display: none;">
-            </div>
+            <input type="file" id="import-cfg-input" accept=".json" style="display: none;">
         </div>
     </div>
 

@@ -1,9 +1,9 @@
 <div align="center">
   <h1>🌟 ProGrid Workspace</h1>
-  <p><b>Version 0.1.3 | Developed by MR Prog</b></p>
+  <p><b>Version 0.1.4 | Developed by MR Prog</b></p>
   <p>A modern, modular, and fully customizable Liquid Glass workspace for your browser and mobile.</p>
 
-  <img src="https://img.shields.io/badge/Version-0.1.3-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.4-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Extension%20%7C%20PWA-success.svg" alt="Platform">
   <img src="https://img.shields.io/badge/Mobile-Optimized-brightgreen.svg" alt="Mobile Optimized">
 </div>
@@ -14,19 +14,26 @@
 
 ---
 
-## ✨ Key Features in v0.1.3
-- **📱 Standalone PWA Top Notch & Cut-Off Fixed:**
-  - Resolved mobile standalone PWA issue where top widgets (Clock & Date, Search) were clipped behind the status bar/notch.
-  - Upgraded `#app-container` with safe-area padding (`padding-top: max(22px, calc(env(safe-area-inset-top, 0px) + 12px))`) and safe flex start alignment with `margin: auto 0` that never forces negative top boundaries.
-  - Dynamically bounded mobile rows in `js/grid.js` ensuring the grid height always fits comfortably within the viewport.
-- **🔒 Keyboard Viewport Drift & Jump Suppressed:**
-  - Integrated `interactive-widget=overlays-content` in viewport metadata.
-  - Locked html/body position with zero-scroll traps and 16px input font size preventing mobile browsers (iOS Safari & Android Chrome) from erratically scrolling or zooming when the search keyboard appears.
-- **🔍 Redesigned Modern Search Widget:**
-  - Upgraded search widget with a sleek 46px pill container (`border-radius: 23px`), crisp leading lens SVG icon, subtle glowing focus ring, and clean circular submit action.
-- **📐 Uniform & Collapsible Bottom Edit Shelf:**
-  - Equal, consistent 260px height across both **Widgets** and **Appearance** tabs eliminating drawer size jumping.
-  - Added 1-click shelf collapse/expand toggle button (`#panel-collapse-btn`) minimizing the drawer down to a compact 52px strip so users can inspect the full grid without leaving Edit Mode, with real-time responsive canvas zoom scaling.
+## ✨ Key Features in v0.1.4
+- **🚀 60/120fps Buttery-Smooth Drag & Drop (Zero Freezing/Lockups):**
+  - Resolved widget drag lockups by providing dynamic vertical buffer rows (`Math.max(screenRows, contentMaxY + 3)`), ensuring `omniMagnetPush` always has ample headroom to slide widgets downward smoothly.
+  - Eliminated forced layout reflows by caching container bounds and scale at `pointerdown` instead of re-measuring `getBoundingClientRect()` on every single animation frame.
+  - Guarded scroll lock against active dragging gestures.
+- **📐 Elevated Edit Mode Grid Positioning & Proportional Zoom:**
+  - Shifted grid container upwards in Edit Mode with `transform-origin: center top` and elevated top alignment, ensuring the entire grid remains crystal-clear and fully visible above the bottom shelf.
+  - Calibrated zoom scale (down to ~0.76) providing comfortable vertical clearance.
+- **✨ Ergonomic Bottom Action Bar (Done & Delete Zone):**
+  - Moved the **Done** button (`#done-btn`) down to sit right above the edit shelf on the right side.
+  - Moved the **Delete Zone** (`#delete-zone`) down as a sleek 38px circular trash icon flanking the left side above the shelf.
+  - Both controls dynamically glide up and down in sync with shelf collapse and expansion.
+- **🧹 Clean Minimalist Guidance Typography:**
+  - Converted top hint pill to pure typography with subtle shadow and zero background box, harmonizing with the fluid wallpaper.
+- **📲 Floating Web Install Bubble:**
+  - Non-intrusive floating glass bubble (`#web-install-bubble`) shown only when visiting via browser. Completely hidden in standalone PWA mode.
+- **💾 100% Offline Wallpapers:**
+  - Selected gallery wallpapers are automatically downloaded and cached in device storage as offline base64 data, ensuring instant offline loading anytime.
+- **🛍️ Bespoke 142px Widget Store Cards:**
+  - Tailored card dimensions (135px width × 142px height) with 34px rounded glass icons, clean typography, and full-width actions filling the 260px drawer perfectly.
 - **🎯 3 Clean Core Modules on Default Home Screen:**
   - Initial grid starts with only the 3 essential widgets: **Clock & Date**, **Search Bar**, and **Shortcut**.
   - All other modules (Quick Notes, Checklist, Calculator, Daily Quote, Pomodoro Timer, Smart Folders) are neatly stored in the Widget Store / Online Hub for users to add on demand.
