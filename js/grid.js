@@ -8,30 +8,22 @@ export class GridEngine {
         this.rows = 4;
     }
 
-    updateMetrics(widgets = null) {
+    updateMetrics() {
         const width = window.innerWidth;
         const height = window.innerHeight;
 
         const isMobile = width < 640;
 
-        let contentMaxY = 4;
-        if (widgets && Array.isArray(widgets) && widgets.length) {
-            contentMaxY = Math.max(...widgets.map(w => (w.y || 0) + (w.h || 1)));
-        } else if (typeof window !== 'undefined' && window.state && window.state.widgets && window.state.widgets.length) {
-            contentMaxY = Math.max(...window.state.widgets.map(w => (w.y || 0) + (w.h || 1)));
-        }
-
         if (isMobile) {
-            // در گوشی‌ها (حتی گوشی‌های کوچک مثل iPhone SE) چیدمان همیشه ۴ ستونه و اندازه سلول‌ها کاملاً ثابت و بهینه است
+            // در گوشی‌ها چیدمان همیشه ۴ ستونه و ابعاد گرید کاملاً ثابت بر اساس صفحه است و هرگز داینامیک اضافه نمی‌شود
             this.cols = 4;
             this.GAP = 12;
             const availableW = Math.max(280, width - 24);
-            // محاسبه اندازه سلول دقیقاً بر اساس عرض صفحه بدون کوچک شدن بی‌مورد ارتفاعی
             const calculatedCell = Math.floor((availableW - (3 * this.GAP)) / 4);
             this.CELL_SIZE = Math.max(72, Math.min(84, calculatedCell));
-            const screenRows = Math.max(5, Math.floor((height - 80) / (this.CELL_SIZE + this.GAP)));
-            // ایجاد ردیف‌های بافر کافی تا جابجایی و فشردن ویجت‌ها به سمت پایین هرگز قفل نشود
-            this.rows = Math.max(screenRows, contentMaxY + 3);
+            const availableH = Math.max(300, height - (height < 700 ? 70 : 90));
+            // تعداد ردیف‌ها کاملاً ثابت بوده و هرگز به سمت پایین گسترش پیدا نمی‌کند
+            this.rows = Math.max(5, Math.floor((availableH + this.GAP) / (this.CELL_SIZE + this.GAP)));
         } else {
             const availableW = width * 0.85;
             const availableH = height - 40;
@@ -43,11 +35,19 @@ export class GridEngine {
             if (calculatedCols % 2 !== 0) calculatedCols--;
             
             this.cols = Math.max(4, calculatedCols);
-            const screenRows = Math.max(4, Math.floor((availableH + baseGap) / (baseCell + baseGap)));
-            this.rows = Math.max(screenRows, contentMaxY + 3);
+            this.rows = Math.max(4, Math.floor((availableH + baseGap) / (baseCell + baseGap)));
 
             const targetGridW = this.cols * baseCell + (this.cols - 1) * baseGap;
             const targetGridH = this.rows * baseCell + (this.rows - 1) * baseGap;
+
+            let scale = 1;
+            if (targetGridW > availableW || targetGridH > availableH) {
+                scale = Math.min(availableW / targetGridW, availableH / targetGridH);
+            }
+
+            this.CELL_SIZE = Math.round(baseCell * scale);
+            this.GAP = Math.round(baseGap * scale);
+        }
 
             let scale = 1;
             if (targetGridW > availableW || targetGridH > availableH) {
@@ -187,8 +187,10 @@ export class GridEngine {
             iterations++;
             let current = queue.shift();
             let directions = [
-                { x: current.x, y: current.y + 1 }, { x: current.x + 1, y: current.y },
-                { x: current.x - 1, y: current.y }, { x: current.x, y: current.y - 1 }
+                { x: current.x, y: current.y + 1 },
+                { x: current.x, y: current.y - 1 },
+                { x: current.x + 1, y: current.y },
+                { x: current.x - 1, y: current.y }
             ];
 
             let validPosFound = false;
@@ -218,6 +220,29 @@ export class GridEngine {
                 });
             } else {
                 failed = true; break;
+            }
+        }
+
+        // اگر هل‌دادن آبشاری به انتهای ردیف‌های ثابت گرید رسید، بررسی جابجایی مستقیم (Position Swap):
+        if (failed && itemsToProcess.length > 0) {
+            const directlyOverlapped = itemsToProcess.filter(it => this.checkOverlap(it, activeWidget));
+            if (directlyOverlapped.length === 1) {
+                const single = directlyOverlapped[0];
+                const priorX = activeWidget.idealLayout ? activeWidget.idealLayout.x : activeWidget.x;
+                const priorY = activeWidget.idealLayout ? activeWidget.idealLayout.y : activeWidget.y;
+                const swapPos = { x: priorX, y: priorY, w: single.w, h: single.h };
+                if (swapPos.x >= 0 && swapPos.x + swapPos.w <= this.cols && swapPos.y >= 0 && swapPos.y + swapPos.h <= this.rows) {
+                    const hasConflict = itemsToProcess.some(other => other.id !== single.id && this.checkOverlap(swapPos, other));
+                    if (!hasConflict && !this.checkOverlap(swapPos, activeWidget)) {
+                        snapshots.forEach(snap => {
+                            let realItem = itemsToProcess.find(it => it.id === snap.id);
+                            if (realItem) { realItem.x = snap.x; realItem.y = snap.y; }
+                        });
+                        single.x = swapPos.x;
+                        single.y = swapPos.y;
+                        failed = false;
+                    }
+                }
             }
         }
 

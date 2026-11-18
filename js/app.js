@@ -88,6 +88,8 @@ function applyGlobalStyles() {
     }
     const slider = document.getElementById('blur-slider');
     if (slider) slider.value = state.blurValue;
+    const blurValLabel = document.getElementById('blur-val-label');
+    if (blurValLabel) blurValLabel.textContent = `${state.blurValue}px`;
     
     document.body.classList.toggle('light-mode', state.theme === 'light');
     const themeToggle = document.getElementById('theme-toggle');
@@ -327,7 +329,7 @@ function attachInteractionEngine(el, w, instance) {
         el.setPointerCapture(e.pointerId);
         initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
 
-        grid.updateMetrics(state.widgets);
+        grid.updateMetrics();
         cachedScale = getWrapperScale() || 1;
         cachedContainerBounds = container.getBoundingClientRect();
 
@@ -746,9 +748,11 @@ function setupGlobalEvents() {
     }
 
     const slider = document.getElementById('blur-slider');
+    const blurValLabel = document.getElementById('blur-val-label');
     if (slider) {
         slider.addEventListener('input', (e) => {
-            state.blurValue = e.target.value;
+            state.blurValue = parseInt(e.target.value);
+            if (blurValLabel) blurValLabel.textContent = `${state.blurValue}px`;
             applyGlobalStyles();
             StorageEngine.save(state);
         });
@@ -1201,10 +1205,44 @@ async function renderMarketplaceDrawerList() {
 function setupWidgetDrawer() {
     const searchInput = document.getElementById('widget-store-search');
     const searchClear = document.getElementById('widget-store-search-clear');
+    const searchToggleBtn = document.getElementById('store-search-toggle-btn');
+    const searchCloseBtn = document.getElementById('store-search-close-btn');
+    const searchField = document.getElementById('store-search-field');
+    const subnavPills = document.getElementById('store-subnav-pills');
     const installedList = document.getElementById('store-installed-list');
     const marketList = document.getElementById('store-marketplace-list');
     const pillInstalled = document.getElementById('subtab-installed-btn');
     const pillMarket = document.getElementById('subtab-marketplace-btn');
+
+    if (searchToggleBtn && searchField && subnavPills) {
+        searchToggleBtn.addEventListener('click', () => {
+            subnavPills.style.display = 'none';
+            searchToggleBtn.style.display = 'none';
+            searchField.style.display = 'flex';
+            if (searchInput) searchInput.focus();
+        });
+    }
+
+    const closeSearch = () => {
+        if (!searchField || !subnavPills) return;
+        searchField.style.display = 'none';
+        subnavPills.style.display = 'flex';
+        if (searchToggleBtn) searchToggleBtn.style.display = 'flex';
+        if (searchInput) {
+            searchInput.value = '';
+            currentDrawerSearch = '';
+            if (searchClear) searchClear.style.display = 'none';
+            if (activeDrawerSubtab === 'installed') {
+                renderInstalledDrawerList();
+            } else {
+                renderMarketplaceDrawerList();
+            }
+        }
+    };
+
+    if (searchCloseBtn) {
+        searchCloseBtn.addEventListener('click', closeSearch);
+    }
 
     if (pillInstalled && pillMarket) {
         pillInstalled.addEventListener('click', () => {

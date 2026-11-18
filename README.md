@@ -1,9 +1,9 @@
 <div align="center">
   <h1>🌟 ProGrid Workspace</h1>
-  <p><b>Version 0.1.4 | Developed by MR Prog</b></p>
+  <p><b>Version 0.1.5 | Developed by MR Prog</b></p>
   <p>A modern, modular, and fully customizable Liquid Glass workspace for your browser and mobile.</p>
 
-  <img src="https://img.shields.io/badge/Version-0.1.4-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.5-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Extension%20%7C%20PWA-success.svg" alt="Platform">
   <img src="https://img.shields.io/badge/Mobile-Optimized-brightgreen.svg" alt="Mobile Optimized">
 </div>
@@ -14,18 +14,23 @@
 
 ---
 
-## ✨ Key Features in v0.1.4
-- **🚀 60/120fps Buttery-Smooth Drag & Drop (Zero Freezing/Lockups):**
-  - Resolved widget drag lockups by providing dynamic vertical buffer rows (`Math.max(screenRows, contentMaxY + 3)`), ensuring `omniMagnetPush` always has ample headroom to slide widgets downward smoothly.
-  - Eliminated forced layout reflows by caching container bounds and scale at `pointerdown` instead of re-measuring `getBoundingClientRect()` on every single animation frame.
-  - Guarded scroll lock against active dragging gestures.
-- **📐 Elevated Edit Mode Grid Positioning & Proportional Zoom:**
-  - Shifted grid container upwards in Edit Mode with `transform-origin: center top` and elevated top alignment, ensuring the entire grid remains crystal-clear and fully visible above the bottom shelf.
-  - Calibrated zoom scale (down to ~0.76) providing comfortable vertical clearance.
-- **✨ Ergonomic Bottom Action Bar (Done & Delete Zone):**
-  - Moved the **Done** button (`#done-btn`) down to sit right above the edit shelf on the right side.
-  - Moved the **Delete Zone** (`#delete-zone`) down as a sleek 38px circular trash icon flanking the left side above the shelf.
-  - Both controls dynamically glide up and down in sync with shelf collapse and expansion.
+## ✨ Key Features in v0.1.5
+- **🔒 Strictly Fixed Viewport Grid (No Unwanted Row Expansion):**
+  - Completely resolved the grid expansion bug where dragging widgets downwards generated excess rows. The grid rows are strictly bounded by screen viewport metrics and remain 100% stable in both normal and edit modes.
+  - Implemented smart **Position Swap Fallback** (SpringBoard style): when widgets collide against grid boundaries, they gracefully swap positions instead of failing or pushing out of bounds.
+- **✨ Hover Clipping Fixed on Store Cards:**
+  - Removed clipping `translateY` offset on `.store-card:hover` in favor of a soft blue glow ring and internal container padding, preventing cards from being cut off at the top border.
+- **📱 Zero-Scroll Compact Appearance Tab:**
+  - Redesigned the Appearance drawer tab into a streamlined dock fitting comfortably within the 260px drawer without any vertical scrollbar:
+    - HD Wallpapers horizontal gallery with 1-click apply and offline storage.
+    - Compact controls dock with gradient presets, blur slider with real-time value label, and theme toggle.
+- **🔍 Responsive Search Toggle in Drawer:**
+  - Solved cramped search input on mobile: by default, wide subnav pills (`Installed` & `Online Hub`) are displayed with a sleek glass search lens button.
+  - Tapping the search icon smoothly expands a full-width search input with auto-focus and instant `✕` close action.
+- **🚀 60/120fps Buttery-Smooth Drag & Drop:**
+  - Eliminated forced layout reflows and cached scale/bounds at pointerdown.
+- **✨ Ergonomic Bottom Action Bar:**
+  - **Done** button and **Delete Zone** flank the top edge of the edit drawer and smoothly glide with shelf collapse.
 - **🧹 Clean Minimalist Guidance Typography:**
   - Converted top hint pill to pure typography with subtle shadow and zero background box, harmonizing with the fluid wallpaper.
 - **📲 Floating Web Install Bubble:**
