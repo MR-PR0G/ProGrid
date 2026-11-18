@@ -30,7 +30,7 @@ export class WidgetHubEngine {
 
     async fetchRegistry() {
         try {
-            const res = await fetch('./widgets/registry.json?t=' + Date.now());
+            const res = await fetch('./widgets/registry.json');
             if (res.ok) {
                 this.registryCache = await res.json();
                 return this.registryCache;

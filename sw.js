@@ -1,4 +1,4 @@
-const CACHE_NAME = 'progrid-cache-v0.1.7';
+const CACHE_NAME = 'progrid-cache-v0.1.8';
 const urlsToCache = [
   './',
   './index.html',
@@ -26,17 +26,11 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', event => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(async cache => {
-      for (const url of urlsToCache) {
-        try {
-          await cache.add(url);
-        } catch (err) {
-          console.warn('PWA Cache item failed:', url, err);
-        }
-      }
-    })
+      // Safely cache core assets
+      await Promise.allSettled(urlsToCache.map(url => cache.add(url)));
+    }).then(() => self.skipWaiting())
   );
 });
 
@@ -52,35 +46,53 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
-  // Allow cross-origin requests (e.g. Unsplash images, search engines) to bypass Service Worker without interception
+  // Allow cross-origin requests (e.g. Unsplash, search engines) to run natively
   if (url.origin !== self.location.origin) return;
 
+  // 1. Navigation Requests: Cache-First for instant 0ms launch & resilience against network drops
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      caches.match('./index.html').then(cachedHtml => {
+        // Background revalidation
+        const networkUpdate = fetch(event.request).then(networkResponse => {
+          if (networkResponse && networkResponse.ok) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put('./index.html', clone));
+          }
+          return networkResponse;
+        }).catch(() => null);
+
+        if (cachedHtml) {
+          // Serve from cache instantly
+          return cachedHtml;
+        }
+
+        // If not yet in cache, await network
+        return networkUpdate.then(async netResp => {
+          if (netResp) return netResp;
+          return (await caches.match('./index.html')) || (await caches.match('./')) || new Response(
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>ProGrid</title></head><body style="background:#1e2126;color:#fff;font-family:sans-serif;text-align:center;padding:50px;"><h2>ProGrid Workspace</h2><p>Please check your connection and refresh.</p></body></html>',
+            { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
+        });
+      })
+    );
+    return;
+  }
+
+  // 2. Local Assets (JS, CSS, JSON, Images): Stale-While-Revalidate
   event.respondWith(
     caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
-      // Stale-While-Revalidate / Cache-First strategy for local assets:
       const fetchPromise = fetch(event.request).then(networkResponse => {
-        if (networkResponse && networkResponse.status === 200) {
+        if (networkResponse && networkResponse.ok) {
           const clone = networkResponse.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return networkResponse;
-      }).catch(async () => {
-        // If network failed and navigating, return cached home
-        if (event.request.mode === 'navigate') {
-          const fallback = await caches.match('./index.html') || await caches.match('./');
-          if (fallback) return fallback;
-        }
-        // If already cached, return that
-        if (cachedResponse) return cachedResponse;
-        // Never return undefined (which causes browser connection reset / SSL error page)
-        return new Response('Network offline. Please check connection.', {
-          status: 503,
-          statusText: 'Service Unavailable',
-          headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-        });
+      }).catch(() => {
+        return cachedResponse || new Response('', { status: 404, statusText: 'Not Found' });
       });
 
-      // If cached response exists, return instantly (0ms load time), while updating cache in background
       return cachedResponse || fetchPromise;
     })
   );

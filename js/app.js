@@ -3,14 +3,13 @@ import { StorageEngine } from './storage.js';
 import { widgetHub } from './hub.js';
 import { WALLPAPER_COLLECTION } from './wallpapers.js';
 
-const DYNAMIC_WIDGET_LIST = ['shortcut', 'search', 'checklist', 'folder', 'clock', 'notes'];
-
-async function loadSystemWidgets() {
-    for (const name of DYNAMIC_WIDGET_LIST) {
-        try { await import(`../widgets/${name}.js`); } catch (e) { console.error(e); }
-    }
-    try { await widgetHub.bootInstalledWidgets(); } catch (e) { console.error(e); }
-}
+// Synchronously import core widgets so they register in 0ms with zero network delay
+import '../widgets/shortcut.js';
+import '../widgets/search.js';
+import '../widgets/checklist.js';
+import '../widgets/folder.js';
+import '../widgets/clock.js';
+import '../widgets/notes.js';
 
 let state = { editMode: false, blurValue: 27, presetBg: '1', theme: 'dark', customBg: null, widgets: [] };
 window.state = state;
@@ -38,7 +37,6 @@ async function init() {
     folderOverlay = document.getElementById('folder-overlay-view');
     dynamicBgLayer = document.getElementById('dynamic-bg-layer');
 
-    await loadSystemWidgets();
     const loaded = StorageEngine.load();
     
     if (loaded && loaded.widgets && loaded.widgets.length > 0) {
@@ -58,6 +56,9 @@ async function init() {
         ];
     }
 
+    // Apply global background & theme immediately - eliminate any white flash!
+    applyGlobalStyles();
+
     grid.updateMetrics();
     currentColumnsCount = grid.columns;
     state.widgets.forEach(w => {
@@ -75,10 +76,15 @@ async function init() {
     renderGrid();
     setupGlobalEvents();
     setupBackgroundActivationSensors();
-    applyGlobalStyles();
     setupWidgetDrawer();
     setupWallpaperGallery();
     setupQuickMenuListeners();
+
+    // Asynchronously boot community widgets in background without blocking screen
+    widgetHub.bootInstalledWidgets().then(() => {
+        const hasCommunityWidget = state.widgets.some(w => !['shortcut', 'search', 'checklist', 'folder', 'clock', 'notes'].includes(w.type));
+        if (hasCommunityWidget) renderGrid();
+    }).catch(e => console.error('Community widget boot notice:', e));
 }
 
 function applyGlobalStyles() {

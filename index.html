@@ -17,6 +17,23 @@
     <link rel="modulepreload" href="js/app.js">
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
+    <style>
+        html, body {
+            background-color: #1a1d22 !important;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #dynamic-bg-layer {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 50% 25%, #2c3038 0%, #1a1d22 60%, #111316 100%);
+            z-index: 0;
+        }
+    </style>
     <script>
         // Early PWA install event interception
         window.deferredPWAInstallPrompt = null;
@@ -32,11 +49,20 @@
                     reg.update();
                 }).catch(err => console.warn('SW register issue:', err));
             });
+
+            // Automatically reload when new service worker takes control
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
+            });
         }
     </script>
 </head>
-<body>
-    <div id="dynamic-bg-layer" class="bg-layer"></div>
+<body style="background-color: #1a1d22;">
+    <div id="dynamic-bg-layer" class="bg-layer" style="background: radial-gradient(circle at 50% 25%, #2c3038 0%, #1a1d22 60%, #111316 100%);"></div>
     
     <div id="app-container">
         <div id="blur-overlay"></div>
