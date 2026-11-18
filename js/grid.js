@@ -49,15 +49,6 @@ export class GridEngine {
             this.GAP = Math.round(baseGap * scale);
         }
 
-            let scale = 1;
-            if (targetGridW > availableW || targetGridH > availableH) {
-                scale = Math.min(availableW / targetGridW, availableH / targetGridH);
-            }
-
-            this.CELL_SIZE = Math.round(baseCell * scale);
-            this.GAP = Math.round(baseGap * scale);
-        }
-
         const finalGridW = this.cols * this.CELL_SIZE + (this.cols - 1) * this.GAP;
         const finalGridH = this.rows * this.CELL_SIZE + (this.rows - 1) * this.GAP;
         

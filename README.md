@@ -1,9 +1,9 @@
 <div align="center">
   <h1>🌟 ProGrid Workspace</h1>
-  <p><b>Version 0.1.5 | Developed by MR Prog</b></p>
+  <p><b>Version 0.1.6 | Developed by MR Prog</b></p>
   <p>A modern, modular, and fully customizable Liquid Glass workspace for your browser and mobile.</p>
 
-  <img src="https://img.shields.io/badge/Version-0.1.5-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.6-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Extension%20%7C%20PWA-success.svg" alt="Platform">
   <img src="https://img.shields.io/badge/Mobile-Optimized-brightgreen.svg" alt="Mobile Optimized">
 </div>
@@ -13,6 +13,9 @@
 </div>
 
 ---
+
+## 🚨 Hotfix in v0.1.6
+- **Fix Blank White Screen on Startup:** Resolved duplicate closing block in `js/grid.js` that caused an unexpected identifier syntax error during module import, restoring instant dashboard startup and PWA caching.
 
 ## ✨ Key Features in v0.1.5
 - **🔒 Strictly Fixed Viewport Grid (No Unwanted Row Expansion):**
