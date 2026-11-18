@@ -1,9 +1,9 @@
 <div align="center">
   <h1>🌟 ProGrid Workspace</h1>
-  <p><b>Version 0.1.6 | Developed by MR Prog</b></p>
+  <p><b>Version 0.1.7 | Developed by MR Prog</b></p>
   <p>A modern, modular, and fully customizable Liquid Glass workspace for your browser and mobile.</p>
 
-  <img src="https://img.shields.io/badge/Version-0.1.6-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.7-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Extension%20%7C%20PWA-success.svg" alt="Platform">
   <img src="https://img.shields.io/badge/Mobile-Optimized-brightgreen.svg" alt="Mobile Optimized">
 </div>
@@ -14,8 +14,17 @@
 
 ---
 
-## 🚨 Hotfix in v0.1.6
-- **Fix Blank White Screen on Startup:** Resolved duplicate closing block in `js/grid.js` that caused an unexpected identifier syntax error during module import, restoring instant dashboard startup and PWA caching.
+## 🚀 What's New in v0.1.7
+- **🛡️ Fix Connection Security / Reset Error:**
+  - Resolved `ERR_CONNECTION_RESET` / "Secure Connection Failed" by eliminating `undefined` responses in the Service Worker's fetch handler.
+  - Bypassed cross-origin requests (e.g. Unsplash images, search engines) from Service Worker hijacking so they load natively without CORS or security errors.
+  - Implemented ultra-fast **Stale-While-Revalidate** strategy for local assets: cached assets render in **0ms**, and are updated smoothly in the background.
+  - Guaranteed offline and network fallback: navigation requests safely fall back to cached `index.html`.
+- **⚡ Preload & Performance Optimizations:**
+  - Added preconnect links for external CDNs and preloaded critical CSS & JavaScript bundles in `<head>` for instant paint.
+- **✨ Redesigned Modern Install Banner:**
+  - Replaced the awkward corner bubble with a native-style, glassmorphic bottom toast (`#web-install-banner`) featuring app icon, crisp typography, 1-click Install button, and a dismiss (`✕`) action that persists for 5 days.
+  - Hidden automatically in standalone PWA mode and edit mode.
 
 ## ✨ Key Features in v0.1.5
 - **🔒 Strictly Fixed Viewport Grid (No Unwanted Row Expansion):**

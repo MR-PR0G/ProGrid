@@ -783,40 +783,131 @@ body.edit-mode .edit-hint-pill {
     transform: translate(-50%, 0);
 }
 
-/* Floating Web Install Bubble */
-.web-install-bubble {
+/* Floating Web Install Banner (Modern bottom toast) */
+.web-install-banner {
     position: fixed;
-    top: max(16px, calc(env(safe-area-inset-top, 0px) + 12px));
-    right: max(16px, calc(env(safe-area-inset-right, 0px) + 14px));
-    background: rgba(30, 41, 59, 0.75);
-    border: 1px solid var(--panel-border);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
+    bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 16px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 420px;
+    background: rgba(18, 24, 38, 0.88);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 20px;
-    padding: 6px 14px;
-    display: none;
+    padding: 10px 14px;
+    display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
+    gap: 12px;
+    z-index: 9999;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.25);
+    animation: bannerSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes bannerSlideUp {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 20px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+}
+
+.install-banner-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.install-banner-app-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
+
+.install-banner-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.install-banner-title {
+    font-size: 13px;
+    font-weight: 700;
     color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.2px;
+}
+
+.install-banner-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.install-banner-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.install-banner-btn {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 7px 15px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    z-index: 1000;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
-    transition: transform 0.2s, background 0.2s, opacity 0.25s;
+    box-shadow: 0 3px 10px rgba(59, 130, 246, 0.4);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.web-install-bubble:hover {
-    background: rgba(59, 130, 246, 0.25);
-    border-color: rgba(59, 130, 246, 0.5);
+
+.install-banner-btn:hover {
     transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(59, 130, 246, 0.55);
 }
-.web-install-bubble:active {
-    transform: scale(0.95);
+
+.install-banner-btn:active {
+    transform: scale(0.96);
 }
-body.edit-mode .web-install-bubble {
-    opacity: 0 !important;
-    pointer-events: none !important;
-    transform: translateY(-10px) !important;
+
+.install-banner-dismiss-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.install-banner-dismiss-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: var(--text-primary);
+}
+
+body.edit-mode .web-install-banner {
+    display: none !important;
 }
 
 /* Folder Popup Smooth Animation & Symmetry */

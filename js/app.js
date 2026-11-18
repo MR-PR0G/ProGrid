@@ -890,13 +890,32 @@ function setupGlobalEvents() {
 
     if (pwaInstallBtn) pwaInstallBtn.addEventListener('click', openInstallModal);
     
-    const webBubble = document.getElementById('web-install-bubble');
-    if (webBubble) {
-        if (!isStandalone) {
-            webBubble.style.display = 'flex';
-            webBubble.addEventListener('click', openInstallModal);
-        } else {
-            webBubble.style.display = 'none';
+    const webBanner = document.getElementById('web-install-banner');
+    const webActionBtn = document.getElementById('web-install-action-btn');
+    const webDismissBtn = document.getElementById('web-install-dismiss-btn');
+
+    if (webBanner && !isStandalone) {
+        const dismissedAt = localStorage.getItem('progrid_install_banner_dismissed');
+        const fiveDaysMs = 5 * 24 * 60 * 60 * 1000;
+        const isDismissedRecently = dismissedAt && (Date.now() - parseInt(dismissedAt, 10) < fiveDaysMs);
+
+        if (!isDismissedRecently) {
+            setTimeout(() => {
+                if (!document.body.classList.contains('edit-mode')) {
+                    webBanner.style.display = 'flex';
+                }
+            }, 1200);
+        }
+
+        if (webActionBtn) {
+            webActionBtn.addEventListener('click', openInstallModal);
+        }
+
+        if (webDismissBtn) {
+            webDismissBtn.addEventListener('click', () => {
+                webBanner.style.display = 'none';
+                localStorage.setItem('progrid_install_banner_dismissed', Date.now().toString());
+            });
         }
     }
 
@@ -918,7 +937,7 @@ function setupGlobalEvents() {
                         pwaInstallBtn.textContent = '✓ Installed';
                         pwaInstallBtn.style.opacity = '0.6';
                     }
-                    if (webBubble) webBubble.style.display = 'none';
+                    if (webBanner) webBanner.style.display = 'none';
                 }
                 window.deferredPWAInstallPrompt = null;
             } else {

@@ -12,6 +12,9 @@
     <title>ProGrid Workspace</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+    <link rel="preload" href="css/style.css" as="style">
+    <link rel="modulepreload" href="js/app.js">
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
     <script>
@@ -51,11 +54,20 @@
     </button>
     <div id="edit-mode-hint" class="edit-hint-pill">✨ Drag to organize • Resize from corner • Tap widget for options</div>
     
-    <!-- Floating Web Install Bubble (Shown only in browser, hidden in standalone PWA) -->
-    <button id="web-install-bubble" class="web-install-bubble" title="Install ProGrid" aria-label="Install ProGrid App">
-        <span>📲</span>
-        <span>Install App</span>
-    </button>
+    <!-- Floating Web Install Toast (Elegant, dismissible, native-style) -->
+    <aside id="web-install-banner" class="web-install-banner" style="display: none;" aria-label="Install App">
+        <div class="install-banner-left">
+            <img src="icons/icon-192.png" alt="ProGrid" width="32" height="32" class="install-banner-app-icon">
+            <div class="install-banner-meta">
+                <span class="install-banner-title">Install ProGrid</span>
+                <span class="install-banner-sub">Fast • Offline • Fullscreen</span>
+            </div>
+        </div>
+        <div class="install-banner-right">
+            <button id="web-install-action-btn" class="install-banner-btn">Install</button>
+            <button id="web-install-dismiss-btn" class="install-banner-dismiss-btn" title="Dismiss" aria-label="Dismiss">✕</button>
+        </div>
+    </aside>
 
     <div id="edit-panel">
         <div class="panel-header-row">
