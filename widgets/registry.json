@@ -43,13 +43,13 @@
     "id": "finance",
     "name": "Markets & Crypto",
     "author": "MR Prog",
-    "version": "1.3.0",
-    "downloads": "9.4k",
+    "version": "1.4.0",
+    "downloads": "9.8k",
     "category": "finance",
     "defaultW": 2,
     "defaultH": 2,
     "verified": true,
-    "description": "Interactive financial tracker with customizable assets (up to 4), 24h hourly charts, and live rates.",
+    "description": "Professional financial tracker with vector SVG icons, customizable multi-asset focus (up to 4), and live rates.",
     "scriptUrl": "./widgets/community/finance.js"
   },
   {

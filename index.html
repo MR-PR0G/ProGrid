@@ -301,6 +301,24 @@
                         <span class="theme-card-badge soon-badge">Soon</span>
                     </div>
                 </div>
+
+                <!-- Material 3 Color Tone Selector (Light / Dark) -->
+                <div id="m3-color-mode-section" class="m3-color-mode-section" style="display: none; margin-top: 10px; padding: 10px 12px; background: rgba(0,0,0,0.22); border: 1px solid var(--panel-border); border-radius: 14px; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary);">Material 3 Tone</span>
+                        <span id="m3-mode-status" style="font-size: 10.5px; color: #f59e0b; font-weight: 600;">Dark Tone</span>
+                    </div>
+                    <div style="display: flex; gap: 8px; width: 100%;">
+                        <button type="button" id="m3-tone-dark-btn" class="m3-tone-btn active" data-tone="dark">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                            <span>Dark Tone</span>
+                        </button>
+                        <button type="button" id="m3-tone-light-btn" class="m3-tone-btn" data-tone="light">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                            <span>Light Tone</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <input type="file" id="import-cfg-input" accept=".json" style="display: none;">
@@ -363,22 +381,18 @@
             </div>
             <div class="modal-field id-search-only" style="display: flex; flex-direction: column; gap: 6px;">
                 <label style="color: var(--text-secondary); font-size: 12px;">Bar Aesthetic Layout</label>
-                <div class="search-shape-options" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
-                    <button type="button" class="search-shape-btn" data-shape="pill" title="Rounded Pill">
-                        <span style="display:block; width:26px; height:13px; border:1.5px solid var(--text-primary); border-radius:10px; margin:auto;"></span>
+                <div class="search-shape-options" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                    <button type="button" class="search-shape-btn" data-shape="pill" title="Rounded Capsule Pill">
+                        <span style="display:block; width:28px; height:14px; border:1.5px solid var(--text-primary); border-radius:10px; margin:auto;"></span>
                         <span style="font-size:10px; color:var(--text-secondary); margin-top:4px; display:block;">Pill</span>
                     </button>
                     <button type="button" class="search-shape-btn" data-shape="spotlight" title="Command Spotlight">
-                        <span style="display:block; width:26px; height:13px; border:1.5px solid #38bdf8; box-shadow:0 0 6px rgba(56,189,248,0.6); border-radius:5px; margin:auto;"></span>
+                        <span style="display:block; width:28px; height:14px; border:1.5px solid #38bdf8; box-shadow:0 0 6px rgba(56,189,248,0.6); border-radius:5px; margin:auto;"></span>
                         <span style="font-size:10px; color:#38bdf8; margin-top:4px; display:block; font-weight:600;">Spotlight</span>
                     </button>
-                    <button type="button" class="search-shape-btn" data-shape="frameless" title="Frameless Minimal">
-                        <span style="display:block; width:26px; height:13px; border-bottom:2px solid var(--text-primary); margin:auto;"></span>
-                        <span style="font-size:10px; color:var(--text-secondary); margin-top:4px; display:block;">Frameless</span>
-                    </button>
-                    <button type="button" class="search-shape-btn" data-shape="liquid" title="Liquid Specular">
-                        <span style="display:block; width:26px; height:13px; border:1.5px solid #a855f7; box-shadow:0 0 6px rgba(168,85,247,0.5); border-radius:7px; margin:auto;"></span>
-                        <span style="font-size:10px; color:#c084fc; margin-top:4px; display:block; font-weight:600;">Liquid</span>
+                    <button type="button" class="search-shape-btn" data-shape="minimal" title="Full Fluid Minimal">
+                        <span style="display:block; width:28px; height:14px; border:1.5px solid var(--text-primary); border-radius:6px; margin:auto;"></span>
+                        <span style="font-size:10px; color:var(--text-secondary); margin-top:4px; display:block;">Minimal</span>
                     </button>
                 </div>
             </div>
@@ -583,7 +597,7 @@
                 <div class="about-title-block">
                     <h3 class="about-name">ProGrid Workspace</h3>
                     <div class="about-badge-row">
-                        <span class="about-version-badge" id="about-app-version">v0.2.5</span>
+                        <span class="about-version-badge" id="about-app-version">v0.3.0</span>
                         <span class="about-license-badge">GNU GPLv3</span>
                     </div>
                 </div>
@@ -600,7 +614,7 @@
                 </div>
                 <div class="about-spec-item">
                     <span class="spec-label">Engine</span>
-                    <span class="spec-val">ProGrid Fluid Grid 2.0</span>
+                    <span class="spec-val">ProGrid Fluid Matrix 3.2</span>
                 </div>
                 <div class="about-spec-item">
                     <span class="spec-label">License</span>
@@ -617,7 +631,7 @@
                     <div class="update-indicator-dot" id="update-indicator-dot"></div>
                     <div class="update-info-text">
                         <span class="update-title" id="update-status-title">System Up to Date</span>
-                        <span class="update-sub" id="update-status-sub">Running official v0.2.5 release</span>
+                        <span class="update-sub" id="update-status-sub">Running official v0.3.0 release</span>
                     </div>
                 </div>
                 <button id="about-check-update-btn" class="about-update-action-btn">

@@ -147,6 +147,21 @@ function applyGlobalStyles() {
     const currentTheme = state.designTheme || 'frosted-glass';
     document.body.classList.remove('theme-liquid-glass', 'theme-frosted-glass', 'theme-material3');
     document.body.classList.add(`theme-${currentTheme}`);
+    document.body.classList.toggle('light-mode', state.theme === 'light');
+
+    const m3Section = document.getElementById('m3-color-mode-section');
+    if (m3Section) {
+        m3Section.style.display = currentTheme === 'material3' ? 'block' : 'none';
+    }
+    const m3DarkBtn = document.getElementById('m3-tone-dark-btn');
+    const m3LightBtn = document.getElementById('m3-tone-light-btn');
+    const m3Status = document.getElementById('m3-mode-status');
+    if (m3DarkBtn && m3LightBtn) {
+        const isLight = state.theme === 'light';
+        m3DarkBtn.classList.toggle('active', !isLight);
+        m3LightBtn.classList.toggle('active', isLight);
+        if (m3Status) m3Status.textContent = isLight ? 'Light Tone' : 'Dark Tone';
+    }
 
     if (blurOverlay) {
         blurOverlay.style.backdropFilter = `blur(${state.blurValue}px)`;
@@ -242,8 +257,8 @@ function createWidgetDOM(w) {
     wrapper.style.top = `${coords.y * (grid.cellSize + grid.gap)}px`;
     
     const currentTheme = state.designTheme || 'frosted-glass';
-    const isManual = w.manualGlassConfig === true;
-    const isGlass = isManual ? (w.isGlass !== false) : (currentTheme !== 'material3');
+    const isGlass = currentTheme !== 'material3';
+    const isLightMode = state.theme === 'light';
 
     if (isGlass) {
         if (currentTheme === 'liquid-glass') {
@@ -261,21 +276,18 @@ function createWidgetDOM(w) {
             wrapper.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.28)';
         }
     } else {
-        // Solid Material 3 surface (or non-glass)
-        wrapper.style.background = (w.bg && w.bg !== '#ffffff') ? w.bg : '#22262e';
+        // Solid Material 3 surface (Dark or Light)
+        if (isLightMode) {
+            wrapper.style.background = '#ffffff';
+            wrapper.style.border = '1px solid rgba(0, 0, 0, 0.08)';
+            wrapper.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
+        } else {
+            wrapper.style.background = (w.bg && w.bg !== '#ffffff') ? w.bg : '#1e222b';
+            wrapper.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+            wrapper.style.boxShadow = '0 4px 18px rgba(0, 0, 0, 0.35)';
+        }
         wrapper.style.backdropFilter = 'none';
         wrapper.style.webkitBackdropFilter = 'none';
-        wrapper.style.border = '1px solid rgba(255, 255, 255, 0.08)';
-        wrapper.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.4)';
-    }
-
-    if (w.type === 'search') {
-        wrapper.setAttribute('data-type', 'search');
-        wrapper.style.background = 'transparent';
-        wrapper.style.backdropFilter = 'none';
-        wrapper.style.webkitBackdropFilter = 'none';
-        wrapper.style.border = 'none';
-        wrapper.style.boxShadow = 'none';
     }
 
     const content = document.createElement('div');
@@ -1756,14 +1768,53 @@ function setupAppearanceSubtabs() {
             applyDesignTheme(theme);
         });
     });
+
+    const m3DarkBtn = document.getElementById('m3-tone-dark-btn');
+    const m3LightBtn = document.getElementById('m3-tone-light-btn');
+    const m3Status = document.getElementById('m3-mode-status');
+
+    if (m3DarkBtn && m3LightBtn) {
+        m3DarkBtn.addEventListener('click', () => {
+            state.theme = 'dark';
+            document.body.classList.remove('light-mode');
+            m3DarkBtn.classList.add('active');
+            m3LightBtn.classList.remove('active');
+            if (m3Status) m3Status.textContent = 'Dark Tone';
+            StorageEngine.save(state);
+            applyGlobalStyles();
+            renderGrid();
+            if (navigator.vibrate) navigator.vibrate(25);
+        });
+
+        m3LightBtn.addEventListener('click', () => {
+            state.theme = 'light';
+            document.body.classList.add('light-mode');
+            m3LightBtn.classList.add('active');
+            m3DarkBtn.classList.remove('active');
+            if (m3Status) m3Status.textContent = 'Light Tone';
+            StorageEngine.save(state);
+            applyGlobalStyles();
+            renderGrid();
+            if (navigator.vibrate) navigator.vibrate(25);
+        });
+    }
 }
 
 function applyDesignTheme(theme) {
     if (theme === 'liquid-glass') return; // disabled until future release
     state.designTheme = theme;
+    state.widgets.forEach(w => {
+        w.isGlass = (theme !== 'material3');
+        w.manualGlassConfig = false;
+    });
     document.body.classList.remove('theme-liquid-glass', 'theme-frosted-glass', 'theme-material3');
     document.body.classList.add(`theme-${theme}`);
     StorageEngine.save(state);
+
+    const m3Section = document.getElementById('m3-color-mode-section');
+    if (m3Section) {
+        m3Section.style.display = theme === 'material3' ? 'block' : 'none';
+    }
 
     document.querySelectorAll('.theme-option-card').forEach(card => {
         const cardTheme = card.getAttribute('data-theme');
@@ -2135,17 +2186,30 @@ window.closeFolderPopup = function() {
     }, 220);
 };
 
+const FINANCE_ASSET_ICONS = {
+    'BTC': `<svg viewBox="0 0 24 24" width="15" height="15" fill="none"><circle cx="12" cy="12" r="11" fill="#f7931a"/><path d="M15.2 10.3c.3-.8.2-1.7-.5-2.2-.6-.5-1.5-.7-2.6-.7V6h-1.2v1.4h-.9V6H8.8v1.4H7v1.4h1.1c.3 0 .4.2.4.4v5.6c0 .2-.1.4-.4.4H7v1.4h1.8V18h1.2v-1.4h.9V18h1.2v-1.4c2.1 0 3.5-.8 3.6-2.5 0-1-.5-1.7-1.3-2.1.9-.3 1.2-1 1-1.7zm-4-1.9h1.7c.9 0 1.5.3 1.5 1s-.6 1-1.5 1h-1.7V8.4zm2.1 6.2h-2.1v-2.2h2.1c1 0 1.7.4 1.7 1.1s-.7 1.1-1.7 1.1z" fill="#fff"/></svg>`,
+    'USDIRR': `<svg viewBox="0 0 24 24" width="15" height="15" fill="none"><circle cx="12" cy="12" r="11" fill="#10b981"/><path d="M7 8h10v8H7z" stroke="#fff" stroke-width="1.4" rx="1.5"/><circle cx="12" cy="12" r="2.2" stroke="#fff" stroke-width="1.3"/><path d="M12 6.5v1.5m0 8V17.5" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+    'ETH': `<svg viewBox="0 0 24 24" width="15" height="15" fill="none"><circle cx="12" cy="12" r="11" fill="#627eea"/><path d="M12 4l-4.5 7.5L12 14l4.5-2.5L12 4z" fill="#fff" fill-opacity=".8"/><path d="M7.5 11.5L12 14v-5.5L7.5 11.5z" fill="#fff" fill-opacity=".5"/><path d="M12 14l4.5-2.5L12 8.5V14z" fill="#fff" fill-opacity=".8"/><path d="M7.5 12.5L12 19l4.5-6.5L12 15l-4.5-2.5z" fill="#fff" fill-opacity=".8"/><path d="M12 15v4l4.5-6.5L12 15z" fill="#fff" fill-opacity=".5"/></svg>`,
+    'SOL': `<svg viewBox="0 0 24 24" width="15" height="15" fill="none"><circle cx="12" cy="12" r="11" fill="#141414"/><path d="M7 8h8.5l1.5 1.5-1.5 1.5H7l-1.5-1.5L7 8zm10 3.5H8.5L7 13l1.5 1.5H17l1.5-1.5-1.5-1.5zM7 16h8.5l1.5 1.5-1.5 1.5H7l-1.5-1.5L7 16z" fill="#a855f7"/></svg>`,
+    'TON': `<svg viewBox="0 0 24 24" width="15" height="15" fill="none"><circle cx="12" cy="12" r="11" fill="#0088cc"/><path d="M12 5l6.5 4.5L12 19 5.5 9.5 12 5zm0 2.2L7.6 9.8 12 16.5l4.4-6.7L12 7.2z" fill="#fff"/></svg>`,
+    'GOLD': `<svg viewBox="0 0 24 24" width="15" height="15" fill="none"><circle cx="12" cy="12" r="11" fill="#f59e0b"/><path d="M6 14.5l2.5-5h7L18 14.5H6z" fill="#fef3c7" stroke="#b45309" stroke-width="1.2" stroke-linejoin="round"/></svg>`,
+    'OIL': `<svg viewBox="0 0 24 24" width="15" height="15" fill="none"><circle cx="12" cy="12" r="11" fill="#334155"/><path d="M12 5c-2.5 3.5-5 6.5-5 9.5a5 5 0 0 0 10 0c0-3-2.5-6-5-9.5z" fill="#94a3b8"/></svg>`,
+    'SILVER': `<svg viewBox="0 0 24 24" width="15" height="15" fill="none"><circle cx="12" cy="12" r="11" fill="#64748b"/><path d="M6 14.5l2.5-5h7L18 14.5H6z" fill="#e2e8f0" stroke="#475569" stroke-width="1.2" stroke-linejoin="round"/></svg>`,
+    'EURUSD': `<svg viewBox="0 0 24 24" width="15" height="15" fill="none"><circle cx="12" cy="12" r="11" fill="#0284c7"/><path d="M14.5 8.5a4 4 0 0 0-5.5 3.5h5.5m-5.5 1.5h5.5a4 4 0 0 1-5.5 3.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><path d="M7.5 12h3.5" stroke="#fff" stroke-width="1.6"/></svg>`,
+    'GBPUSD': `<svg viewBox="0 0 24 24" width="15" height="15" fill="none"><circle cx="12" cy="12" r="11" fill="#4f46e5"/><path d="M15 7.5a3 3 0 0 0-4.5 2.5c0 2.5 3 4 3 6h-6m5-3.5H9" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>`
+};
+
 const FINANCE_ASSET_INFO = {
-    'BTC': { name: 'Bitcoin', symbol: 'BTC', icon: '₿' },
-    'USDIRR': { name: 'US Dollar (Toman)', symbol: 'USD/TMN', icon: '💵' },
-    'ETH': { name: 'Ethereum', symbol: 'ETH', icon: 'Ξ' },
-    'SOL': { name: 'Solana', symbol: 'SOL', icon: '◎' },
-    'TON': { name: 'Toncoin', symbol: 'TON', icon: '💎' },
-    'GOLD': { name: 'Gold (Ounce)', symbol: 'XAU', icon: '🟡' },
-    'OIL': { name: 'Brent Crude', symbol: 'OIL', icon: '🛢️' },
-    'SILVER': { name: 'Silver (Ounce)', symbol: 'XAG', icon: '⚪' },
-    'EURUSD': { name: 'Euro / Dollar', symbol: 'EUR', icon: '💶' },
-    'GBPUSD': { name: 'British Pound', symbol: 'GBP', icon: '💷' }
+    'BTC': { name: 'Bitcoin', symbol: 'BTC', icon: FINANCE_ASSET_ICONS.BTC },
+    'USDIRR': { name: 'US Dollar (Toman)', symbol: 'USD/TMN', icon: FINANCE_ASSET_ICONS.USDIRR },
+    'ETH': { name: 'Ethereum', symbol: 'ETH', icon: FINANCE_ASSET_ICONS.ETH },
+    'SOL': { name: 'Solana', symbol: 'SOL', icon: FINANCE_ASSET_ICONS.SOL },
+    'TON': { name: 'Toncoin', symbol: 'TON', icon: FINANCE_ASSET_ICONS.TON },
+    'GOLD': { name: 'Gold (Ounce)', symbol: 'XAU', icon: FINANCE_ASSET_ICONS.GOLD },
+    'OIL': { name: 'Brent Crude', symbol: 'OIL', icon: FINANCE_ASSET_ICONS.OIL },
+    'SILVER': { name: 'Silver (Ounce)', symbol: 'XAG', icon: FINANCE_ASSET_ICONS.SILVER },
+    'EURUSD': { name: 'Euro / Dollar', symbol: 'EUR', icon: FINANCE_ASSET_ICONS.EURUSD },
+    'GBPUSD': { name: 'British Pound', symbol: 'GBP', icon: FINANCE_ASSET_ICONS.GBPUSD }
 };
 
 let currentFinanceAssets = ['BTC', 'USDIRR'];
@@ -2579,7 +2643,7 @@ function closeWidgetInfo() {
     }, 220);
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.2.5') {
+function launchUpdateSplashScreen(targetVer = 'v0.3.0') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -2684,7 +2748,7 @@ function setupAboutModal() {
             if (isChecking) return;
 
             if (checkUpdateBtn.getAttribute('data-action') === 'reload') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.2.5';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.3.0';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -2706,8 +2770,8 @@ function setupAboutModal() {
                 const res = await fetch(`./manifest.json?t=${Date.now()}`, { cache: 'no-store' });
                 if (res.ok) {
                     const remoteManifest = await res.json();
-                    const currentVersion = '0.2.5';
-                    const remoteVersion = remoteManifest.version || '0.2.5';
+                    const currentVersion = '0.3.0';
+                    const remoteVersion = remoteManifest.version || '0.3.0';
 
                     if (remoteVersion !== currentVersion) {
                         if (updateDot) updateDot.className = 'update-indicator-dot update-found';
@@ -2727,19 +2791,19 @@ function setupAboutModal() {
                 } else {
                     if (updateDot) updateDot.className = 'update-indicator-dot';
                     if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.2.5 is active.';
+                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.3.0 is active.';
                     if (btnLabel) btnLabel.textContent = 'Re-sync Engine';
                     checkUpdateBtn.setAttribute('data-action', 'reload');
-                    checkUpdateBtn.setAttribute('data-target-ver', 'v0.2.5');
+                    checkUpdateBtn.setAttribute('data-target-ver', 'v0.3.0');
                 }
             } catch (err) {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Using cached standalone v0.2.5 release.';
+                if (updateSub) updateSub.textContent = 'Using cached standalone v0.3.0 release.';
                 if (btnLabel) btnLabel.textContent = 'Re-sync Engine';
                 checkUpdateBtn.setAttribute('data-action', 'reload');
-                checkUpdateBtn.setAttribute('data-target-ver', 'v0.2.5');
+                checkUpdateBtn.setAttribute('data-target-ver', 'v0.3.0');
             } finally {
                 isChecking = false;
                 checkUpdateBtn.classList.remove('spin');

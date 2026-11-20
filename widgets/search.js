@@ -121,11 +121,11 @@ export default class SearchWidget extends BaseWidget {
                 .search-widget-container {
                     width: 100%; height: 100%;
                     display: flex; align-items: center; justify-content: center;
-                    padding: 0 4px; box-sizing: border-box;
+                    padding: 8px 12px; box-sizing: border-box;
                     position: relative;
                 }
                 .search-form {
-                    width: 100%; height: 46px;
+                    width: 100%; height: 48px;
                     display: flex; align-items: center;
                     background: rgba(255, 255, 255, 0.08);
                     border: 1px solid rgba(255, 255, 255, 0.16);
@@ -139,60 +139,53 @@ export default class SearchWidget extends BaseWidget {
                 /* Shape & Layout Variants */
                 .search-form.shape-pill {
                     border-radius: 28px;
-                    background: rgba(255, 255, 255, 0.08);
-                    border: 1px solid rgba(255, 255, 255, 0.16);
-                    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
                 }
                 .search-form.shape-spotlight {
                     border-radius: 14px;
                     border: 1.5px solid rgba(56, 189, 248, 0.55);
                     box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
                     background: rgba(14, 18, 28, 0.75);
-                    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
                 }
-                .search-form.shape-frameless,
-                .search-form.shape-full {
-                    height: 44px;
-                    border-radius: 0 !important;
-                    background: transparent !important;
-                    border: none !important;
-                    border-bottom: 2px solid rgba(255, 255, 255, 0.24) !important;
-                    box-shadow: none !important;
-                    backdrop-filter: none !important;
-                    -webkit-backdrop-filter: none !important;
-                    padding: 0 4px !important;
-                }
-                .search-form.shape-frameless:focus-within,
-                .search-form.shape-full:focus-within {
-                    border-bottom-color: #3b82f6 !important;
-                    background: transparent !important;
-                    box-shadow: none !important;
-                }
-                .search-form.shape-liquid {
-                    border-radius: 20px;
-                    background: rgba(255, 255, 255, 0.07);
-                    border: 1.5px solid rgba(168, 85, 247, 0.42);
-                    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), 0 0 14px rgba(168, 85, 247, 0.22);
-                    backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-                }
-                .search-form.shape-liquid:focus-within {
-                    border-color: #c084fc;
-                    box-shadow: 0 0 20px rgba(192, 132, 252, 0.45);
+                .search-form.shape-minimal,
+                .search-form.shape-full,
+                .search-form.shape-frameless {
+                    border-radius: 12px;
+                    border: 1px solid rgba(255, 255, 255, 0.12);
+                    background: rgba(0, 0, 0, 0.2);
                 }
 
                 /* Material 3 System Support */
-                body.theme-material3 .search-form:not(.shape-frameless) {
+                body.theme-material3 .search-form {
                     border-radius: 28px !important;
-                    background: rgba(255, 255, 255, 0.09) !important;
-                    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+                    background: #282a32 !important;
+                    border: 1px solid rgba(255, 255, 255, 0.08) !important;
                     backdrop-filter: none !important;
                     -webkit-backdrop-filter: none !important;
                     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
                 }
-                body.theme-material3 .search-form:not(.shape-frameless):focus-within {
-                    background: rgba(255, 255, 255, 0.15) !important;
-                    border-color: #60a5fa !important;
-                    box-shadow: 0 4px 16px rgba(96, 165, 250, 0.28) !important;
+                body.theme-material3 .search-form:focus-within {
+                    background: #32353f !important;
+                    border-color: #a8c7fa !important;
+                    box-shadow: 0 4px 16px rgba(168, 199, 250, 0.25) !important;
+                }
+                body.theme-material3.light-mode .search-form {
+                    background: #eaedf6 !important;
+                    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+                }
+                body.theme-material3.light-mode .search-form:focus-within {
+                    background: #ffffff !important;
+                    border-color: #0b57d0 !important;
+                    box-shadow: 0 4px 16px rgba(11, 87, 208, 0.2) !important;
+                }
+                body.theme-material3.light-mode .search-input {
+                    color: #191c20 !important;
+                }
+                body.theme-material3.light-mode .search-input::placeholder {
+                    color: #74777f !important;
+                }
+                body.theme-material3.light-mode .search-leading-icon {
+                    color: #0b57d0 !important;
                 }
 
                 .search-form:focus-within {

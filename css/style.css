@@ -1220,6 +1220,59 @@ body.edit-mode .first-visit-tip { display: none !important; }
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Material 3 Tone Controls */
+.m3-tone-btn {
+    flex: 1;
+    height: 32px;
+    border-radius: 9px;
+    border: 1px solid var(--panel-border);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all 0.15s ease;
+}
+.m3-tone-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+.m3-tone-btn.active {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: #000;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+}
+
+/* Material 3 System Theming */
+body.theme-material3 .widget-wrapper {
+    border-radius: 28px !important;
+    background: #1e222b !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
+}
+body.theme-material3.light-mode .widget-wrapper {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+}
+body.theme-material3.light-mode {
+    --text-primary: #191c20;
+    --text-secondary: #44474e;
+    --panel-border: rgba(0, 0, 0, 0.12);
+    --panel-bg: rgba(245, 247, 252, 0.94);
+}
+body.theme-material3.light-mode .widget-content {
+    color: #191c20;
+}
+
 @media (max-width: 600px) {
     .theme-cards-container {
         gap: 6px;
