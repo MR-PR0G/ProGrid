@@ -11,7 +11,7 @@ import '../widgets/folder.js';
 import '../widgets/clock.js';
 import '../widgets/notes.js';
 
-let state = { editMode: false, blurValue: 27, presetBg: '1', theme: 'dark', designTheme: 'liquid-glass', customBg: null, widgets: [] };
+let state = { editMode: false, blurValue: 27, presetBg: '1', theme: 'dark', designTheme: 'frosted-glass', customBg: null, widgets: [] };
 window.state = state;
 window.appState = state;
 
@@ -44,14 +44,14 @@ async function init() {
         state.blurValue = loaded.blurValue ?? 27;
         state.presetBg = loaded.presetBg || '1';
         state.theme = loaded.theme || 'dark';
-        state.designTheme = loaded.designTheme || 'liquid-glass';
+        state.designTheme = (loaded.designTheme === 'liquid-glass') ? 'frosted-glass' : (loaded.designTheme || 'frosted-glass');
         state.customBg = loaded.customBg || null;
         state.widgets = loaded.widgets;
     } else {
         state.blurValue = 27;
         state.presetBg = "1";
         state.theme = "dark";
-        state.designTheme = "liquid-glass";
+        state.designTheme = "frosted-glass";
         state.widgets = [
             { id: "w-clock-default", type: "clock", x: 0, y: 0, w: 2, h: 1, format24: true, showDate: true, isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 0, w: 2, h: 1, baseCols: 8 }, isHidden: false, centerDist: 0.5 },
             { id: "w-search-default", type: "search", x: 2, y: 0, w: 6, h: 1, engine: "google", placeholder: "Search...", isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 0, w: 6, h: 1, baseCols: 8 }, isHidden: false, centerDist: 1 },
@@ -85,17 +85,36 @@ async function init() {
     setupQuickMenuListeners();
     setupAboutModal();
 
-    // First visit guidance banner
+    // First visit guidance banner (Clean auto-dismiss after 2.5s or on tap)
     try {
         const hasSeenTip = localStorage.getItem('progrid_edit_tip_seen');
         const tipEl = document.getElementById('first-visit-tip');
         const dismissBtn = document.getElementById('tip-dismiss-btn') || document.getElementById('first-visit-dismiss');
         if (!hasSeenTip && tipEl) {
             tipEl.style.display = 'flex';
+            // Smooth entrance
+            requestAnimationFrame(() => {
+                tipEl.classList.add('show');
+            });
+
+            const hideTip = () => {
+                tipEl.classList.remove('show');
+                tipEl.classList.add('hide');
+                localStorage.setItem('progrid_edit_tip_seen', '1');
+                setTimeout(() => {
+                    tipEl.style.display = 'none';
+                }, 400);
+            };
+
+            // Auto-dismiss after 2.5 seconds
+            const autoTimer = setTimeout(() => {
+                hideTip();
+            }, 2500);
+
             if (dismissBtn) {
                 dismissBtn.addEventListener('click', () => {
-                    tipEl.style.display = 'none';
-                    localStorage.setItem('progrid_edit_tip_seen', '1');
+                    clearTimeout(autoTimer);
+                    hideTip();
                 });
             }
         }
@@ -111,7 +130,7 @@ async function init() {
 }
 
 function applyGlobalStyles() {
-    const currentTheme = state.designTheme || 'liquid-glass';
+    const currentTheme = state.designTheme || 'frosted-glass';
     document.body.classList.remove('theme-liquid-glass', 'theme-frosted-glass', 'theme-material3');
     document.body.classList.add(`theme-${currentTheme}`);
 
@@ -208,24 +227,24 @@ function createWidgetDOM(w) {
     wrapper.style.left = `${coords.x * (grid.cellSize + grid.gap)}px`;
     wrapper.style.top = `${coords.y * (grid.cellSize + grid.gap)}px`;
     
-    const currentTheme = state.designTheme || 'liquid-glass';
+    const currentTheme = state.designTheme || 'frosted-glass';
     const isManual = w.manualGlassConfig === true;
     const isGlass = isManual ? (w.isGlass !== false) : (currentTheme !== 'material3');
 
     if (isGlass) {
-        if (currentTheme === 'frosted-glass') {
-            wrapper.style.background = hexToRgba(w.bg || '#ffffff', 0.08);
-            wrapper.style.backdropFilter = 'blur(35px)';
-            wrapper.style.webkitBackdropFilter = 'blur(35px)';
-            wrapper.style.border = '1px solid rgba(255, 255, 255, 0.12)';
-            wrapper.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.25)';
-        } else {
-            // liquid-glass (default)
+        if (currentTheme === 'liquid-glass') {
             wrapper.style.background = hexToRgba(w.bg || '#ffffff', 0.12);
             wrapper.style.backdropFilter = 'blur(20px)';
             wrapper.style.webkitBackdropFilter = 'blur(20px)';
             wrapper.style.border = '1px solid var(--panel-border)';
             wrapper.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.35)';
+        } else {
+            // frosted-glass (default & refined)
+            wrapper.style.background = hexToRgba(w.bg || '#ffffff', 0.08);
+            wrapper.style.backdropFilter = 'blur(35px) saturate(180%)';
+            wrapper.style.webkitBackdropFilter = 'blur(35px) saturate(180%)';
+            wrapper.style.border = '1px solid rgba(255, 255, 255, 0.14)';
+            wrapper.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.28)';
         }
     } else {
         // Solid Material 3 surface (or non-glass)
@@ -1620,12 +1639,19 @@ function setupAppearanceSubtabs() {
     // Initialize Theme Option Cards
     document.querySelectorAll('.theme-option-card').forEach(card => {
         const theme = card.getAttribute('data-theme');
-        const isActive = (state.designTheme || 'liquid-glass') === theme;
+        const isComingSoon = card.classList.contains('coming-soon');
+        const isActive = (state.designTheme || 'frosted-glass') === theme;
         card.classList.toggle('active', isActive);
         const badge = card.querySelector('.theme-card-badge');
-        if (badge) badge.textContent = isActive ? 'Active' : 'Select';
+        if (badge && !isComingSoon) {
+            badge.textContent = isActive ? 'Active' : 'Select';
+        }
 
         card.addEventListener('click', () => {
+            if (isComingSoon) {
+                // Show subtle toast or feedback that Liquid Glass is coming in next update
+                return;
+            }
             if (navigator.vibrate) navigator.vibrate(25);
             applyDesignTheme(theme);
         });
@@ -1633,6 +1659,7 @@ function setupAppearanceSubtabs() {
 }
 
 function applyDesignTheme(theme) {
+    if (theme === 'liquid-glass') return; // disabled until future release
     state.designTheme = theme;
     document.body.classList.remove('theme-liquid-glass', 'theme-frosted-glass', 'theme-material3');
     document.body.classList.add(`theme-${theme}`);
@@ -1640,10 +1667,13 @@ function applyDesignTheme(theme) {
 
     document.querySelectorAll('.theme-option-card').forEach(card => {
         const cardTheme = card.getAttribute('data-theme');
+        const isComingSoon = card.classList.contains('coming-soon');
         const isActive = cardTheme === theme;
         card.classList.toggle('active', isActive);
         const badge = card.querySelector('.theme-card-badge');
-        if (badge) badge.textContent = isActive ? 'Active' : 'Select';
+        if (badge && !isComingSoon) {
+            badge.textContent = isActive ? 'Active' : 'Select';
+        }
     });
 
     renderGrid();

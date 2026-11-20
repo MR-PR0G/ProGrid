@@ -545,35 +545,76 @@ body.edit-mode #edit-panel {
     left: 50%;
     transform: translateX(-50%);
     width: calc(100% - 32px);
-    max-width: 440px;
-    background: rgba(18, 24, 38, 0.92);
+    max-width: 420px;
+    background: rgba(18, 24, 38, 0.94);
     backdrop-filter: blur(28px) saturate(190%);
     -webkit-backdrop-filter: blur(28px) saturate(190%);
     border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 20px;
-    padding: 12px 16px;
+    border-radius: 18px;
+    padding: 10px 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
     z-index: 10001;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.25);
-    animation: tipSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    direction: rtl;
-    text-align: right;
+    direction: ltr;
+    text-align: left;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translate(-50%, -15px) scale(0.96);
 }
-@keyframes tipSlideDown {
-    from { opacity: 0; transform: translate(-50%, -20px) scale(0.96); }
-    to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.first-visit-tip.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, 0) scale(1);
 }
-.tip-icon { font-size: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.tip-content { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-.tip-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
-.tip-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+.first-visit-tip.hide {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -15px) scale(0.96);
+}
+.tip-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.tip-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+.tip-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.2px;
+}
+.tip-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
 .tip-dismiss-btn {
-    background: #3b82f6; color: white; border: none; border-radius: 12px;
-    padding: 6px 14px; font-size: 11.5px; font-weight: 700; cursor: pointer;
-    flex-shrink: 0; transition: background 0.15s, transform 0.1s;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s, transform 0.1s;
 }
 .tip-dismiss-btn:hover { background: #2563eb; }
 .tip-dismiss-btn:active { transform: scale(0.94); }
@@ -853,45 +894,60 @@ body.edit-mode .first-visit-tip { display: none !important; }
     transform: scale(0.98);
 }
 
-/* Compact Appearance Controls Dock */
-.appearance-controls-dock {
+/* Appearance Controls Floating Bar (Sleek, Minimalist, Modern) */
+.appearance-controls-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    background: rgba(0, 0, 0, 0.22);
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.28);
     border: 1px solid var(--panel-border);
-    border-radius: 14px;
-    padding: 6px 12px;
+    border-radius: 16px;
+    padding: 7px 14px;
     box-sizing: border-box;
     width: 100%;
 }
-.appearance-control-group {
+.appearance-control-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.appearance-control-pill.blur-control-pill {
+    flex: 1;
+    max-width: 200px;
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     gap: 3px;
 }
-.control-group-label {
-    font-size: 10px;
+.control-pill-title {
+    font-size: 10.5px;
     font-weight: 700;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
 }
-.control-label-row {
+.control-pill-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
 }
-.appearance-control-divider {
+.control-pill-val {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #60a5fa;
+}
+.appearance-bar-divider {
     width: 1px;
-    height: 26px;
+    height: 28px;
     background: var(--panel-border);
     flex-shrink: 0;
 }
 .bg-presets-mini-list {
     display: flex;
-    gap: 5px;
+    gap: 6px;
     align-items: center;
 }
 .bg-presets-mini-list .bg-thumb {
@@ -900,41 +956,53 @@ body.edit-mode .first-visit-tip { display: none !important; }
     border-radius: 50%;
     cursor: pointer;
     border: 2px solid transparent;
-    transition: transform 0.15s, border-color 0.15s;
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.15s ease;
     flex-shrink: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
-.bg-presets-mini-list .bg-thumb:hover { transform: scale(1.12); }
-#custom-bg-btn {
+.bg-presets-mini-list .bg-thumb:hover { transform: scale(1.15); }
+.custom-bg-picker-btn {
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: rgba(128,128,128,0.2);
-    border: 1px dashed var(--text-secondary);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px dashed rgba(255, 255, 255, 0.25);
     cursor: pointer;
     color: var(--text-primary);
-    font-size: 13px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: transform 0.15s;
+    transition: transform 0.15s, border-color 0.15s, background 0.15s;
+    padding: 0;
 }
-#custom-bg-btn:hover { transform: scale(1.12); }
+.custom-bg-picker-btn:hover {
+    transform: scale(1.15);
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.15);
+}
 .reset-bg-pill-btn {
     padding: 3px 8px;
-    background: rgba(255,255,255,0.06);
+    background: rgba(255, 255, 255, 0.06);
     border: 1px solid var(--panel-border);
-    border-radius: 7px;
+    border-radius: 8px;
     color: var(--text-secondary);
     font-size: 10px;
     font-weight: 600;
     cursor: pointer;
-    margin-left: 2px;
     transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
 }
 .reset-bg-pill-btn:hover {
-    background: rgba(255,255,255,0.12);
+    background: rgba(255, 255, 255, 0.12);
     color: var(--text-primary);
+}
+.appearance-blur-slider {
+    width: 100%;
+    height: 4px;
+    cursor: pointer;
+    accent-color: #3b82f6;
 }
 
 /* Appearance Sub-Navigation Segmented Bar */
@@ -988,8 +1056,8 @@ body.edit-mode .first-visit-tip { display: none !important; }
 
 /* Custom Upload Card in Wallpaper Gallery */
 .wallpaper-thumb-card.upload-custom-wp-card {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1.5px dashed rgba(59, 130, 246, 0.45);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1.5px dashed rgba(59, 130, 246, 0.4);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1001,7 +1069,7 @@ body.edit-mode .first-visit-tip { display: none !important; }
     box-sizing: border-box;
 }
 .wallpaper-thumb-card.upload-custom-wp-card:hover {
-    background: rgba(59, 130, 246, 0.14);
+    background: rgba(59, 130, 246, 0.12);
     border-color: #3b82f6;
     transform: scale(1.05);
 }
@@ -1040,8 +1108,9 @@ body.edit-mode .first-visit-tip { display: none !important; }
     transition: all 0.2s ease;
     user-select: none;
     box-sizing: border-box;
+    position: relative;
 }
-.theme-option-card:hover {
+.theme-option-card:not(.coming-soon):hover {
     background: rgba(255, 255, 255, 0.08);
     transform: translateY(-2px);
     border-color: rgba(59, 130, 246, 0.4);
@@ -1050,6 +1119,16 @@ body.edit-mode .first-visit-tip { display: none !important; }
     background: rgba(59, 130, 246, 0.12);
     border-color: #3b82f6;
     box-shadow: 0 0 16px rgba(59, 130, 246, 0.35);
+}
+.theme-option-card.coming-soon {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.02);
+    border-style: dashed;
+}
+.theme-option-card.coming-soon:hover {
+    transform: none;
+    border-color: var(--panel-border);
 }
 .theme-card-icon {
     width: 38px;
@@ -1061,8 +1140,8 @@ body.edit-mode .first-visit-tip { display: none !important; }
     margin-bottom: 4px;
 }
 .theme-card-icon.liquid-preview {
-    background: rgba(56, 189, 248, 0.18);
-    border: 1px solid rgba(56, 189, 248, 0.35);
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.3);
 }
 .theme-card-icon.frosted-preview {
     background: rgba(255, 255, 255, 0.1);
@@ -1103,6 +1182,11 @@ body.edit-mode .first-visit-tip { display: none !important; }
 .theme-option-card.active .theme-card-badge {
     background: #3b82f6;
     color: white;
+}
+.theme-card-badge.soon-badge {
+    background: rgba(255, 255, 255, 0.06);
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 @media (max-width: 600px) {
@@ -1151,31 +1235,66 @@ body.edit-mode .first-visit-tip { display: none !important; }
     background: rgba(255,255,255,0.1); color: var(--text-secondary); cursor: default;
 }
 
-/* Wallpaper Gallery */
+/* Wallpaper Gallery (Clean, uncluttered, horizontal smooth cards) */
 .appearance-section-title {
-    display: flex; justify-content: space-between; align-items: center;
+    display: none;
 }
 .wallpaper-gallery-scroll {
-    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 2px 6px 2px;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scroll-behavior: smooth;
+    flex: 1;
+    align-items: center;
 }
 .wallpaper-gallery-scroll::-webkit-scrollbar { height: 4px; }
 .wallpaper-gallery-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
 .wallpaper-thumb-card {
-    flex: 0 0 100px; height: 72px; border-radius: 14px; overflow: hidden;
-    position: relative; cursor: pointer; border: 2px solid transparent;
-    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s; flex-shrink: 0;
+    flex: 0 0 106px;
+    height: 76px;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s, box-shadow 0.18s;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
-.wallpaper-thumb-card:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-.wallpaper-thumb-card.active { border-color: #3b82f6; box-shadow: 0 0 14px rgba(59, 130, 246, 0.5); }
+.wallpaper-thumb-card:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+.wallpaper-thumb-card.active {
+    border-color: #3b82f6;
+    box-shadow: 0 0 14px rgba(59, 130, 246, 0.6);
+}
 .wallpaper-thumb-card img {
-    width: 100%; height: 100%; object-fit: cover; display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 .wallpaper-thumb-card .wp-label {
-    position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.65);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    color: white; font-size: 9.5px; font-weight: 600; padding: 3px 4px; text-align: center;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.2) 75%, transparent 100%);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 6px 3px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.1px;
 }
 
 .store-item {
