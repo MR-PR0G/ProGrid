@@ -108,10 +108,11 @@ export default class FolderWidget extends BaseWidget {
 
         const getIconHtml = (ch) => {
             let uIcon = (ch.icon !== undefined ? ch.icon : '').trim();
-            if (uIcon === '🔗') uIcon = '';
+            if (uIcon === '🔗' || uIcon === '🌐') uIcon = '';
             if (uIcon) return uIcon;
             const favUrl = `https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(ch.url || '')}&size=128`;
-            return `<img src="${favUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" onerror="this.outerHTML='🌐'" draggable="false" />`;
+            const globeSvg = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
+            return `<img src="${favUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" onerror="this.outerHTML='${globeSvg.replace(/"/g, '&quot;')}'" draggable="false" />`;
         };
 
         let gridTemplate = `grid-template-columns: repeat(${w}, 1fr); grid-template-rows: repeat(${h}, 1fr);`;

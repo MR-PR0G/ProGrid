@@ -32,11 +32,11 @@ export default class PomodoroWidget extends BaseWidget {
                     <span class="pomo-time" style="font-size: 24px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; line-height: 1.1;">${timeStr}</span>
                 </div>
                 <div style="display: flex; gap: 6px; align-items: center;">
-                    <button class="pomo-toggle-btn" style="width: 36px; height: 36px; border-radius: 50%; border: none; background: ${isRunning ? '#ef4444' : '#3b82f6'}; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s;">
-                        ${isRunning ? '❚❚' : '▶'}
+                    <button class="pomo-toggle-btn" style="width: 36px; height: 36px; border-radius: 50%; border: none; background: ${isRunning ? '#ef4444' : '#3b82f6'}; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s;" title="${isRunning ? 'Pause' : 'Start'}">
+                        ${isRunning ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>` : `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>`}
                     </button>
-                    <button class="pomo-reset-btn" style="width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(255,255,255,0.08); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer;">
-                        ↺
+                    <button class="pomo-reset-btn" style="width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(255,255,255,0.08); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Reset Timer">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
                     </button>
                 </div>
             </div>
@@ -67,7 +67,7 @@ export default class PomodoroWidget extends BaseWidget {
                 this.config.isRunning = false;
                 if (this._interval) clearInterval(this._interval);
                 if (toggleBtn) {
-                    toggleBtn.innerHTML = '▶';
+                    toggleBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>';
                     toggleBtn.style.background = '#3b82f6';
                 }
                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
@@ -84,11 +84,11 @@ export default class PomodoroWidget extends BaseWidget {
                 if (navigator.vibrate) navigator.vibrate(20);
                 this.config.isRunning = !this.config.isRunning;
                 if (this.config.isRunning) {
-                    toggleBtn.innerHTML = '❚❚';
+                    toggleBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
                     toggleBtn.style.background = '#ef4444';
                     this._interval = setInterval(tick, 1000);
                 } else {
-                    toggleBtn.innerHTML = '▶';
+                    toggleBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>';
                     toggleBtn.style.background = '#3b82f6';
                     if (this._interval) clearInterval(this._interval);
                 }

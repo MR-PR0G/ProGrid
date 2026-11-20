@@ -395,7 +395,12 @@ export default class SearchWidget extends BaseWidget {
                         </svg>
                     </span>
                     <input type="text" name="q" id="input-${id}" class="search-input-field" placeholder="${placeholder}" required autocomplete="off" spellcheck="false" dir="auto">
-                    <button type="button" id="clear-${id}" class="search-clear-btn" aria-label="Clear query" style="display: none;" title="Clear">✕</button>
+                    <button type="button" id="clear-${id}" class="search-clear-btn" aria-label="Clear query" style="display: none;" title="Clear">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
                     <button type="submit" class="search-submit-btn" aria-label="Search" title="Search">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -445,7 +450,7 @@ export default class SearchWidget extends BaseWidget {
                     : `<svg class="suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`;
 
                 const delBtnHtml = isHistory
-                    ? `<button type="button" class="suggest-del-btn" data-query="${encodeURIComponent(item)}" title="Remove from history">✕</button>`
+                    ? `<button type="button" class="suggest-del-btn" data-query="${encodeURIComponent(item)}" title="Remove from history"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>`
                     : '';
 
                 html += `

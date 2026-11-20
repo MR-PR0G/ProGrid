@@ -27,7 +27,9 @@ export default class ChecklistWidget extends BaseWidget {
                     <div class="checklist-item" data-index="${i}" style="display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--panel-border);">
                         <input type="checkbox" class="checklist-check" ${t.done ? 'checked' : ''} style="accent-color: #3b82f6; width: 16px; height: 16px; cursor: pointer;">
                         <span dir="auto" style="flex: 1; font-size: 13px; color: var(--text-primary); text-decoration: ${t.done ? 'line-through' : 'none'}; opacity: ${t.done ? '0.5' : '1'}; text-align: start;">${t.text}</span>
-                        <button class="checklist-del" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px; opacity: 0.7;">✖</button>
+                        <button class="checklist-del" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 2px; opacity: 0.7; display: flex; align-items: center; justify-content: center;" title="Delete task">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
                     </div>
                 `;
             });
@@ -36,7 +38,10 @@ export default class ChecklistWidget extends BaseWidget {
         return `
             <div style="width: 100%; height: 100%; display: flex; flex-direction: column; padding: 14px; box-sizing: border-box;">
                 <div class="todo-header" style="font-weight: 600; font-size: 14px; margin-bottom: 10px; color: var(--text-primary); display: flex; align-items: center; justify-content: space-between;">
-                    <span>✅ Tasks</span>
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Tasks</span>
+                    </span>
                 </div>
                 <div class="todo-list-container" style="flex: 1; overflow-y: auto; padding-right: 4px; margin-bottom: 8px;">
                     ${tasksHtml}

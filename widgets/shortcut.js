@@ -22,15 +22,14 @@ export default class ShortcutWidget extends BaseWidget {
         const iconBg = this.config.iconBg || 'transparent';
         
         let userIcon = (this.config.icon !== undefined ? this.config.icon : '').trim();
-        // حذف هوشمند زنجیره‌های باگ شده قبلی
-        if (userIcon === '🔗') userIcon = '';
+        if (userIcon === '🔗' || userIcon === '🌐') userIcon = '';
         
         let iconContent = '';
 
         if (userIcon) {
             iconContent = userIcon;
         } else {
-            const firstLetter = title.charAt(0).toUpperCase() || '🔗';
+            const firstLetter = title.charAt(0).toUpperCase() || '•';
             const favUrl = `https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(url)}&size=128`;
             iconContent = `<img src="${favUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" onerror="this.outerHTML='<span style=\\'font-weight:700;font-size:24px;color:var(--text-primary);\\'>${firstLetter}</span>'" draggable="false" />`;
         }

@@ -80,12 +80,13 @@ async function init() {
     setupWidgetDrawer();
     setupWallpaperGallery();
     setupQuickMenuListeners();
+    setupAboutModal();
 
     // First visit guidance banner
     try {
         const hasSeenTip = localStorage.getItem('progrid_edit_tip_seen');
         const tipEl = document.getElementById('first-visit-tip');
-        const dismissBtn = document.getElementById('first-visit-dismiss');
+        const dismissBtn = document.getElementById('tip-dismiss-btn') || document.getElementById('first-visit-dismiss');
         if (!hasSeenTip && tipEl) {
             tipEl.style.display = 'flex';
             if (dismissBtn) {
@@ -840,7 +841,7 @@ function setupGlobalEvents() {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
     if (isStandalone && pwaInstallBtn) {
-        pwaInstallBtn.textContent = '✓ Installed';
+        pwaInstallBtn.textContent = 'Installed';
         pwaInstallBtn.style.opacity = '0.6';
         pwaInstallBtn.style.pointerEvents = 'none';
     }
@@ -859,7 +860,7 @@ function setupGlobalEvents() {
             window.deferredPWAInstallPrompt.userChoice.then(({ outcome }) => {
                 if (outcome === 'accepted') {
                     if (pwaInstallBtn) {
-                        pwaInstallBtn.textContent = '✓ Installed';
+                        pwaInstallBtn.textContent = 'Installed';
                         pwaInstallBtn.style.opacity = '0.6';
                     }
                     if (webBanner) webBanner.style.display = 'none';
@@ -876,11 +877,11 @@ function setupGlobalEvents() {
                 pwaInstructions.innerHTML = `
                     <div class="pwa-step-item">
                         <span class="pwa-step-num">1</span>
-                        <span class="pwa-step-text">Tap the <strong>Share</strong> button (📤) in Safari toolbar at the bottom.</span>
+                        <span class="pwa-step-text">Tap the <strong>Share</strong> button in Safari toolbar at the bottom.</span>
                     </div>
                     <div class="pwa-step-item">
                         <span class="pwa-step-num">2</span>
-                        <span class="pwa-step-text">Scroll down and tap <strong>Add to Home Screen</strong> (➕).</span>
+                        <span class="pwa-step-text">Scroll down and tap <strong>Add to Home Screen</strong>.</span>
                     </div>
                     <div class="pwa-step-item">
                         <span class="pwa-step-num">3</span>
@@ -960,7 +961,7 @@ function setupGlobalEvents() {
                 if (outcome === 'accepted') {
                     closeInstallModal();
                     if (pwaInstallBtn) {
-                        pwaInstallBtn.textContent = '✓ Installed';
+                        pwaInstallBtn.textContent = 'Installed';
                         pwaInstallBtn.style.opacity = '0.6';
                     }
                     if (webBanner) webBanner.style.display = 'none';
@@ -1116,14 +1117,44 @@ function addWidgetDirectly(type) {
     return newWidget;
 }
 
+function getWidgetIconSvg(type) {
+    if (window.WidgetGlobals) {
+        const meta = window.WidgetGlobals.getMetadata(type);
+        if (meta && meta.icon && typeof meta.icon === 'string' && meta.icon.includes('<svg')) {
+            return meta.icon;
+        }
+    }
+    const svgMap = {
+        clock: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
+        search: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`,
+        shortcut: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
+        folder: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`,
+        notes: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>`,
+        checklist: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
+        calculator: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="14.01"></line><line x1="12" y1="14" x2="12" y2="14.01"></line><line x1="8" y1="14" x2="8" y2="14.01"></line><line x1="16" y1="18" x2="16" y2="18.01"></line><line x1="12" y1="18" x2="12" y2="18.01"></line><line x1="8" y1="18" x2="8" y2="18.01"></line></svg>`,
+        quote: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path></svg>`,
+        pomodoro: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`
+    };
+    return svgMap[type] || `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`;
+}
+
+function openModalForConfig(type) {
+    const meta = window.WidgetGlobals ? window.WidgetGlobals.getMetadata(type) : null;
+    if (!meta) return;
+    const previewWidget = {
+        id: `pending-add-${type}-${Date.now()}`,
+        type: type,
+        w: type === 'search' ? 2 : (meta.defaultW || 1),
+        h: type === 'search' ? 1 : (meta.defaultH || 1),
+        isGlass: true,
+        bg: '#ffffff',
+        ...JSON.parse(JSON.stringify(meta.defaultConfig || {}))
+    };
+    openModal(previewWidget, true);
+}
+
 function configureWidgetType(type) {
-    let existing = state.widgets.find(w => w.type === type);
-    if (!existing) {
-        existing = addWidgetDirectly(type);
-    }
-    if (existing) {
-        openModal(existing);
-    }
+    openModalForConfig(type);
 }
 
 function renderInstalledDrawerList() {
@@ -1155,23 +1186,40 @@ function renderInstalledDrawerList() {
     let html = '';
     filtered.forEach(m => {
         const author = m.author || 'ProGrid';
+        const iconSvg = getWidgetIconSvg(m.type);
         html += `
             <div class="store-card" data-type="${m.type}">
                 <div class="store-card-header">
-                    <div class="store-card-icon">${m.icon || '📦'}</div>
+                    <div class="store-card-icon">${iconSvg}</div>
                     <div class="store-card-meta">
-                        <span class="store-card-title">${m.label || m.name}</span>
-                        <div class="store-card-author-row">
-                            <span class="store-card-author">By ${author}</span>
-                            <button class="store-card-info-btn" data-type="${m.type}" title="Widget details">ℹ️</button>
-                        </div>
+                        <span class="store-card-title" title="${m.label || m.name}">${m.label || m.name}</span>
                         <span class="store-card-size">${m.defaultW || 1}×${m.defaultH || 1}</span>
                     </div>
                 </div>
+                <div class="store-card-author-row">
+                    <span class="store-card-author">By ${author}</span>
+                    <button class="store-card-info-btn" data-type="${m.type}" title="Widget details" aria-label="Widget details">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                    </button>
+                </div>
                 <div class="store-card-actions">
-                    <button class="store-config-btn" data-type="${m.type}" title="Configure Widget">⚙️</button>
+                    <button class="store-config-btn" data-type="${m.type}" title="Configure & Add">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        <span>Config</span>
+                    </button>
                     <button class="store-add-btn" data-type="${m.type}">
-                        <span>+ Add</span>
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Add</span>
                     </button>
                 </div>
             </div>
@@ -1199,7 +1247,7 @@ function renderInstalledDrawerList() {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const type = btn.getAttribute('data-type');
-            configureWidgetType(type);
+            openModalForConfig(type);
         });
     });
 
@@ -1245,20 +1293,39 @@ async function renderMarketplaceDrawerList() {
     let html = '';
     filtered.forEach(item => {
         const isInstalled = widgetHub.isInstalled(item.id);
+        const iconSvg = getWidgetIconSvg(item.id);
         html += `
             <div class="market-card" data-id="${item.id}">
                 <div class="market-card-top">
-                    <div class="store-card-icon">${item.icon || '🧩'}</div>
+                    <div class="store-card-icon">${iconSvg}</div>
                     <div class="market-card-info">
-                        <span class="market-card-name">${item.name}</span>
-                        <span class="market-card-author">by ${item.author}</span>
+                        <span class="market-card-name" title="${item.name}">${item.name}</span>
+                        <span class="market-card-author">By ${item.author || 'ProGrid'}</span>
                     </div>
                 </div>
-                <div class="market-card-desc">${item.description}</div>
+                <div class="market-card-desc" title="${item.description}">${item.description}</div>
                 <div class="market-card-footer">
-                    <span class="market-downloads-tag">↓ ${item.downloads}</span>
+                    <span class="market-downloads-tag">
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>${item.downloads}</span>
+                    </span>
                     <button class="market-install-btn ${isInstalled ? 'installed' : ''}" data-id="${item.id}">
-                        ${isInstalled ? '✓ Added' : 'Install'}
+                        ${isInstalled ? `
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Added</span>
+                        ` : `
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span>Install</span>
+                        `}
                     </button>
                 </div>
             </div>
@@ -1278,7 +1345,12 @@ async function renderMarketplaceDrawerList() {
             btn.textContent = 'Installing...';
             const ok = await widgetHub.installWidget(targetItem);
             if (ok) {
-                btn.textContent = '✓ Added';
+                btn.innerHTML = `
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Added</span>
+                `;
                 btn.classList.add('installed');
                 renderInstalledDrawerList();
                 if (navigator.vibrate) navigator.vibrate(30);
@@ -1656,14 +1728,15 @@ window.openFolderPopup = function(folderId) {
             item.style.cursor = "pointer";
             
             let uIcon = (ch.icon !== undefined ? ch.icon : '').trim();
-            if (uIcon === '🔗') uIcon = '';
+            if (uIcon === '🔗' || uIcon === '🌐') uIcon = '';
             let iconHtml = uIcon;
             let iconBg = ch.iconBg || 'transparent';
             let shape = ch.shape || '20px';
 
             if (!iconHtml) {
                 const favUrl = `https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(ch.url || '')}&size=128`;
-                iconHtml = `<img src="${favUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" onerror="this.outerHTML='🌐'" draggable="false" />`;
+                const fallbackSvg = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`;
+                iconHtml = `<img src="${favUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" onerror="this.outerHTML='${fallbackSvg.replace(/"/g, '&quot;')}'" draggable="false" />`;
             }
             
             item.innerHTML = `
@@ -1809,11 +1882,30 @@ window.closeFolderPopup = function() {
     }, 220);
 };
 
-function openModal(w) {
+function openModal(w, isPreAdd = false) {
     const overlay = document.getElementById('modal-overlay');
     if (!overlay) return;
     
     document.getElementById('edit-w-id').value = w.id;
+
+    const modalTitle = document.getElementById('modal-header-title');
+    const saveBtn = document.getElementById('modal-save-btn');
+    const deleteBtn = document.getElementById('modal-delete-btn');
+
+    if (modalTitle) {
+        modalTitle.textContent = isPreAdd ? `Configure & Add ${w.type.charAt(0).toUpperCase() + w.type.slice(1)}` : 'Configure Widget';
+    }
+    if (saveBtn) {
+        saveBtn.innerHTML = isPreAdd ? `
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-2px; margin-right:4px;">
+                <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Add to Grid</span>
+        ` : '<span>Save</span>';
+    }
+    if (deleteBtn) {
+        deleteBtn.style.display = isPreAdd ? 'none' : 'block';
+    }
     
     document.querySelectorAll('.id-shortcut-only').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.id-search-only').forEach(el => el.style.display = 'none');
@@ -1858,6 +1950,63 @@ function closeModal() {
 
 function saveWidgetSettings() {
     const id = document.getElementById('edit-w-id').value;
+    const isPreAdd = id.startsWith('pending-add-');
+
+    if (isPreAdd) {
+        const type = id.split('-')[2];
+        const meta = window.WidgetGlobals ? window.WidgetGlobals.getMetadata(type) : null;
+        if (!meta) {
+            closeModal();
+            return;
+        }
+
+        grid.updateMetrics();
+        const effW = type === 'search' ? 2 : Math.min(meta.defaultW || 1, grid.columns);
+        const effH = type === 'search' ? 1 : Math.min(meta.defaultH || 1, grid.rowsCount);
+
+        const pos = grid.findFirstAvailablePos(effW, effH, state.widgets);
+        if (!pos) {
+            alert("No space available on grid! Rearrange or resize existing widgets.");
+            return;
+        }
+
+        const newWidget = {
+            id: `w-${Date.now()}`,
+            type: type,
+            x: pos.x,
+            y: pos.y,
+            w: effW,
+            h: effH,
+            ...JSON.parse(JSON.stringify(meta.defaultConfig || {})),
+            isGlass: document.getElementById('edit-w-glass-toggle').checked,
+            bg: currentWidgetBgSelection
+        };
+
+        if (type === 'shortcut') {
+            newWidget.title = document.getElementById('edit-w-title').value || 'Link';
+            newWidget.url = document.getElementById('edit-w-url').value || 'https://google.com';
+            newWidget.icon = document.getElementById('edit-w-icon').value;
+            newWidget.shape = currentShapeSelection;
+            newWidget.iconBg = currentIconBgSelection;
+        } else if (type === 'folder') {
+            newWidget.title = document.getElementById('edit-folder-title').value || 'Folder';
+        } else if (type === 'search') {
+            newWidget.engine = document.getElementById('edit-search-engine').value;
+            newWidget.placeholder = document.getElementById('edit-search-placeholder').value;
+            newWidget.searchShape = currentSearchShapeSelection || 'pill';
+            newWidget.showSuggestions = document.getElementById('edit-search-suggestions').checked;
+        }
+
+        newWidget.idealLayout = { x: newWidget.x, y: newWidget.y, w: newWidget.w, h: newWidget.h, baseCols: grid.columns };
+        state.widgets.push(newWidget);
+        grid.resolveAllFinalOverlaps(state.widgets);
+        StorageEngine.save(state);
+        renderGrid();
+        if (navigator.vibrate) navigator.vibrate(35);
+        closeModal();
+        return;
+    }
+
     const w = state.widgets.find(item => item.id === id);
     if (w) {
         w.isGlass = document.getElementById('edit-w-glass-toggle').checked;
@@ -1977,7 +2126,7 @@ function openWidgetInfo(wOrMeta) {
     const authorEl = document.getElementById('info-w-author');
     const versionEl = document.getElementById('info-w-version');
 
-    if (iconEl) iconEl.innerHTML = (meta && meta.icon) ? meta.icon : '📦';
+    if (iconEl) iconEl.innerHTML = getWidgetIconSvg(type);
     if (labelEl) labelEl.textContent = title;
     if (typeEl) typeEl.textContent = `${type} widget`;
     if (sizeEl) sizeEl.textContent = `${w} × ${h}`;
@@ -1998,6 +2147,101 @@ function closeWidgetInfo() {
     setTimeout(() => {
         modal.style.display = 'none';
     }, 220);
+}
+
+function setupAboutModal() {
+    const aboutBtn = document.getElementById('panel-about-btn');
+    const aboutModal = document.getElementById('about-modal');
+    const closeBtn = document.getElementById('about-close-btn');
+    const checkUpdateBtn = document.getElementById('about-check-update-btn');
+    const updateDot = document.getElementById('update-indicator-dot');
+    const updateTitle = document.getElementById('update-status-title');
+    const updateSub = document.getElementById('update-status-sub');
+    const btnLabel = document.getElementById('update-btn-label');
+
+    if (!aboutModal) return;
+
+    if (aboutBtn) {
+        aboutBtn.addEventListener('click', () => {
+            aboutModal.style.display = 'flex';
+        });
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            aboutModal.style.display = 'none';
+        });
+    }
+
+    aboutModal.addEventListener('click', (e) => {
+        if (e.target === aboutModal) aboutModal.style.display = 'none';
+    });
+
+    if (checkUpdateBtn) {
+        let isChecking = false;
+        checkUpdateBtn.addEventListener('click', async () => {
+            if (isChecking) return;
+
+            if (checkUpdateBtn.getAttribute('data-action') === 'reload') {
+                if ('serviceWorker' in navigator) {
+                    const reg = await navigator.serviceWorker.getRegistration();
+                    if (reg && reg.waiting) {
+                        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                }
+                window.location.reload(true);
+                return;
+            }
+
+            isChecking = true;
+            checkUpdateBtn.classList.add('spin');
+            if (btnLabel) btnLabel.textContent = 'Checking...';
+            if (updateDot) updateDot.className = 'update-indicator-dot checking';
+            if (updateTitle) updateTitle.textContent = 'Checking for updates...';
+            if (updateSub) updateSub.textContent = 'Contacting server & cache verification';
+
+            try {
+                if ('serviceWorker' in navigator) {
+                    const reg = await navigator.serviceWorker.getRegistration();
+                    if (reg) await reg.update();
+                }
+
+                const res = await fetch(`./manifest.json?t=${Date.now()}`, { cache: 'no-store' });
+                if (res.ok) {
+                    const remoteManifest = await res.json();
+                    const currentVersion = '0.2.0';
+                    const remoteVersion = remoteManifest.version || '0.2.0';
+
+                    if (remoteVersion !== currentVersion) {
+                        if (updateDot) updateDot.className = 'update-indicator-dot update-found';
+                        if (updateTitle) updateTitle.textContent = `New Update v${remoteVersion} Available!`;
+                        if (updateSub) updateSub.textContent = 'Click to reload and apply latest version.';
+                        if (btnLabel) btnLabel.textContent = 'Reload to Apply';
+                        checkUpdateBtn.setAttribute('data-action', 'reload');
+                    } else {
+                        if (updateDot) updateDot.className = 'update-indicator-dot';
+                        if (updateTitle) updateTitle.textContent = 'System Up to Date';
+                        if (updateSub) updateSub.textContent = `ProGrid v${currentVersion} is the latest verified release.`;
+                        if (btnLabel) btnLabel.textContent = 'Check Updates';
+                    }
+                } else {
+                    if (updateDot) updateDot.className = 'update-indicator-dot';
+                    if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
+                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.2.0 is active.';
+                    if (btnLabel) btnLabel.textContent = 'Check Updates';
+                }
+            } catch (err) {
+                console.warn('Update check error:', err);
+                if (updateDot) updateDot.className = 'update-indicator-dot';
+                if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
+                if (updateSub) updateSub.textContent = 'Using cached standalone v0.2.0 release.';
+                if (btnLabel) btnLabel.textContent = 'Check Updates';
+            } finally {
+                isChecking = false;
+                checkUpdateBtn.classList.remove('spin');
+            }
+        });
+    }
 }
 
 function setupQuickMenuListeners() {
