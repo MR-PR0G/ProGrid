@@ -126,6 +126,7 @@ async function init() {
     widgetHub.bootInstalledWidgets().then(() => {
         const hasCommunityWidget = state.widgets.some(w => !['shortcut', 'search', 'checklist', 'folder', 'clock', 'notes'].includes(w.type));
         if (hasCommunityWidget) renderGrid();
+        renderInstalledDrawerList();
     }).catch(e => console.error('Community widget boot notice:', e));
 }
 
@@ -1293,6 +1294,14 @@ function renderInstalledDrawerList() {
                     </button>
                 </div>
                 <div class="store-card-actions">
+                    ${!isCore ? `
+                        <button class="store-uninstall-btn" data-type="${m.type}" title="Uninstall widget from device" aria-label="Uninstall widget">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    ` : ''}
                     <button class="store-config-btn" data-type="${m.type}" title="Configure & Add">
                         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3"></circle>
@@ -1325,6 +1334,27 @@ function renderInstalledDrawerList() {
             const type = btn.getAttribute('data-type');
             const meta = window.WidgetGlobals.getMetadata(type);
             if (meta) openWidgetInfo(meta);
+        });
+    });
+
+    listEl.querySelectorAll('.store-uninstall-btn').forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const type = btn.getAttribute('data-type');
+            if (!type || CORE_WIDGET_TYPES.includes(type)) return;
+
+            widgetHub.uninstallWidget(type);
+            const hadInstances = state.widgets.some(w => w.type === type);
+            if (hadInstances) {
+                state.widgets = state.widgets.filter(w => w.type !== type);
+                StorageEngine.save(state);
+                renderGrid();
+            }
+
+            renderInstalledDrawerList();
+            renderMarketplaceDrawerList();
+            if (navigator.vibrate) navigator.vibrate([20, 30, 20]);
         });
     });
 
@@ -1380,14 +1410,22 @@ async function renderMarketplaceDrawerList() {
     filtered.forEach(item => {
         const isInstalled = widgetHub.isInstalled(item.id);
         const iconSvg = getWidgetIconSvg(item.id);
+        const downloadsStr = widgetHub.getDownloads(item.id);
         html += `
             <div class="market-card" data-id="${item.id}">
                 <div class="market-card-top">
                     <div class="store-card-icon">${iconSvg}</div>
                     <div class="market-card-info">
                         <span class="market-card-name" title="${item.name}">${item.name}</span>
-                        <span class="market-card-author">By ${item.author || 'ProGrid'}</span>
+                        <span class="market-card-author">By ${item.author || 'MR Prog'}</span>
                     </div>
+                    <button class="store-card-info-btn market-info-btn" data-id="${item.id}" title="Widget details" aria-label="Widget details">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                    </button>
                 </div>
                 <div class="market-card-desc" title="${item.description}">${item.description}</div>
                 <div class="market-card-footer">
@@ -1397,7 +1435,7 @@ async function renderMarketplaceDrawerList() {
                             <polyline points="7 10 12 15 17 10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
-                        <span>${item.downloads}</span>
+                        <span>${downloadsStr}</span>
                     </span>
                     <button class="market-install-btn ${isInstalled ? 'installed' : ''}" data-id="${item.id}">
                         ${isInstalled ? `
@@ -1420,6 +1458,16 @@ async function renderMarketplaceDrawerList() {
 
     listEl.innerHTML = html;
 
+    listEl.querySelectorAll('.market-info-btn').forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = btn.getAttribute('data-id');
+            const targetItem = items.find(x => x.id === id);
+            if (targetItem) openWidgetInfo(targetItem);
+        });
+    });
+
     listEl.querySelectorAll('.market-install-btn:not(.installed)').forEach(btn => {
         btn.addEventListener('pointerdown', (e) => e.stopPropagation());
         btn.addEventListener('click', async (e) => {
@@ -1438,6 +1486,8 @@ async function renderMarketplaceDrawerList() {
                     <span>Added</span>
                 `;
                 btn.classList.add('installed');
+                const tagSpan = btn.closest('.market-card')?.querySelector('.market-downloads-tag span');
+                if (tagSpan) tagSpan.textContent = widgetHub.getDownloads(id);
                 renderInstalledDrawerList();
                 if (navigator.vibrate) navigator.vibrate(30);
             } else {
@@ -2248,6 +2298,9 @@ const widgetDescriptions = {
     clock: 'Aesthetic digital clock with live seconds, dynamic greeting, and system time synchronization.',
     notes: 'Quick scratchpad for thoughts, memos, and checklists with instant local autosave.',
     checklist: 'Interactive daily tasks checklist to prioritize and manage everyday todos.',
+    pomodoro: 'Engineered focus sessions and countdown timer with chime notification.',
+    finance: 'Real-time rates for Cryptocurrencies, Gold, Oil, Forex and Iranian Toman.',
+    calculator: 'Compact glassmorphic calculator for rapid computations.',
     quote: 'Daily motivational wisdom to keep you inspired while working in your new tab.'
 };
 
@@ -2309,12 +2362,14 @@ function openWidgetInfo(wOrMeta) {
         meta = wOrMeta;
     }
 
-    type = wOrMeta.type || (meta && meta.type) || 'widget';
+    type = wOrMeta.type || (meta && meta.type) || (meta && meta.id) || 'widget';
     title = wOrMeta.title || (meta && (meta.label || meta.name)) || type;
-    w = wOrMeta.w || (meta && meta.defaultW) || 1;
-    h = wOrMeta.h || (meta && meta.defaultH) || 1;
-    author = (meta && meta.author) || wOrMeta.author || 'ProGrid';
-    version = (meta && meta.version) || wOrMeta.version || '1.0.0';
+    w = wOrMeta.w || (meta && (meta.defaultW || meta.w)) || 1;
+    h = wOrMeta.h || (meta && (meta.defaultH || meta.h)) || 1;
+    const isCore = CORE_WIDGET_TYPES.includes(type);
+    author = (meta && meta.author) || wOrMeta.author || (isCore ? 'ProGrid' : 'MR Prog');
+    version = (meta && meta.version) || wOrMeta.version || (isCore ? '0.2.4' : '1.0.0');
+    if (!version.startsWith('v')) version = `v${version}`;
     desc = (meta && meta.description) || widgetDescriptions[type] || 'Modular ProGrid fluid widget component.';
 
     const iconEl = document.getElementById('info-w-icon');
@@ -2324,6 +2379,8 @@ function openWidgetInfo(wOrMeta) {
     const descEl = document.getElementById('info-w-desc');
     const authorEl = document.getElementById('info-w-author');
     const versionEl = document.getElementById('info-w-version');
+    const downloadsEl = document.getElementById('info-w-downloads');
+    const actionBtn = document.getElementById('info-action-btn');
 
     if (iconEl) iconEl.innerHTML = getWidgetIconSvg(type);
     if (labelEl) labelEl.textContent = title;
@@ -2332,6 +2389,41 @@ function openWidgetInfo(wOrMeta) {
     if (descEl) descEl.textContent = desc;
     if (authorEl) authorEl.textContent = author;
     if (versionEl) versionEl.textContent = version;
+    if (downloadsEl) downloadsEl.textContent = widgetHub.getDownloads(type);
+
+    if (actionBtn) {
+        const isInstalled = isCore || widgetHub.isInstalled(type);
+        if (isInstalled) {
+            actionBtn.textContent = 'Add to Grid';
+            actionBtn.style.background = '#3b82f6';
+            actionBtn.onclick = () => {
+                closeWidgetInfo();
+                addWidgetDirectly(type);
+            };
+        } else {
+            actionBtn.textContent = 'Install Widget';
+            actionBtn.style.background = '#10b981';
+            actionBtn.onclick = async () => {
+                actionBtn.textContent = 'Installing...';
+                const items = await widgetHub.fetchRegistry();
+                const target = items.find(x => x.id === type) || meta;
+                const ok = await widgetHub.installWidget(target);
+                if (ok) {
+                    renderInstalledDrawerList();
+                    renderMarketplaceDrawerList();
+                    if (downloadsEl) downloadsEl.textContent = widgetHub.getDownloads(type);
+                    actionBtn.textContent = 'Add to Grid';
+                    actionBtn.style.background = '#3b82f6';
+                    actionBtn.onclick = () => {
+                        closeWidgetInfo();
+                        addWidgetDirectly(type);
+                    };
+                } else {
+                    actionBtn.textContent = 'Retry Install';
+                }
+            };
+        }
+    }
 
     modal.style.display = 'flex';
     requestAnimationFrame(() => {

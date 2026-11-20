@@ -537,6 +537,18 @@ body.edit-mode #edit-panel {
 }
 .store-add-btn:hover { background: #2563eb; transform: scale(1.02); }
 .store-add-btn:active { transform: scale(0.96); }
+.store-uninstall-btn {
+    width: 28px; height: 28px; flex-shrink: 0; border-radius: 9px;
+    background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #f87171; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+.store-uninstall-btn:hover {
+    background: rgba(239, 68, 68, 0.28); color: #ef4444; transform: scale(1.05);
+}
+.store-uninstall-btn:active {
+    transform: scale(0.95);
+}
 
 /* First-Time Visitor Onboarding Tip */
 .first-visit-tip {
