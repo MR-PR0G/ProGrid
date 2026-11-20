@@ -90,12 +90,12 @@ export default class SearchWidget extends BaseWidget {
             type: 'search',
             label: 'Search Bar',
             author: 'ProGrid',
-            version: '1.0.0',
-            description: 'Multi-engine web search with live Google autocomplete, search history, RTL support, and 4 custom shape themes.',
+            version: '0.2.4',
+            description: 'Multi-engine web search with live Google autocomplete, search history, RTL support, and 3 custom layouts.',
             icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`,
             defaultW: 3, defaultH: 1,
             minW: 2, minH: 1, maxW: 8, maxH: 1,
-            defaultConfig: { engine: 'google', placeholder: 'Search...', searchShape: 'pill', showSuggestions: true, isGlass: true, bg: '#ffffff' }
+            defaultConfig: { engine: 'google', placeholder: 'Search...', searchShape: 'pill', showSuggestions: true, bg: '#ffffff' }
         };
     }
 
@@ -136,8 +136,22 @@ export default class SearchWidget extends BaseWidget {
                     box-sizing: border-box;
                     transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, border-radius 0.2s;
                 }
-                /* Shape Variants */
+                /* Shape & Layout Variants */
                 .search-form.shape-pill { border-radius: 23px; }
+                .search-form.shape-full {
+                    height: calc(100% - 4px);
+                    border-radius: 12px;
+                    background: transparent;
+                    border: 1px solid rgba(255, 255, 255, 0.09);
+                    box-shadow: none;
+                    padding: 0 16px;
+                }
+                .search-form.shape-spotlight {
+                    border-radius: 14px;
+                    border: 1.5px solid rgba(56, 189, 248, 0.45);
+                    box-shadow: 0 0 16px rgba(56, 189, 248, 0.22);
+                    background: rgba(14, 17, 22, 0.65);
+                }
                 .search-form.shape-squircle { border-radius: 14px; }
                 .search-form.shape-sharp { border-radius: 6px; }
                 .search-form.shape-glow {

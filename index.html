@@ -308,10 +308,15 @@
                 <label style="color: var(--text-secondary); font-size: 12px;">URL</label>
                 <input type="text" class="modal-input" id="edit-w-url">
             </div>
+
+            <div class="modal-field id-shortcut-only" style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="color: var(--text-secondary); font-size: 12px;">Icon URL (Image / Web Icon)</label>
+                <input type="url" class="modal-input" id="edit-w-icon-url" placeholder="https://example.com/logo.png or leave empty">
+            </div>
             
             <div class="modal-field id-shortcut-only" style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="color: var(--text-secondary); font-size: 12px;">Icon</label>
-                <input type="text" class="modal-input" id="edit-w-icon" placeholder="Emoji/Text or empty">
+                <label style="color: var(--text-secondary); font-size: 12px;">Custom Letter / Text Icon</label>
+                <input type="text" class="modal-input" id="edit-w-icon" placeholder="Letter/Symbol (leave empty for auto favicon)">
             </div>
 
             <div class="modal-field id-shortcut-only" style="display: flex; flex-direction: column; gap: 6px;">
@@ -320,20 +325,6 @@
                     <button class="shape-btn" data-shape="4px" style="flex:1; padding:8px 0; background:var(--panel-border); border:2px solid transparent; border-radius:8px; cursor:pointer;"><div style="width:20px;height:20px;border:2px solid var(--text-primary);border-radius:2px;margin:auto;"></div></button>
                     <button class="shape-btn" data-shape="20px" style="flex:1; padding:8px 0; background:var(--panel-border); border:2px solid transparent; border-radius:8px; cursor:pointer;"><div style="width:20px;height:20px;border:2px solid var(--text-primary);border-radius:8px;margin:auto;"></div></button>
                     <button class="shape-btn" data-shape="50%" style="flex:1; padding:8px 0; background:var(--panel-border); border:2px solid transparent; border-radius:8px; cursor:pointer;"><div style="width:20px;height:20px;border:2px solid var(--text-primary);border-radius:50%;margin:auto;"></div></button>
-                </div>
-            </div>
-
-            <div class="modal-field id-shortcut-only" style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="color: var(--text-secondary); font-size: 12px;">Icon Background Color</label>
-                <div class="color-swatch-container">
-                    <div class="color-swatch-btn" data-target="iconBg" data-color="transparent" style="background:#333; color:white; display:flex; align-items:center; justify-content:center;" title="Transparent">
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.7" y1="5.7" x2="18.3" y2="18.3"></line></svg>
-                    </div>
-                    <div class="color-swatch-btn" data-target="iconBg" data-color="#ffffff" style="background:#ffffff;"></div>
-                    <div class="color-swatch-btn" data-target="iconBg" data-color="#1e1e2e" style="background:#1e1e2e;"></div>
-                    <div class="color-swatch-btn" data-target="iconBg" data-color="#3b82f6" style="background:#3b82f6;"></div>
-                    <div class="color-swatch-btn" data-target="iconBg" data-color="#10b981" style="background:#10b981;"></div>
-                    <div class="color-picker-wrapper" data-target="iconBg" title="Custom Color"><input type="color"></div>
                 </div>
             </div>
 
@@ -358,23 +349,19 @@
                 <input type="text" class="modal-input" id="edit-search-placeholder" dir="auto">
             </div>
             <div class="modal-field id-search-only" style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="color: var(--text-secondary); font-size: 12px;">Bar Shape & Aesthetic Theme</label>
-                <div class="search-shape-options" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
-                    <button type="button" class="search-shape-btn" data-shape="pill" title="Pill Rounded">
+                <label style="color: var(--text-secondary); font-size: 12px;">Bar Aesthetic Layout</label>
+                <div class="search-shape-options" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                    <button type="button" class="search-shape-btn" data-shape="pill" title="Floating Fluid Pill">
                         <span style="display:block; width:28px; height:14px; border:1.5px solid var(--text-primary); border-radius:10px; margin:auto;"></span>
                         <span style="font-size:10px; color:var(--text-secondary); margin-top:4px; display:block;">Pill</span>
                     </button>
-                    <button type="button" class="search-shape-btn" data-shape="squircle" title="Squircle Rounded">
-                        <span style="display:block; width:28px; height:14px; border:1.5px solid var(--text-primary); border-radius:5px; margin:auto;"></span>
-                        <span style="font-size:10px; color:var(--text-secondary); margin-top:4px; display:block;">Squircle</span>
+                    <button type="button" class="search-shape-btn" data-shape="full" title="Edge-to-Edge Minimal">
+                        <span style="display:block; width:28px; height:14px; border:1.5px dashed var(--text-primary); border-radius:3px; margin:auto;"></span>
+                        <span style="font-size:10px; color:var(--text-secondary); margin-top:4px; display:block;">Full Minimal</span>
                     </button>
-                    <button type="button" class="search-shape-btn" data-shape="sharp" title="Square Boxy">
-                        <span style="display:block; width:28px; height:14px; border:1.5px solid var(--text-primary); border-radius:2px; margin:auto;"></span>
-                        <span style="font-size:10px; color:var(--text-secondary); margin-top:4px; display:block;">Boxy</span>
-                    </button>
-                    <button type="button" class="search-shape-btn" data-shape="glow" title="Neo Glow Glass">
-                        <span style="display:block; width:28px; height:14px; border:1.5px solid #3b82f6; box-shadow:0 0 6px rgba(59,130,246,0.6); border-radius:6px; margin:auto;"></span>
-                        <span style="font-size:10px; color:#3b82f6; margin-top:4px; display:block; font-weight:600;">Glow</span>
+                    <button type="button" class="search-shape-btn" data-shape="spotlight" title="Command Spotlight">
+                        <span style="display:block; width:28px; height:14px; border:1.5px solid #38bdf8; box-shadow:0 0 6px rgba(56,189,248,0.6); border-radius:5px; margin:auto;"></span>
+                        <span style="font-size:10px; color:#38bdf8; margin-top:4px; display:block; font-weight:600;">Spotlight</span>
                     </button>
                 </div>
             </div>
@@ -425,26 +412,28 @@
 
             <div style="width: 100%; height: 1px; background: var(--panel-border); margin: 4px 0;"></div>
 
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <label style="color: var(--text-secondary); font-size: 12px;">Widget Body Color</label>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="color: var(--text-secondary); font-size: 11px;">Frosted Glass</span>
-                        <label class="glass-toggle-switch">
-                            <input type="checkbox" id="edit-w-glass-toggle">
-                            <span class="toggle-slider"></span>
-                        </label>
+            <!-- Compact 1-line Color Configuration Row -->
+            <div style="display: flex; gap: 12px; width: 100%; box-sizing: border-box; align-items: flex-start;">
+                <div class="id-shortcut-only" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                    <label style="color: var(--text-secondary); font-size: 12px;">Icon Color</label>
+                    <div class="color-swatch-container">
+                        <div class="color-swatch-btn" data-target="iconBg" data-color="transparent" style="background:#333; color:white; display:flex; align-items:center; justify-content:center;" title="Transparent">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.7" y1="5.7" x2="18.3" y2="18.3"></line></svg>
+                        </div>
+                        <div class="color-swatch-btn" data-target="iconBg" data-color="#ffffff" style="background:#ffffff;"></div>
+                        <div class="color-swatch-btn" data-target="iconBg" data-color="#3b82f6" style="background:#3b82f6;"></div>
+                        <div class="color-picker-wrapper" data-target="iconBg" title="Custom Icon Color"><input type="color"></div>
                     </div>
                 </div>
-                <div class="color-swatch-container">
-                    <div class="color-swatch-btn" data-target="widgetBg" data-color="transparent" style="background:#333; color:white; display:flex; align-items:center; justify-content:center;" title="Transparent">
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.7" y1="5.7" x2="18.3" y2="18.3"></line></svg>
+
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                    <label style="color: var(--text-secondary); font-size: 12px;">Card Color</label>
+                    <div class="color-swatch-container">
+                        <div class="color-swatch-btn" data-target="widgetBg" data-color="#ffffff" style="background:#ffffff;"></div>
+                        <div class="color-swatch-btn" data-target="widgetBg" data-color="#1e1e2e" style="background:#1e1e2e;"></div>
+                        <div class="color-swatch-btn" data-target="widgetBg" data-color="#3b82f6" style="background:#3b82f6;"></div>
+                        <div class="color-picker-wrapper" data-target="widgetBg" title="Custom Card Color"><input type="color"></div>
                     </div>
-                    <div class="color-swatch-btn" data-target="widgetBg" data-color="#ffffff" style="background:#ffffff;"></div>
-                    <div class="color-swatch-btn" data-target="widgetBg" data-color="#1e1e2e" style="background:#1e1e2e;"></div>
-                    <div class="color-swatch-btn" data-target="widgetBg" data-color="#3b82f6" style="background:#3b82f6;"></div>
-                    <div class="color-swatch-btn" data-target="widgetBg" data-color="#10b981" style="background:#10b981;"></div>
-                    <div class="color-picker-wrapper" data-target="widgetBg" title="Custom Color"><input type="color"></div>
                 </div>
             </div>
 
@@ -531,7 +520,7 @@
                 <div class="about-title-block">
                     <h3 class="about-name">ProGrid Workspace</h3>
                     <div class="about-badge-row">
-                        <span class="about-version-badge" id="about-app-version">v0.2.3</span>
+                        <span class="about-version-badge" id="about-app-version">v0.2.4</span>
                         <span class="about-license-badge">GNU GPLv3</span>
                     </div>
                 </div>
@@ -565,7 +554,7 @@
                     <div class="update-indicator-dot" id="update-indicator-dot"></div>
                     <div class="update-info-text">
                         <span class="update-title" id="update-status-title">System Up to Date</span>
-                        <span class="update-sub" id="update-status-sub">Running official v0.2.3 release</span>
+                        <span class="update-sub" id="update-status-sub">Running official v0.2.4 release</span>
                     </div>
                 </div>
                 <button id="about-check-update-btn" class="about-update-action-btn">

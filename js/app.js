@@ -1209,10 +1209,13 @@ function getWidgetIconSvg(type) {
         checklist: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
         calculator: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="14.01"></line><line x1="12" y1="14" x2="12" y2="14.01"></line><line x1="8" y1="14" x2="8" y2="14.01"></line><line x1="16" y1="18" x2="16" y2="18.01"></line><line x1="12" y1="18" x2="12" y2="18.01"></line><line x1="8" y1="18" x2="8" y2="18.01"></line></svg>`,
         quote: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path></svg>`,
-        pomodoro: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`
+        pomodoro: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
+        finance: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>`
     };
     return svgMap[type] || `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`;
 }
+
+const CORE_WIDGET_TYPES = ['shortcut', 'search', 'clock'];
 
 function openModalForConfig(type) {
     const meta = window.WidgetGlobals ? window.WidgetGlobals.getMetadata(type) : null;
@@ -1222,7 +1225,7 @@ function openModalForConfig(type) {
         type: type,
         w: type === 'search' ? 2 : (meta.defaultW || 1),
         h: type === 'search' ? 1 : (meta.defaultH || 1),
-        isGlass: true,
+        isGlass: state.designTheme !== 'material3',
         bg: '#ffffff',
         ...JSON.parse(JSON.stringify(meta.defaultConfig || {}))
     };
@@ -1238,7 +1241,11 @@ function renderInstalledDrawerList() {
     const badgeEl = document.getElementById('installed-count-pill');
     if (!listEl || !window.WidgetGlobals) return;
 
-    const allMetas = window.WidgetGlobals.getAllMetadata().filter(m => m.type !== 'folder');
+    const allMetas = window.WidgetGlobals.getAllMetadata().filter(m => {
+        if (m.type === 'folder') return false;
+        if (CORE_WIDGET_TYPES.includes(m.type)) return true;
+        return widgetHub.isInstalled(m.type);
+    });
     if (badgeEl) badgeEl.textContent = allMetas.length;
 
     const q = currentDrawerSearch.toLowerCase().trim();
@@ -1261,7 +1268,10 @@ function renderInstalledDrawerList() {
 
     let html = '';
     filtered.forEach(m => {
-        const author = m.author || 'ProGrid';
+        const isCore = CORE_WIDGET_TYPES.includes(m.type);
+        const author = isCore ? 'ProGrid' : (m.author || 'MR Prog');
+        const rawVer = m.version || (isCore ? '0.2.4' : '1.0.0');
+        const verStr = rawVer.startsWith('v') ? rawVer : `v${rawVer}`;
         const iconSvg = getWidgetIconSvg(m.type);
         html += `
             <div class="store-card" data-type="${m.type}">
@@ -1273,7 +1283,7 @@ function renderInstalledDrawerList() {
                     </div>
                 </div>
                 <div class="store-card-author-row">
-                    <span class="store-card-author">By ${author}</span>
+                    <span class="store-card-author">By ${author} • ${verStr}</span>
                     <button class="store-card-info-btn" data-type="${m.type}" title="Widget details" aria-label="Widget details">
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -2072,6 +2082,8 @@ function openModal(w, isPreAdd = false) {
         document.querySelectorAll('.id-shortcut-only').forEach(el => el.style.display = 'flex');
         document.getElementById('edit-w-title').value = w.title || '';
         document.getElementById('edit-w-url').value = w.url || '';
+        const iconUrlInput = document.getElementById('edit-w-icon-url');
+        if (iconUrlInput) iconUrlInput.value = w.iconUrl || '';
         document.getElementById('edit-w-icon').value = w.icon !== undefined ? w.icon : '';
         
         currentShapeSelection = w.shape || '20px';
@@ -2107,9 +2119,6 @@ function openModal(w, isPreAdd = false) {
     
     currentWidgetBgSelection = w.bg || '#ffffff';
     updateColorUI('widgetBg', currentWidgetBgSelection);
-    
-    const currentTheme = state.designTheme || 'liquid-glass';
-    document.getElementById('edit-w-glass-toggle').checked = (w.manualGlassConfig === true) ? (w.isGlass !== false) : (currentTheme !== 'material3');
     overlay.style.display = 'flex';
 }
 
@@ -2148,7 +2157,7 @@ function saveWidgetSettings() {
             w: effW,
             h: effH,
             ...JSON.parse(JSON.stringify(meta.defaultConfig || {})),
-            isGlass: document.getElementById('edit-w-glass-toggle').checked,
+            isGlass: state.designTheme !== 'material3',
             manualGlassConfig: true,
             bg: currentWidgetBgSelection
         };
@@ -2156,6 +2165,8 @@ function saveWidgetSettings() {
         if (type === 'shortcut') {
             newWidget.title = document.getElementById('edit-w-title').value || 'Link';
             newWidget.url = document.getElementById('edit-w-url').value || 'https://google.com';
+            const iconUrlInput = document.getElementById('edit-w-icon-url');
+            if (iconUrlInput) newWidget.iconUrl = iconUrlInput.value.trim();
             newWidget.icon = document.getElementById('edit-w-icon').value;
             newWidget.shape = currentShapeSelection;
             newWidget.iconBg = currentIconBgSelection;
@@ -2187,12 +2198,14 @@ function saveWidgetSettings() {
 
     const w = state.widgets.find(item => item.id === id);
     if (w) {
-        w.isGlass = document.getElementById('edit-w-glass-toggle').checked;
+        w.isGlass = state.designTheme !== 'material3';
         w.manualGlassConfig = true;
         w.bg = currentWidgetBgSelection;
         if (w.type === 'shortcut') {
             w.title = document.getElementById('edit-w-title').value;
             w.url = document.getElementById('edit-w-url').value;
+            const iconUrlInput = document.getElementById('edit-w-icon-url');
+            if (iconUrlInput) w.iconUrl = iconUrlInput.value.trim();
             w.icon = document.getElementById('edit-w-icon').value;
             w.shape = currentShapeSelection;
             w.iconBg = currentIconBgSelection;
@@ -2413,14 +2426,14 @@ function setupAboutModal() {
                 } else {
                     if (updateDot) updateDot.className = 'update-indicator-dot';
                     if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.2.3 is active.';
+                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.2.4 is active.';
                     if (btnLabel) btnLabel.textContent = 'Check Updates';
                 }
             } catch (err) {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Using cached standalone v0.2.3 release.';
+                if (updateSub) updateSub.textContent = 'Using cached standalone v0.2.4 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
             } finally {
                 isChecking = false;

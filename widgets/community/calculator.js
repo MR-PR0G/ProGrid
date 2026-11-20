@@ -9,9 +9,9 @@ export default class CalculatorWidget extends BaseWidget {
             defaultW: 2, defaultH: 2,
             minW: 2, minH: 2, maxW: 2, maxH: 2,
             category: 'tools',
-            author: 'ProGrid',
-            version: '1.0.0',
-            downloads: '4.8k',
+            author: 'MR Prog',
+            version: '1.2.0',
+            downloads: '5.3k',
             description: 'Compact glassmorphic calculator for rapid computations.',
             defaultConfig: { expression: '', result: '0', isGlass: true, bg: '#ffffff' }
         };
