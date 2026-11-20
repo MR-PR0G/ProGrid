@@ -269,6 +269,15 @@ function createWidgetDOM(w) {
         wrapper.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.4)';
     }
 
+    if (w.type === 'search') {
+        wrapper.setAttribute('data-type', 'search');
+        wrapper.style.background = 'transparent';
+        wrapper.style.backdropFilter = 'none';
+        wrapper.style.webkitBackdropFilter = 'none';
+        wrapper.style.border = 'none';
+        wrapper.style.boxShadow = 'none';
+    }
+
     const content = document.createElement('div');
     content.className = 'widget-content';
     const WidgetClass = window.WidgetGlobals.get(w.type);
@@ -364,6 +373,8 @@ function attachInteractionEngine(el, w, instance) {
     let isResizing = false;
     let widgetLongPressTimer = null;
     let isPointerMoved = false;
+    let dragOccurred = false;
+    let pointerDownTime = 0;
     let cachedContainerBounds = null;
     let cachedScale = 1;
 
@@ -389,6 +400,8 @@ function attachInteractionEngine(el, w, instance) {
         initialX = e.clientX;
         initialY = e.clientY;
         isPointerMoved = false;
+        dragOccurred = false;
+        pointerDownTime = Date.now();
 
         if (!state.editMode) {
             // پشتیبانی از لمس طولانی برای باز کردن منوی گزینه‌های هوشمند ویجت
@@ -441,7 +454,8 @@ function attachInteractionEngine(el, w, instance) {
         const moveDist = Math.hypot(e.clientX - initialX, e.clientY - initialY);
 
         if (!isResizing && !isDragging) {
-            if (moveDist > 6) {
+            if (moveDist > 5) {
+                dragOccurred = true;
                 isDragging = true;
                 isPointerMoved = true;
                 el.classList.add('dragging');
@@ -606,12 +620,19 @@ function attachInteractionEngine(el, w, instance) {
             }
         } catch (err) {}
 
-        // Single click / tap in edit mode (without drag): Open widget config/edit modal!
-        if (!isPointerMoved && !isDragging && !isResizing) {
+        const duration = Date.now() - pointerDownTime;
+        const wasIntentionalTap = !dragOccurred && !isPointerMoved && !isDragging && !isResizing && duration < 280;
+
+        // Single deliberate tap in edit mode (without drag): Open widget config/edit modal!
+        if (wasIntentionalTap) {
             el.classList.remove('dragging', 'resizing', 'burn-effect', 'max-limit-reached');
             if (ghost) ghost.classList.remove('active', 'max-limit-reached');
             openModal(w);
             return;
+        }
+
+        if (isDragging || isResizing || dragOccurred) {
+            window.__lastDropTimestamp = Date.now();
         }
 
         el.classList.remove('dragging');
@@ -692,9 +713,11 @@ function attachInteractionEngine(el, w, instance) {
                 el.releasePointerCapture(e.pointerId);
             }
         } catch (err) {}
+        dragOccurred = true;
         isDragging = false;
         isResizing = false;
         isPointerMoved = false;
+        window.__lastDropTimestamp = Date.now();
         el.classList.remove('dragging', 'resizing', 'burn-effect', 'max-limit-reached');
         if (ghost) ghost.classList.remove('active', 'max-limit-reached');
     });
@@ -2171,6 +2194,7 @@ function renderFinanceAssetChips() {
 }
 
 function openModal(w, isPreAdd = false) {
+    if (!isPreAdd && Date.now() - (window.__lastDropTimestamp || 0) < 450) return;
     const overlay = document.getElementById('modal-overlay');
     if (!overlay) return;
     

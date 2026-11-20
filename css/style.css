@@ -434,21 +434,26 @@ body.edit-mode #edit-panel {
 
 /* Store Scroll Lists & Native Mobile Cards */
 .store-list-container {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: nowrap !important;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
     gap: 12px;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
+    overflow-x: auto;
+    overflow-y: hidden;
     padding: 8px 6px;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x;
     scroll-behavior: smooth;
     overscroll-behavior-x: contain;
     flex: 1;
+    height: 165px;
+    min-height: 165px;
     align-items: center;
     width: 100%;
     box-sizing: border-box;
+}
+.store-list-container[style*="display: none"] {
+    display: none !important;
 }
 .store-list-container::-webkit-scrollbar { height: 4px; }
 .store-list-container::-webkit-scrollbar-track { background: transparent; }
@@ -456,10 +461,10 @@ body.edit-mode #edit-panel {
 .store-list-container::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35); }
 
 .store-card {
-    flex: 0 0 156px !important;
-    width: 156px !important;
-    min-width: 156px !important;
-    max-width: 156px !important;
+    flex: 0 0 156px;
+    width: 156px;
+    min-width: 156px;
+    max-width: 156px;
     height: 150px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--panel-border);
@@ -476,7 +481,7 @@ body.edit-mode #edit-panel {
     user-select: none;
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    flex-shrink: 0 !important;
+    flex-shrink: 0;
 }
 .store-card:hover {
     background: rgba(255, 255, 255, 0.09);

@@ -90,8 +90,8 @@ export default class SearchWidget extends BaseWidget {
             type: 'search',
             label: 'Search Bar',
             author: 'ProGrid',
-            version: '0.2.4',
-            description: 'Multi-engine web search with live Google autocomplete, search history, RTL support, and 3 custom layouts.',
+            version: '0.2.5',
+            description: 'Multi-engine web search with live Google autocomplete, search history, RTL support, and 4 aesthetic layouts.',
             icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`,
             defaultW: 3, defaultH: 1,
             minW: 2, minH: 1, maxW: 8, maxH: 1,
@@ -137,27 +137,62 @@ export default class SearchWidget extends BaseWidget {
                     transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, border-radius 0.2s;
                 }
                 /* Shape & Layout Variants */
-                .search-form.shape-pill { border-radius: 23px; }
-                .search-form.shape-full {
-                    height: calc(100% - 4px);
-                    border-radius: 12px;
-                    background: transparent;
-                    border: 1px solid rgba(255, 255, 255, 0.09);
-                    box-shadow: none;
-                    padding: 0 16px;
+                .search-form.shape-pill {
+                    border-radius: 28px;
+                    background: rgba(255, 255, 255, 0.08);
+                    border: 1px solid rgba(255, 255, 255, 0.16);
+                    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
                 }
                 .search-form.shape-spotlight {
                     border-radius: 14px;
-                    border: 1.5px solid rgba(56, 189, 248, 0.45);
-                    box-shadow: 0 0 16px rgba(56, 189, 248, 0.22);
-                    background: rgba(14, 17, 22, 0.65);
+                    border: 1.5px solid rgba(56, 189, 248, 0.55);
+                    box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
+                    background: rgba(14, 18, 28, 0.75);
+                    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
                 }
-                .search-form.shape-squircle { border-radius: 14px; }
-                .search-form.shape-sharp { border-radius: 6px; }
-                .search-form.shape-glow {
-                    border-radius: 16px;
-                    border: 1.5px solid rgba(59, 130, 246, 0.5);
-                    box-shadow: 0 0 16px rgba(59, 130, 246, 0.28);
+                .search-form.shape-frameless,
+                .search-form.shape-full {
+                    height: 44px;
+                    border-radius: 0 !important;
+                    background: transparent !important;
+                    border: none !important;
+                    border-bottom: 2px solid rgba(255, 255, 255, 0.24) !important;
+                    box-shadow: none !important;
+                    backdrop-filter: none !important;
+                    -webkit-backdrop-filter: none !important;
+                    padding: 0 4px !important;
+                }
+                .search-form.shape-frameless:focus-within,
+                .search-form.shape-full:focus-within {
+                    border-bottom-color: #3b82f6 !important;
+                    background: transparent !important;
+                    box-shadow: none !important;
+                }
+                .search-form.shape-liquid {
+                    border-radius: 20px;
+                    background: rgba(255, 255, 255, 0.07);
+                    border: 1.5px solid rgba(168, 85, 247, 0.42);
+                    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), 0 0 14px rgba(168, 85, 247, 0.22);
+                    backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+                }
+                .search-form.shape-liquid:focus-within {
+                    border-color: #c084fc;
+                    box-shadow: 0 0 20px rgba(192, 132, 252, 0.45);
+                }
+
+                /* Material 3 System Support */
+                body.theme-material3 .search-form:not(.shape-frameless) {
+                    border-radius: 28px !important;
+                    background: rgba(255, 255, 255, 0.09) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+                    backdrop-filter: none !important;
+                    -webkit-backdrop-filter: none !important;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+                }
+                body.theme-material3 .search-form:not(.shape-frameless):focus-within {
+                    background: rgba(255, 255, 255, 0.15) !important;
+                    border-color: #60a5fa !important;
+                    box-shadow: 0 4px 16px rgba(96, 165, 250, 0.28) !important;
                 }
 
                 .search-form:focus-within {
