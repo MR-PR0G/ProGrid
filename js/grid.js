@@ -15,15 +15,15 @@ export class GridEngine {
         const isMobile = width < 640;
 
         if (isMobile) {
-            // در گوشی‌ها چیدمان همیشه ۴ ستونه و ابعاد گرید کاملاً ثابت بر اساس صفحه است و هرگز داینامیک اضافه نمی‌شود
+            // در گوشی‌ها گرید ۴ ستونه و ردیف‌ها هوشمند با فضای کافی برای جابجایی روان ویجت‌ها
             this.cols = 4;
             this.GAP = 12;
             const availableW = Math.max(280, width - 24);
             const calculatedCell = Math.floor((availableW - (3 * this.GAP)) / 4);
             this.CELL_SIZE = Math.max(72, Math.min(84, calculatedCell));
             const availableH = Math.max(300, height - (height < 700 ? 70 : 90));
-            // تعداد ردیف‌ها کاملاً ثابت بوده و هرگز به سمت پایین گسترش پیدا نمی‌کند
-            this.rows = Math.max(5, Math.floor((availableH + this.GAP) / (this.CELL_SIZE + this.GAP)));
+            // حداقل ۶ ردیف یا بر اساس نیاز ویجت‌ها برای جلوگیری از قفل شدن جابجایی
+            this.rows = Math.max(6, Math.floor((availableH + this.GAP) / (this.CELL_SIZE + this.GAP)));
         } else {
             const availableW = width * 0.85;
             const availableH = height - 40;
@@ -214,23 +214,50 @@ export class GridEngine {
             }
         }
 
-        // اگر هل‌دادن آبشاری به انتهای ردیف‌های ثابت گرید رسید، بررسی جابجایی مستقیم (Position Swap):
+        // اگر هل‌دادن آبشاری به مانع خورد، ابتدا Position Swap یا انتقال به نزدیک‌ترین سلول خالی انجام می‌شود:
         if (failed && itemsToProcess.length > 0) {
             const directlyOverlapped = itemsToProcess.filter(it => this.checkOverlap(it, activeWidget));
-            if (directlyOverlapped.length === 1) {
-                const single = directlyOverlapped[0];
+            if (directlyOverlapped.length > 0) {
+                // تلاش برای swap یا پیدا کردن موقعیت آزاد برای آیتم‌های متداخل
+                let canSwapAll = true;
                 const priorX = activeWidget.idealLayout ? activeWidget.idealLayout.x : activeWidget.x;
                 const priorY = activeWidget.idealLayout ? activeWidget.idealLayout.y : activeWidget.y;
-                const swapPos = { x: priorX, y: priorY, w: single.w, h: single.h };
-                if (swapPos.x >= 0 && swapPos.x + swapPos.w <= this.cols && swapPos.y >= 0 && swapPos.y + swapPos.h <= this.rows) {
-                    const hasConflict = itemsToProcess.some(other => other.id !== single.id && this.checkOverlap(swapPos, other));
-                    if (!hasConflict && !this.checkOverlap(swapPos, activeWidget)) {
-                        snapshots.forEach(snap => {
-                            let realItem = itemsToProcess.find(it => it.id === snap.id);
-                            if (realItem) { realItem.x = snap.x; realItem.y = snap.y; }
-                        });
-                        single.x = swapPos.x;
-                        single.y = swapPos.y;
+
+                if (directlyOverlapped.length === 1) {
+                    const single = directlyOverlapped[0];
+                    const swapPos = { x: priorX, y: priorY, w: single.w, h: single.h };
+                    if (swapPos.x >= 0 && swapPos.x + swapPos.w <= this.cols && swapPos.y >= 0 && swapPos.y + swapPos.h <= this.rows) {
+                        const hasConflict = itemsToProcess.some(other => other.id !== single.id && this.checkOverlap(swapPos, other));
+                        if (!hasConflict && !this.checkOverlap(swapPos, activeWidget)) {
+                            snapshots.forEach(snap => {
+                                let realItem = itemsToProcess.find(it => it.id === snap.id);
+                                if (realItem) { realItem.x = snap.x; realItem.y = snap.y; }
+                            });
+                            single.x = swapPos.x;
+                            single.y = swapPos.y;
+                            failed = false;
+                        }
+                    }
+                }
+                
+                if (failed) {
+                    // جستجوی نزدیک‌ترین خانه خالی در گرید
+                    snapshots.forEach(snap => {
+                        let realItem = itemsToProcess.find(it => it.id === snap.id);
+                        if (realItem) { realItem.x = snap.x; realItem.y = snap.y; }
+                    });
+                    let allRelocated = true;
+                    for (const overlapped of directlyOverlapped) {
+                        const freePos = this.findFirstAvailablePos(overlapped.w, overlapped.h, [activeWidget, ...itemsToProcess.filter(it => it.id !== overlapped.id)], overlapped.id);
+                        if (freePos) {
+                            overlapped.x = freePos.x;
+                            overlapped.y = freePos.y;
+                        } else {
+                            allRelocated = false;
+                            break;
+                        }
+                    }
+                    if (allRelocated) {
                         failed = false;
                     }
                 }

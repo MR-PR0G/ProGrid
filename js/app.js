@@ -388,7 +388,7 @@ function attachInteractionEngine(el, w, instance) {
         }
 
         try {
-            el.setPointerCapture(e.pointerId);
+            if (el.setPointerCapture) el.setPointerCapture(e.pointerId);
         } catch (err) {}
 
         initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
@@ -417,15 +417,17 @@ function attachInteractionEngine(el, w, instance) {
 
     el.addEventListener('pointermove', (e) => {
         if (!state.editMode) {
-            if (Math.hypot(e.clientX - initialX, e.clientY - initialY) > 10) {
+            if (Math.hypot(e.clientX - initialX, e.clientY - initialY) > 8) {
                 isPointerMoved = true;
                 if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
             }
             return;
         }
 
+        const moveDist = Math.hypot(e.clientX - initialX, e.clientY - initialY);
+
         if (!isResizing && !isDragging) {
-            if (Math.hypot(e.clientX - initialX, e.clientY - initialY) > 5) {
+            if (moveDist > 6) {
                 isDragging = true;
                 isPointerMoved = true;
                 el.classList.add('dragging');
@@ -436,6 +438,7 @@ function attachInteractionEngine(el, w, instance) {
             }
         }
 
+        if (e.cancelable) e.preventDefault();
         if (!isDragging && !isResizing) return;
 
         if (rAFActive) return;
@@ -2410,14 +2413,14 @@ function setupAboutModal() {
                 } else {
                     if (updateDot) updateDot.className = 'update-indicator-dot';
                     if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.2.2 is active.';
+                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.2.3 is active.';
                     if (btnLabel) btnLabel.textContent = 'Check Updates';
                 }
             } catch (err) {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Using cached standalone v0.2.2 release.';
+                if (updateSub) updateSub.textContent = 'Using cached standalone v0.2.3 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
             } finally {
                 isChecking = false;
