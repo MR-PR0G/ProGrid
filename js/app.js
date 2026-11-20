@@ -2137,6 +2137,7 @@ function openModal(w, isPreAdd = false) {
     document.querySelectorAll('.id-search-only').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.id-folder-only').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.id-clock-only').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.id-finance-only').forEach(el => el.style.display = 'none');
 
     if (w.type === 'shortcut') {
         document.querySelectorAll('.id-shortcut-only').forEach(el => el.style.display = 'flex');
@@ -2175,6 +2176,28 @@ function openModal(w, isPreAdd = false) {
         if (h24Check) h24Check.checked = w.format24 !== false;
         const secCheck = document.getElementById('edit-clock-seconds');
         if (secCheck) secCheck.checked = !!w.showSeconds;
+    } else if (w.type === 'finance') {
+        document.querySelectorAll('.id-finance-only').forEach(el => {
+            el.style.display = el.classList.contains('glass-toggle-switch') ? 'inline-block' : 'flex';
+        });
+        const modeSelect = document.getElementById('edit-finance-mode');
+        const primarySelect = document.getElementById('edit-finance-primary');
+        const secondarySelect = document.getElementById('edit-finance-secondary');
+        const chartToggle = document.getElementById('edit-finance-chart');
+        const secondaryWrap = document.getElementById('edit-finance-secondary-wrap');
+
+        if (modeSelect) modeSelect.value = w.viewMode || 'single';
+        if (primarySelect) primarySelect.value = w.primaryAsset || 'BTC';
+        if (secondarySelect) secondarySelect.value = w.secondaryAsset || 'USDIRR';
+        if (chartToggle) chartToggle.checked = w.showChart !== false;
+
+        const syncSecondary = () => {
+            if (secondaryWrap) {
+                secondaryWrap.style.display = (modeSelect && modeSelect.value === 'dual') ? 'flex' : 'none';
+            }
+        };
+        if (modeSelect) modeSelect.onchange = syncSecondary;
+        syncSecondary();
     }
     
     currentWidgetBgSelection = w.bg || '#ffffff';
@@ -2244,6 +2267,11 @@ function saveWidgetSettings() {
             newWidget.timezone = document.getElementById('edit-clock-timezone').value;
             newWidget.format24 = document.getElementById('edit-clock-24h').checked;
             newWidget.showSeconds = document.getElementById('edit-clock-seconds').checked;
+        } else if (type === 'finance') {
+            newWidget.viewMode = document.getElementById('edit-finance-mode').value;
+            newWidget.primaryAsset = document.getElementById('edit-finance-primary').value;
+            newWidget.secondaryAsset = document.getElementById('edit-finance-secondary').value;
+            newWidget.showChart = document.getElementById('edit-finance-chart').checked;
         }
 
         newWidget.idealLayout = { x: newWidget.x, y: newWidget.y, w: newWidget.w, h: newWidget.h, baseCols: grid.columns };
@@ -2283,6 +2311,11 @@ function saveWidgetSettings() {
             w.timezone = document.getElementById('edit-clock-timezone').value;
             w.format24 = document.getElementById('edit-clock-24h').checked;
             w.showSeconds = document.getElementById('edit-clock-seconds').checked;
+        } else if (w.type === 'finance') {
+            w.viewMode = document.getElementById('edit-finance-mode').value;
+            w.primaryAsset = document.getElementById('edit-finance-primary').value;
+            w.secondaryAsset = document.getElementById('edit-finance-secondary').value;
+            w.showChart = document.getElementById('edit-finance-chart').checked;
         }
         
         w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: grid.columns };
@@ -2309,7 +2342,7 @@ const widgetDescriptions = {
     notes: 'Quick scratchpad for thoughts, memos, and checklists with instant local autosave.',
     checklist: 'Interactive daily tasks checklist to prioritize and manage everyday todos.',
     pomodoro: 'Engineered focus sessions and countdown timer with chime notification.',
-    finance: 'Real-time rates for Cryptocurrencies, Gold, Oil, Forex and Iranian Toman.',
+    finance: 'Interactive financial tracker with 24h hourly charts, single/dual currency focus, and Iranian Toman rates.',
     calculator: 'Compact glassmorphic calculator for rapid computations.',
     quote: 'Daily motivational wisdom to keep you inspired while working in your new tab.'
 };

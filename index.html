@@ -410,6 +410,51 @@
                 </label>
             </div>
 
+            <!-- Finance / Markets Widget Configuration Options -->
+            <div class="modal-field id-finance-only" style="display: none; flex-direction: column; gap: 6px;">
+                <label style="color: var(--text-secondary); font-size: 12px;">Display Layout / حالت نمایش</label>
+                <select class="modal-input" id="edit-finance-mode">
+                    <option value="single">Single Asset Focus (تک دارایی با چارت ۲۴ ساعته)</option>
+                    <option value="dual">Dual Comparison (نمایش ۲ دارایی همزمان)</option>
+                    <option value="market">Market Overview (نمای کلی دسته‌بندی‌ها)</option>
+                </select>
+            </div>
+            <div class="modal-field id-finance-only" style="display: none; flex-direction: column; gap: 6px;">
+                <label style="color: var(--text-secondary); font-size: 12px;">Primary Asset / دارایی اصلی</label>
+                <select class="modal-input" id="edit-finance-primary">
+                    <option value="BTC">Bitcoin (BTC) - ₿ بیت‌کوین</option>
+                    <option value="USDIRR">US Dollar (تومان) - 💵 دلار به تومان</option>
+                    <option value="ETH">Ethereum (ETH) - Ξ اتریوم</option>
+                    <option value="SOL">Solana (SOL) - ◎ سولانا</option>
+                    <option value="TON">Toncoin (TON) - 💎 تون‌کوین</option>
+                    <option value="GOLD">Gold Ounce (XAU) - 🟡 انس طلا</option>
+                    <option value="OIL">Brent Crude (OIL) - 🛢️ نفت برنت</option>
+                    <option value="SILVER">Silver (XAG) - ⚪ نقره جهانی</option>
+                    <option value="EURUSD">Euro / Dollar (EUR) - 💶 یورو</option>
+                    <option value="GBPUSD">British Pound (GBP) - 💷 پوند انگلیس</option>
+                </select>
+            </div>
+            <div class="modal-field id-finance-only" id="edit-finance-secondary-wrap" style="display: none; flex-direction: column; gap: 6px;">
+                <label style="color: var(--text-secondary); font-size: 12px;">Secondary Asset / دارایی دوم</label>
+                <select class="modal-input" id="edit-finance-secondary">
+                    <option value="USDIRR">US Dollar (تومان) - 💵 دلار به تومان</option>
+                    <option value="BTC">Bitcoin (BTC) - ₿ بیت‌کوین</option>
+                    <option value="ETH">Ethereum (ETH) - Ξ اتریوم</option>
+                    <option value="SOL">Solana (SOL) - ◎ سولانا</option>
+                    <option value="TON">Toncoin (TON) - 💎 تون‌کوین</option>
+                    <option value="GOLD">Gold Ounce (XAU) - 🟡 انس طلا</option>
+                    <option value="OIL">Brent Crude (OIL) - 🛢️ نفت برنت</option>
+                    <option value="EURUSD">Euro / Dollar (EUR) - 💶 یورو</option>
+                </select>
+            </div>
+            <div class="modal-field id-finance-only" style="display: none; align-items: center; justify-content: space-between; padding: 4px 0;">
+                <label style="color: var(--text-secondary); font-size: 12px;">Show 24h Hourly Chart (نمایش چارت)</label>
+                <label class="glass-toggle-switch">
+                    <input type="checkbox" id="edit-finance-chart" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
             <div style="width: 100%; height: 1px; background: var(--panel-border); margin: 4px 0;"></div>
 
             <!-- Compact 1-line Color Configuration Row -->

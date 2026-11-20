@@ -43,13 +43,13 @@
     "id": "finance",
     "name": "Markets & Crypto",
     "author": "MR Prog",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "downloads": "9.2k",
     "category": "finance",
     "defaultW": 2,
     "defaultH": 2,
     "verified": true,
-    "description": "Real-time rates for Cryptocurrencies, Gold, Oil, Forex and Iranian Toman.",
+    "description": "Interactive financial tracker with 24h hourly charts, single/dual currency focus, and Iranian Toman rates.",
     "scriptUrl": "./widgets/community/finance.js"
   },
   {
