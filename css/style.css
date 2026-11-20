@@ -69,6 +69,7 @@ body, html {
     width: 100%;
     height: 100%;
     position: relative;
+    z-index: 10;
     overflow: hidden;
     padding: max(22px, calc(env(safe-area-inset-top, 0px) + 12px)) 16px max(18px, calc(env(safe-area-inset-bottom, 0px) + 10px)) 16px;
     display: flex;
@@ -80,6 +81,7 @@ body, html {
 
 body.edit-mode #app-container {
     position: fixed;
+    z-index: 10;
     top: max(38px, calc(env(safe-area-inset-top, 0px) + 32px));
     bottom: 290px;
     left: 0;
