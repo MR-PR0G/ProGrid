@@ -101,205 +101,141 @@ export class GridEngine {
     }
 
     resolveAllFinalOverlaps(widgets) {
-        const centerX = this.cols / 2;
-        const centerY = this.rows / 2;
+        const visible = widgets.filter(w => !w.isHidden);
 
-        widgets.forEach(w => {
-            if (!w.idealLayout) w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: this.cols };
-            
-            let minAllowedW = w.type === 'search' ? 2 : 1;
-            let maxAllowedH = w.type === 'search' ? 1 : this.rows;
-
-            w.w = Math.max(minAllowedW, Math.min(w.idealLayout.w, this.cols));
-            w.h = Math.max(1, Math.min(w.idealLayout.h, maxAllowedH));
-            
-            const shift = Math.floor((this.cols - w.idealLayout.baseCols) / 2);
-            w.x = Math.max(0, Math.min(w.idealLayout.x + shift, this.cols - w.w));
-            w.y = Math.max(0, Math.min(w.idealLayout.y, this.rows - w.h));
-            w.isHidden = false;
-
-            const distW = (w.x + w.w / 2) - centerX;
-            const distH = (w.y + w.h / 2) - centerY;
-            w.centerDist = Math.sqrt(distW * distW + distH * distH);
+        // Clamp dimensions and boundaries
+        visible.forEach(w => {
+            const minW = w.type === 'search' ? 2 : 1;
+            const maxH = w.type === 'search' ? 1 : this.rows;
+            w.w = Math.max(minW, Math.min(w.w, this.cols));
+            w.h = Math.max(1, Math.min(w.h, maxH));
+            w.x = Math.max(0, Math.min(w.x, this.cols - w.w));
+            w.y = Math.max(0, Math.min(w.y, this.rows - w.h));
         });
 
-        widgets.sort((a, b) => a.centerDist - b.centerDist);
-        let availableCells = this.cols * this.rows;
-        let usedCells = 0;
-
-        widgets.forEach(w => {
-            if (usedCells + (w.w * w.h) <= availableCells) {
-                usedCells += (w.w * w.h);
-            } else {
-                w.isHidden = true;
-            }
-        });
-
-        const visible = widgets.filter(w => !w.isHidden).sort((a, b) => {
-            if (a.idealLayout.y !== b.idealLayout.y) return a.idealLayout.y - b.idealLayout.y;
-            return a.idealLayout.x - b.idealLayout.x;
-        });
-
+        // Resolve any existing overlaps by placing conflict-free
         const placed = [];
-        for (let item of visible) {
-            let fits = false;
-            let currentY = item.y;
-            while (currentY <= this.rows - item.h) {
-                let temp = { x: item.x, y: currentY, w: item.w, h: item.h };
-                if (!placed.some(p => this.checkOverlap(temp, p))) {
-                    item.y = currentY;
-                    placed.push(item);
-                    fits = true;
-                    break;
+        for (const item of visible) {
+            const hasConflict = placed.some(p => this.checkOverlap(item, p));
+            if (!hasConflict) {
+                placed.push(item);
+            } else {
+                let found = false;
+                for (let r = 0; r <= this.rows - item.h && !found; r++) {
+                    for (let c = 0; c <= this.cols - item.w; c++) {
+                        const candidate = { x: c, y: r, w: item.w, h: item.h };
+                        if (!placed.some(p => this.checkOverlap(candidate, p))) {
+                            item.x = c;
+                            item.y = r;
+                            placed.push(item);
+                            found = true;
+                            break;
+                        }
+                    }
                 }
-                currentY++;
+                if (!found) {
+                    this.rows = Math.max(this.rows, item.y + item.h + 1);
+                    item.y = this.rows - item.h;
+                    placed.push(item);
+                }
             }
-            if (!fits) item.isHidden = true;
         }
     }
 
     omniMagnetPush(activeWidget, widgets) {
-        let minWLimit = activeWidget.type === 'search' ? 2 : 1;
-        let maxHLimit = activeWidget.type === 'search' ? 1 : this.rows;
+        const minW = activeWidget.type === 'search' ? 2 : 1;
+        const maxH = activeWidget.type === 'search' ? 1 : this.rows;
 
-        if (activeWidget.w < minWLimit) activeWidget.w = minWLimit;
-        if (activeWidget.h > maxHLimit) activeWidget.h = maxHLimit;
-        if (activeWidget.w > this.cols) activeWidget.w = this.cols;
+        activeWidget.w = Math.max(minW, Math.min(activeWidget.w, this.cols));
+        activeWidget.h = Math.max(1, Math.min(activeWidget.h, maxH));
+        activeWidget.x = Math.max(0, Math.min(activeWidget.x, this.cols - activeWidget.w));
+        activeWidget.y = Math.max(0, Math.min(activeWidget.y, this.rows - activeWidget.h));
 
-        if (activeWidget.x < 0) activeWidget.x = 0;
-        if (activeWidget.x + activeWidget.w > this.cols) activeWidget.x = this.cols - activeWidget.w;
-        if (activeWidget.y < 0) activeWidget.y = 0;
-        if (activeWidget.y + activeWidget.h > this.rows) activeWidget.y = this.rows - activeWidget.h;
+        const others = widgets.filter(w => w.id !== activeWidget.id && !w.isHidden);
+        const collisions = others.filter(w => this.checkOverlap(w, activeWidget));
 
-        let itemsToProcess = widgets.filter(w => w.id !== activeWidget.id && !w.isHidden);
-        let snapshots = itemsToProcess.map(item => ({ id: item.id, x: item.x, y: item.y, w: item.w, h: item.h }));
-        let queue = [];
-        itemsToProcess.forEach(item => { if (this.checkOverlap(item, activeWidget)) queue.push(item); });
+        // If no overlap, snap cleanly
+        if (collisions.length === 0) {
+            return true;
+        }
 
-        let iterations = 0;
-        let failed = false;
+        const snapshots = others.map(item => ({ id: item.id, x: item.x, y: item.y }));
 
-        while (queue.length > 0 && iterations < 300) {
-            iterations++;
-            let current = queue.shift();
-            let directions = [
-                { x: current.x, y: current.y + 1 },
-                { x: current.x, y: current.y - 1 },
-                { x: current.x + 1, y: current.y },
-                { x: current.x - 1, y: current.y }
+        // Fast mutual swap if exactly one item overlaps
+        if (collisions.length === 1) {
+            const victim = collisions[0];
+            const priorX = activeWidget.idealLayout ? activeWidget.idealLayout.x : activeWidget.x;
+            const priorY = activeWidget.idealLayout ? activeWidget.idealLayout.y : activeWidget.y;
+
+            const swapRect = { x: priorX, y: priorY, w: victim.w, h: victim.h };
+            if (swapRect.x >= 0 && swapRect.x + swapRect.w <= this.cols &&
+                swapRect.y >= 0 && swapRect.y + swapRect.h <= this.rows) {
+                const swapConflict = others.some(other => other.id !== victim.id && this.checkOverlap(swapRect, other));
+                if (!swapConflict && !this.checkOverlap(swapRect, activeWidget)) {
+                    victim.x = swapRect.x;
+                    victim.y = swapRect.y;
+                    return true;
+                }
+            }
+        }
+
+        // Multi-collision or swap not clean: push colliding items to adjacent free slots
+        let allRelocated = true;
+        const placed = [activeWidget];
+
+        collisions.sort((a, b) => {
+            const distA = Math.hypot(a.x - activeWidget.x, a.y - activeWidget.y);
+            const distB = Math.hypot(b.x - activeWidget.x, b.y - activeWidget.y);
+            return distA - distB;
+        });
+
+        for (const victim of collisions) {
+            let found = false;
+            const candidateOffsets = [
+                { x: victim.x, y: activeWidget.y + activeWidget.h }, // below
+                { x: activeWidget.x + activeWidget.w, y: victim.y }, // right
+                { x: activeWidget.x - victim.w, y: victim.y },       // left
+                { x: victim.x, y: activeWidget.y - victim.h }        // above
             ];
 
-            let validPosFound = false;
-            let bestDir = null;
-            let minScore = Infinity;
-
-            for (let dir of directions) {
-                if (dir.x < 0 || dir.x + current.w > this.cols || dir.y < 0 || dir.y + current.h > this.rows) continue;
-                let temp = { ...current, x: dir.x, y: dir.y };
-                if (this.checkOverlap(temp, activeWidget)) continue;
-
-                let score = Math.abs(dir.x - current.x) + Math.abs(dir.y - current.y) * 2;
-                let overlapCount = itemsToProcess.filter(other => other.id !== current.id && this.checkOverlap(temp, other)).length;
-                score += overlapCount * 10;
-
-                if (score < minScore) {
-                    minScore = score; bestDir = dir; validPosFound = true;
+            for (const pos of candidateOffsets) {
+                if (pos.x >= 0 && pos.x + victim.w <= this.cols &&
+                    pos.y >= 0 && pos.y + victim.h <= this.rows) {
+                    const conflict = others.some(o => o.id !== victim.id && this.checkOverlap(pos, o)) ||
+                                     placed.some(p => this.checkOverlap(pos, p));
+                    if (!conflict) {
+                        victim.x = pos.x;
+                        victim.y = pos.y;
+                        placed.push(victim);
+                        found = true;
+                        break;
+                    }
                 }
             }
 
-            if (validPosFound && bestDir) {
-                current.x = bestDir.x; current.y = bestDir.y;
-                itemsToProcess.forEach(other => {
-                    if (other.id !== current.id && this.checkOverlap(current, other)) {
-                        if (!queue.includes(other)) queue.push(other);
-                    }
-                });
-            } else {
-                failed = true; break;
-            }
-        }
-
-        // If cascade push reaches boundary constraints, fallback to position swap or nearest vacant slot
-        if (failed && itemsToProcess.length > 0) {
-            const directlyOverlapped = itemsToProcess.filter(it => this.checkOverlap(it, activeWidget));
-            if (directlyOverlapped.length > 0) {
-                // Attempt mutual position swap for single-item overlap collisions
-                let canSwapAll = true;
-                const priorX = activeWidget.idealLayout ? activeWidget.idealLayout.x : activeWidget.x;
-                const priorY = activeWidget.idealLayout ? activeWidget.idealLayout.y : activeWidget.y;
-
-                if (directlyOverlapped.length === 1) {
-                    const single = directlyOverlapped[0];
-                    const swapPos = { x: priorX, y: priorY, w: single.w, h: single.h };
-                    if (swapPos.x >= 0 && swapPos.x + swapPos.w <= this.cols && swapPos.y >= 0 && swapPos.y + swapPos.h <= this.rows) {
-                        const hasConflict = itemsToProcess.some(other => other.id !== single.id && this.checkOverlap(swapPos, other));
-                        if (!hasConflict && !this.checkOverlap(swapPos, activeWidget)) {
-                            snapshots.forEach(snap => {
-                                let realItem = itemsToProcess.find(it => it.id === snap.id);
-                                if (realItem) { realItem.x = snap.x; realItem.y = snap.y; }
-                            });
-                            single.x = swapPos.x;
-                            single.y = swapPos.y;
-                            failed = false;
-                        }
-                    }
-                }
-                
-                if (failed) {
-                    // Search for first available free cell in matrix grid
-                    snapshots.forEach(snap => {
-                        let realItem = itemsToProcess.find(it => it.id === snap.id);
-                        if (realItem) { realItem.x = snap.x; realItem.y = snap.y; }
-                    });
-                    let allRelocated = true;
-                    for (const overlapped of directlyOverlapped) {
-                        const freePos = this.findFirstAvailablePos(overlapped.w, overlapped.h, [activeWidget, ...itemsToProcess.filter(it => it.id !== overlapped.id)], overlapped.id);
-                        if (freePos) {
-                            overlapped.x = freePos.x;
-                            overlapped.y = freePos.y;
-                        } else {
-                            allRelocated = false;
-                            break;
-                        }
-                    }
-                    if (allRelocated) {
-                        failed = false;
-                    }
+            if (!found) {
+                const freeSlot = this.findFirstAvailablePos(victim.w, victim.h, [...others.filter(o => o.id !== victim.id), ...placed], victim.id);
+                if (freeSlot) {
+                    victim.x = freeSlot.x;
+                    victim.y = freeSlot.y;
+                    placed.push(victim);
+                    found = true;
+                } else {
+                    allRelocated = false;
+                    break;
                 }
             }
         }
 
-        for (let item of itemsToProcess) {
-            if (item.x < 0 || item.x + item.w > this.cols || item.y < 0 || item.y + item.h > this.rows || this.checkOverlap(item, activeWidget)) failed = true;
-            for (let other of itemsToProcess) {
-                if (item.id !== other.id && this.checkOverlap(item, other)) failed = true;
-            }
+        if (allRelocated) {
+            return true;
         }
 
-        const activeEl = document.getElementById(activeWidget.id);
-
-        if (failed) {
-            snapshots.forEach(snap => {
-                let realItem = itemsToProcess.find(it => it.id === snap.id);
-                if (realItem) { realItem.x = snap.x; realItem.y = snap.y; realItem.w = snap.w; realItem.h = snap.h; }
-            });
-            if (activeEl && !activeEl.classList.contains('shake-locked')) {
-                activeEl.classList.add('shake-locked');
-                setTimeout(() => activeEl.classList.remove('shake-locked'), 300);
-            }
-            return false;
-        }
-
-        activeWidget.idealLayout = { x: activeWidget.x, y: activeWidget.y, w: activeWidget.w, h: activeWidget.h, baseCols: this.cols };
-        itemsToProcess.forEach(item => {
-            item.idealLayout = { x: item.x, y: item.y, w: item.w, h: item.h, baseCols: this.cols };
-            const el = document.getElementById(item.id);
-            if (el && !el.classList.contains('dragging') && !el.classList.contains('resizing')) {
-                el.style.left = `${item.x * (this.CELL_SIZE + this.GAP)}px`;
-                el.style.top = `${item.y * (this.CELL_SIZE + this.GAP)}px`;
-            }
+        // Restore snapshot if impossible
+        snapshots.forEach(s => {
+            const item = others.find(o => o.id === s.id);
+            if (item) { item.x = s.x; item.y = s.y; }
         });
-        
-        return true;
+        return false;
     }
 }

@@ -372,26 +372,26 @@ function checkCollisionWithDeleteZone(clientX, clientY) {
 }
 
 function attachInteractionEngine(el, w, instance) {
-    let initialX, initialY, startW, startH;
-    let dragOffsetX = 0;
-    let dragOffsetY = 0;
+    let initialPointerX = 0;
+    let initialPointerY = 0;
+    let startW = 0, startH = 0;
+    let dragOffsetX = 0, dragOffsetY = 0;
     let isDragging = false;
     let isResizing = false;
-    let widgetLongPressTimer = null;
-    let isPointerMoved = false;
-    let dragOccurred = false;
+    let hasMovedPastThreshold = false;
     let pointerDownTime = 0;
-    let cachedContainerBounds = null;
+    let widgetLongPressTimer = null;
     let cachedScale = 1;
+    let cachedContainerBounds = null;
 
     const meta = window.WidgetGlobals.getMetadata(w.type) || { minW: 1, minH: 1, maxW: 4, maxH: 4 };
     if (w.type === 'search') {
         meta.minW = 2; meta.maxH = 1; meta.minH = 1; meta.maxW = 99;
     }
-    
-    let minW = meta.minW || 1; let minH = meta.minH || 1;
-    let maxW = meta.maxW || 4; let maxH = meta.maxH || 4;
+    const minW = meta.minW || 1;
+    const minH = meta.minH || 1;
 
+    // Context menu / long-press handler
     el.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         if (state.editMode) {
@@ -402,69 +402,20 @@ function attachInteractionEngine(el, w, instance) {
         }
     });
 
-    el.addEventListener('pointerdown', (e) => {
-        initialX = e.clientX;
-        initialY = e.clientY;
-        isPointerMoved = false;
-        dragOccurred = false;
-        pointerDownTime = Date.now();
+    const onGlobalPointerMove = (e) => {
+        if (!state.editMode) return;
 
-        if (!state.editMode) {
-            // Long press support to trigger widget quick actions
-            widgetLongPressTimer = setTimeout(() => {
-                if (!isPointerMoved) {
-                    if (navigator.vibrate) navigator.vibrate(50);
-                    showWidgetQuickMenu(w, el, { x: initialX, y: initialY });
-                }
-            }, 460);
-            return;
-        }
-
-        try {
-            if (el.setPointerCapture) el.setPointerCapture(e.pointerId);
-        } catch (err) {}
-
-        initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
-
-        grid.updateMetrics();
-        cachedScale = getWrapperScale() || 1;
-        cachedContainerBounds = container.getBoundingClientRect();
-
-        if (e.target.classList.contains('resize-handle')) {
-            isResizing = true;
-            isDragging = false;
-            el.classList.add('resizing');
-            startW = el.offsetWidth;
-            startH = el.offsetHeight;
-            if (ghost) ghost.classList.add('active');
-            updateGhost(w);
-        } else {
-            isResizing = false;
-            isDragging = false;
-            const rect = el.getBoundingClientRect();
-            dragOffsetX = (e.clientX - rect.left) / cachedScale;
-            dragOffsetY = (e.clientY - rect.top) / cachedScale;
-        }
-        e.stopPropagation();
-    });
-
-    el.addEventListener('pointermove', (e) => {
-        if (!state.editMode) {
-            if (Math.hypot(e.clientX - initialX, e.clientY - initialY) > 8) {
-                isPointerMoved = true;
-                if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
-            }
-            return;
-        }
-
-        const moveDist = Math.hypot(e.clientX - initialX, e.clientY - initialY);
-
-        if (!isResizing && !isDragging) {
+        const moveDist = Math.hypot(e.clientX - initialPointerX, e.clientY - initialPointerY);
+        if (!isDragging && !isResizing) {
             if (moveDist > 5) {
-                dragOccurred = true;
-                isDragging = true;
-                isPointerMoved = true;
-                el.classList.add('dragging');
+                hasMovedPastThreshold = true;
+                if (e.target && e.target.classList.contains('resize-handle')) {
+                    isResizing = true;
+                    el.classList.add('resizing');
+                } else {
+                    isDragging = true;
+                    el.classList.add('dragging');
+                }
                 if (ghost) ghost.classList.add('active');
                 updateGhost(w);
             } else {
@@ -473,18 +424,16 @@ function attachInteractionEngine(el, w, instance) {
         }
 
         if (e.cancelable) e.preventDefault();
-        if (!isDragging && !isResizing) return;
-
         if (rAFActive) return;
         rAFActive = true;
 
         requestAnimationFrame(() => {
             rAFActive = false;
+            if (!isDragging && !isResizing) return;
+
             const scale = cachedScale || 1;
             const containerBounds = cachedContainerBounds || container.getBoundingClientRect();
-
-            maxW = w.type === 'search' ? grid.columns : Math.min(meta.maxW || 4, grid.columns);
-            maxH = Math.min(meta.maxH || 4, grid.rowsCount);
+            const step = grid.cellSize + grid.gap;
 
             if (isDragging) {
                 const targetLeft = ((e.clientX - containerBounds.left) / scale) - dragOffsetX;
@@ -501,15 +450,17 @@ function attachInteractionEngine(el, w, instance) {
                     if (ghost) ghost.classList.add('active');
                 }
 
-                let liveX = Math.round(targetLeft / (grid.cellSize + grid.gap));
-                let liveY = Math.round(targetTop / (grid.cellSize + grid.gap));
-                
-                let effectiveW = Math.max(minW, Math.min(w.w, grid.columns));
-                let effectiveH = Math.max(minH, Math.min(w.h, grid.rowsCount));
-                
-                liveX = Math.max(0, Math.min(liveX, grid.columns - effectiveW));
-                liveY = Math.max(0, Math.min(liveY, grid.rowsCount - effectiveH));
+                // Snap ghost
+                let targetCol = Math.round(targetLeft / step);
+                let targetRow = Math.round(targetTop / step);
 
+                const effW = Math.max(minW, Math.min(w.w, grid.columns));
+                const effH = Math.max(minH, Math.min(w.h, grid.rowsCount));
+
+                targetCol = Math.max(0, Math.min(targetCol, grid.columns - effW));
+                targetRow = Math.max(0, Math.min(targetRow, grid.rowsCount - effH));
+
+                // Shortcut merge into folder
                 potentialMergeTargetId = null;
                 document.querySelectorAll('.widget-wrapper:not(.dragging)').forEach(otherEl => {
                     const r = otherEl.getBoundingClientRect();
@@ -528,127 +479,84 @@ function attachInteractionEngine(el, w, instance) {
                     let tempWidgets = JSON.parse(JSON.stringify(initialWidgetsState));
                     let activeInState = tempWidgets.find(item => item.id === w.id);
                     if (activeInState) {
-                        activeInState.w = effectiveW;
-                        activeInState.h = effectiveH;
-                        activeInState.x = liveX;
-                        activeInState.y = liveY;
-                        
-                        const successfulPush = grid.omniMagnetPush(activeInState, tempWidgets);
-                        if (successfulPush) {
-                            updateGhost({ id: w.id, x: liveX, y: liveY, w: effectiveW, h: effectiveH });
+                        activeInState.x = targetCol;
+                        activeInState.y = targetRow;
+                        activeInState.w = effW;
+                        activeInState.h = effH;
+
+                        const pushed = grid.omniMagnetPush(activeInState, tempWidgets);
+                        if (pushed) {
+                            updateGhost({ id: w.id, x: targetCol, y: targetRow, w: effW, h: effH });
                             tempWidgets.forEach(tw => {
                                 if (tw.id !== w.id && !tw.isHidden) {
-                                    const realEl = document.getElementById(tw.id);
-                                    if (realEl && !realEl.classList.contains('dragging') && !realEl.classList.contains('resizing')) {
-                                        realEl.style.left = `${tw.x * (grid.cellSize + grid.gap)}px`;
-                                        realEl.style.top = `${tw.y * (grid.cellSize + grid.gap)}px`;
+                                    const otherDOM = document.getElementById(tw.id);
+                                    if (otherDOM && !otherDOM.classList.contains('dragging') && !otherDOM.classList.contains('resizing')) {
+                                        otherDOM.style.transition = 'left 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.18s cubic-bezier(0.2, 0.9, 0.3, 1)';
+                                        otherDOM.style.left = `${tw.x * step}px`;
+                                        otherDOM.style.top = `${tw.y * step}px`;
                                     }
                                 }
                             });
                         } else if (ghost) {
-                            const lastGhostX = Math.round(parseInt(ghost.style.left) / (grid.cellSize + grid.gap));
-                            const lastGhostY = Math.round(parseInt(ghost.style.top) / (grid.cellSize + grid.gap));
-                            updateGhost({ id: w.id, x: lastGhostX, y: lastGhostY, w: effectiveW, h: effectiveH });
+                            const lastGhostX = Math.max(0, Math.min(Math.round(parseInt(ghost.style.left) / step), grid.columns - effW));
+                            const lastGhostY = Math.max(0, Math.min(Math.round(parseInt(ghost.style.top) / step), grid.rowsCount - effH));
+                            updateGhost({ id: w.id, x: lastGhostX, y: lastGhostY, w: effW, h: effH });
                         }
                     }
                 } else {
-                    updateGhost({ id: w.id, x: liveX, y: liveY, w: effectiveW, h: effectiveH });
+                    updateGhost({ id: w.id, x: targetCol, y: targetRow, w: effW, h: effH });
                 }
-
             } else if (isResizing) {
-                const deltaX = (e.clientX - initialX) / scale;
-                const deltaY = (e.clientY - initialY) / scale;
-                
+                const deltaX = (e.clientX - initialPointerX) / scale;
+                const deltaY = (e.clientY - initialPointerY) / scale;
+
                 let rawW = startW + deltaX;
                 let rawH = startH + deltaY;
 
                 el.style.width = `${Math.max(50, rawW)}px`;
                 el.style.height = `${Math.max(50, rawH)}px`;
 
-                let gridW = Math.max(minW, Math.min(maxW, Math.round((rawW - grid.gap) / (grid.cellSize + grid.gap))));
-                let gridH = Math.max(minH, Math.min(maxH, Math.round((rawH - grid.gap) / (grid.cellSize + grid.gap))));
+                let maxAllowedW = w.type === 'search' ? grid.columns : Math.min(meta.maxW || 4, grid.columns);
+                let maxAllowedH = Math.min(meta.maxH || 4, grid.rowsCount);
 
-                let isAtLimit = false;
-                if ((rawW > (maxW * (grid.cellSize + grid.gap) - grid.gap + 15) && gridW >= maxW) ||
-                    (rawH > (maxH * (grid.cellSize + grid.gap) - grid.gap + 15) && gridH >= maxH) ||
-                    (w.x + gridW >= grid.columns && rawW > ((grid.columns - w.x) * (grid.cellSize + grid.gap) - grid.gap + 15)) ||
-                    (w.y + gridH >= grid.rowsCount && rawH > ((grid.rowsCount - w.y) * (grid.cellSize + grid.gap) - grid.gap + 15))) {
-                    isAtLimit = true;
-                }
-
-                if (isAtLimit) {
-                    el.classList.add('max-limit-reached');
-                    if (ghost) ghost.classList.add('max-limit-reached');
-                } else {
-                    el.classList.remove('max-limit-reached');
-                    if (ghost) ghost.classList.remove('max-limit-reached');
-                }
+                let gridW = Math.max(minW, Math.min(maxAllowedW, Math.round((rawW - grid.gap) / step)));
+                let gridH = Math.max(minH, Math.min(maxAllowedH, Math.round((rawH - grid.gap) / step)));
 
                 if (w.x + gridW > grid.columns) gridW = grid.columns - w.x;
                 if (w.y + gridH > grid.rowsCount) gridH = grid.rowsCount - w.y;
 
-                if (initialWidgetsState) {
-                    let tempWidgets = JSON.parse(JSON.stringify(initialWidgetsState));
-                    let activeInState = tempWidgets.find(item => item.id === w.id);
-                    if (activeInState) {
-                        activeInState.w = gridW;
-                        activeInState.h = gridH;
-                        const successfulPush = grid.omniMagnetPush(activeInState, tempWidgets);
-                        if (successfulPush) {
-                            updateGhost({ id: w.id, x: activeInState.x, y: activeInState.y, w: gridW, h: gridH });
-                            tempWidgets.forEach(tw => {
-                                if (tw.id !== w.id && !tw.isHidden) {
-                                    const realEl = document.getElementById(tw.id);
-                                    if (realEl && !realEl.classList.contains('dragging') && !realEl.classList.contains('resizing')) {
-                                        realEl.style.left = `${tw.x * (grid.cellSize + grid.gap)}px`;
-                                        realEl.style.top = `${tw.y * (grid.cellSize + grid.gap)}px`;
-                                    }
-                                }
-                            });
-                        } else if (ghost) {
-                            const lastGhostW = Math.round((parseInt(ghost.style.width) + grid.gap) / (grid.cellSize + grid.gap));
-                            const lastGhostH = Math.round((parseInt(ghost.style.height) + grid.gap) / (grid.cellSize + grid.gap));
-                            updateGhost({ id: w.id, x: activeInState.x, y: activeInState.y, w: lastGhostW, h: lastGhostH });
-                        }
-                    }
-                }
+                updateGhost({ id: w.id, x: w.x, y: w.y, w: gridW, h: gridH });
             }
         });
-    });
+    };
 
-    el.addEventListener('pointerup', (e) => {
+    const onGlobalPointerUp = (e) => {
+        window.removeEventListener('pointermove', onGlobalPointerMove);
+        window.removeEventListener('pointerup', onGlobalPointerUp);
+        window.removeEventListener('pointercancel', onGlobalPointerUp);
+
         if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
         if (!state.editMode) return;
-        
-        try {
-            if (el.hasPointerCapture && el.hasPointerCapture(e.pointerId)) {
-                el.releasePointerCapture(e.pointerId);
-            }
-        } catch (err) {}
 
         const duration = Date.now() - pointerDownTime;
-        const wasIntentionalTap = !dragOccurred && !isPointerMoved && !isDragging && !isResizing && duration < 280;
+        const wasTap = !hasMovedPastThreshold && !isDragging && !isResizing && duration < 280;
 
-        // Single deliberate tap in edit mode (without drag): Open widget config/edit modal!
-        if (wasIntentionalTap) {
-            el.classList.remove('dragging', 'resizing', 'burn-effect', 'max-limit-reached');
-            if (ghost) ghost.classList.remove('active', 'max-limit-reached');
-            openModal(w);
+        el.classList.remove('dragging', 'resizing', 'burn-effect', 'max-limit-reached');
+        if (ghost) ghost.classList.remove('active', 'max-limit-reached');
+
+        // Reset inline animation transitions on all sibling elements
+        document.querySelectorAll('.widget-wrapper').forEach(wrapper => {
+            wrapper.style.transition = '';
+        });
+
+        if (wasTap) {
+            if (Date.now() - (window.__lastDragEndTime || 0) > 350) {
+                openModal(w);
+            }
             return;
         }
 
-        if (isDragging || isResizing || dragOccurred) {
-            window.__lastDropTimestamp = Date.now();
-        }
-
-        el.classList.remove('dragging');
-        el.classList.remove('resizing');
-        el.classList.remove('burn-effect');
-        el.classList.remove('max-limit-reached');
-        if (ghost) {
-            ghost.classList.remove('active');
-            ghost.classList.remove('max-limit-reached');
-        }
+        window.__lastDragEndTime = Date.now();
 
         if (deleteZone && deleteZone.classList.contains('hovered')) {
             deleteZone.classList.remove('hovered');
@@ -663,8 +571,7 @@ function attachInteractionEngine(el, w, instance) {
             if (target) {
                 if (target.type === 'shortcut') {
                     target.type = 'folder';
-                    target.w = 2;
-                    target.h = 2;
+                    target.w = 2; target.h = 2;
                     target.title = "Folder";
                     target.children = [
                         { id: `ch-${Date.now()}-1`, type: 'shortcut', title: target.title || 'Link', url: target.url, icon: target.icon || '', shape: target.shape || '20px', iconBg: target.iconBg || 'transparent' },
@@ -685,47 +592,75 @@ function attachInteractionEngine(el, w, instance) {
             }
         }
 
+        const step = grid.cellSize + grid.gap;
         if (isDragging) {
             isDragging = false;
             if (ghost) {
-                w.x = Math.round(parseInt(ghost.style.left) / (grid.cellSize + grid.gap));
-                w.y = Math.round(parseInt(ghost.style.top) / (grid.cellSize + grid.gap));
+                const finalCol = Math.round(parseInt(ghost.style.left) / step);
+                const finalRow = Math.round(parseInt(ghost.style.top) / step);
+                w.x = Math.max(0, Math.min(finalCol, grid.columns - w.w));
+                w.y = Math.max(0, Math.min(finalRow, grid.rowsCount - w.h));
             }
+            grid.omniMagnetPush(w, state.widgets);
         } else if (isResizing) {
             isResizing = false;
             if (ghost) {
-                w.w = Math.round((parseInt(ghost.style.width) + grid.gap) / (grid.cellSize + grid.gap));
-                w.h = Math.round((parseInt(ghost.style.height) + grid.gap) / (grid.cellSize + grid.gap));
-                w.w = Math.max(minW, Math.min(maxW, w.w));
-                w.h = Math.max(minH, Math.min(maxH, w.h));
+                const finalW = Math.round((parseInt(ghost.style.width) + grid.gap) / step);
+                const finalH = Math.round((parseInt(ghost.style.height) + grid.gap) / step);
+                let maxAllowedW = w.type === 'search' ? grid.columns : Math.min(meta.maxW || 4, grid.columns);
+                let maxAllowedH = Math.min(meta.maxH || 4, grid.rowsCount);
+                w.w = Math.max(minW, Math.min(maxAllowedW, finalW));
+                w.h = Math.max(minH, Math.min(maxAllowedH, finalH));
             }
             if (instance && instance.onResize) {
                 try { instance.onResize(w.w, w.h, el); } catch (err) { console.error(err); }
             }
+            grid.omniMagnetPush(w, state.widgets);
         }
 
         w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: grid.columns };
-
-        grid.omniMagnetPush(w, state.widgets);
         grid.resolveAllFinalOverlaps(state.widgets);
         StorageEngine.save(state);
         renderGrid();
-    });
+    };
 
-    el.addEventListener('pointercancel', (e) => {
-        if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
-        try {
-            if (el.hasPointerCapture && el.hasPointerCapture(e.pointerId)) {
-                el.releasePointerCapture(e.pointerId);
-            }
-        } catch (err) {}
-        dragOccurred = true;
+    el.addEventListener('pointerdown', (e) => {
+        initialPointerX = e.clientX;
+        initialPointerY = e.clientY;
+        hasMovedPastThreshold = false;
         isDragging = false;
         isResizing = false;
-        isPointerMoved = false;
-        window.__lastDropTimestamp = Date.now();
-        el.classList.remove('dragging', 'resizing', 'burn-effect', 'max-limit-reached');
-        if (ghost) ghost.classList.remove('active', 'max-limit-reached');
+        pointerDownTime = Date.now();
+
+        if (!state.editMode) {
+            widgetLongPressTimer = setTimeout(() => {
+                if (!hasMovedPastThreshold) {
+                    if (navigator.vibrate) navigator.vibrate(50);
+                    showWidgetQuickMenu(w, el, { x: initialPointerX, y: initialPointerY });
+                }
+            }, 460);
+            return;
+        }
+
+        grid.updateMetrics();
+        cachedScale = getWrapperScale() || 1;
+        cachedContainerBounds = container.getBoundingClientRect();
+        initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
+
+        if (e.target.classList.contains('resize-handle')) {
+            startW = el.offsetWidth;
+            startH = el.offsetHeight;
+        } else {
+            const rect = el.getBoundingClientRect();
+            dragOffsetX = (e.clientX - rect.left) / cachedScale;
+            dragOffsetY = (e.clientY - rect.top) / cachedScale;
+        }
+
+        window.addEventListener('pointermove', onGlobalPointerMove, { passive: false });
+        window.addEventListener('pointerup', onGlobalPointerUp);
+        window.addEventListener('pointercancel', onGlobalPointerUp);
+
+        e.stopPropagation();
     });
 }
 
