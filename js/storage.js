@@ -6,6 +6,7 @@ export class StorageEngine {
             blurValue: state.blurValue,
             presetBg: state.presetBg || '1',
             theme: state.theme || 'dark',
+            designTheme: state.designTheme || 'liquid-glass',
             customBg: state.customBg || null,
             widgets: state.widgets
         }));

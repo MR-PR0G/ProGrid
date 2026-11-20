@@ -200,40 +200,91 @@
             <div class="store-list-container" id="store-marketplace-list" style="display: none;"></div>
         </div>
 
-        <!-- Appearance & Wallpaper Gallery Tab (Zero-Scroll Compact Layout) -->
-        <div class="panel-content" id="tab-appearance" style="flex-direction: column; gap: 8px;">
-            <!-- Wallpaper Gallery Header -->
-            <div class="appearance-section-title">
-                <span style="font-size: 12.5px; font-weight: 700;">Curated HD Wallpapers</span>
-                <span style="font-size: 11px; color: var(--text-secondary);">1-Click Apply • Offline Ready</span>
-            </div>
-            
-            <div class="wallpaper-gallery-scroll" id="wallpaper-gallery-container">
-                <!-- Dynamically populated from WALLPAPER_COLLECTION -->
+        <!-- Appearance & Wallpaper Gallery Tab (Grouped by Wallpapers vs Design Themes) -->
+        <div class="panel-content" id="tab-appearance" style="flex-direction: column; gap: 6px;">
+            <!-- Segmented Sub-navigation: Wallpapers & Blur vs Design Themes -->
+            <div class="appearance-subtabs-row">
+                <button type="button" class="appearance-subtab-btn active" id="app-subtab-wallpapers">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    <span>Wallpapers &amp; Blur</span>
+                </button>
+                <button type="button" class="appearance-subtab-btn" id="app-subtab-themes">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a7 7 0 0 0 0 14c1.66 0 3-1.34 3-3 0-.7-.3-1.3-.8-1.7-.5-.4-.8-1-.8-1.7 0-1.66 1.34-3 3-3 1.66 0 3 1.34 3 3 0 5-4.5 9-9 9A9.5 9.5 0 0 1 2.5 12"></path></svg>
+                    <span>Design System &amp; Themes</span>
+                </button>
             </div>
 
-            <!-- Compact Appearance Controls Dock -->
-            <div class="appearance-controls-dock">
-                <div class="appearance-control-group">
-                    <span class="control-group-label">Presets</span>
-                    <div id="bg-presets-list" class="bg-presets-mini-list">
-                        <div class="bg-thumb" data-preset="1" title="Gradient 1" style="width: 24px; height: 24px; border-radius: 50%; background: var(--bg-preset-1); border: 2px solid white; cursor: pointer;"></div>
-                        <div class="bg-thumb bg-dynamic" data-preset="2" title="Gradient 2" style="width: 24px; height: 24px; border-radius: 50%; background: var(--bg-preset-2); border: 2px solid transparent; cursor: pointer;"></div>
-                        <div class="bg-thumb bg-dynamic" data-preset="3" title="Gradient 3" style="width: 24px; height: 24px; border-radius: 50%; background: var(--bg-preset-3); border: 2px solid transparent; cursor: pointer;"></div>
-                        <button id="custom-bg-btn" title="Upload custom wallpaper" style="width: 24px; height: 24px; border-radius: 50%; background: rgba(128,128,128,0.2); border: 1px dashed var(--text-secondary); cursor: pointer; color: var(--text-primary); font-size: 13px; display: flex; align-items: center; justify-content: center;">+</button>
-                        <input type="file" id="custom-bg-input" accept="image/*" style="display: none;">
-                        <button id="reset-bg-btn" class="reset-bg-pill-btn">Reset</button>
-                    </div>
+            <!-- View 1: Wallpapers, Custom Upload & Blur Controls -->
+            <div class="appearance-view-container active" id="appearance-view-wallpapers">
+                <div class="appearance-section-title">
+                    <span style="font-size: 11.5px; font-weight: 700;">Curated HD Wallpapers &amp; Custom Photos</span>
+                    <span style="font-size: 10.5px; color: var(--text-secondary);">1-Click Apply • Auto-Cached</span>
+                </div>
+                
+                <div class="wallpaper-gallery-scroll" id="wallpaper-gallery-container">
+                    <!-- First element will be dynamically prepended as Custom Upload Card, followed by WALLPAPER_COLLECTION -->
                 </div>
 
-                <div class="appearance-control-divider"></div>
-
-                <div class="appearance-control-group" style="flex: 1; max-width: 180px;">
-                    <div class="control-label-row">
-                        <span class="control-group-label">Background Blur</span>
-                        <span id="blur-val-label" style="font-size: 10.5px; color: var(--text-secondary);">16px</span>
+                <!-- Compact Appearance Controls Dock -->
+                <div class="appearance-controls-dock">
+                    <div class="appearance-control-group">
+                        <span class="control-group-label">Color Presets</span>
+                        <div id="bg-presets-list" class="bg-presets-mini-list">
+                            <div class="bg-thumb" data-preset="1" title="Preset Gradient 1" style="width: 24px; height: 24px; border-radius: 50%; background: var(--bg-preset-1); border: 2px solid white; cursor: pointer;"></div>
+                            <div class="bg-thumb bg-dynamic" data-preset="2" title="Preset Gradient 2" style="width: 24px; height: 24px; border-radius: 50%; background: var(--bg-preset-2); border: 2px solid transparent; cursor: pointer;"></div>
+                            <div class="bg-thumb bg-dynamic" data-preset="3" title="Preset Gradient 3" style="width: 24px; height: 24px; border-radius: 50%; background: var(--bg-preset-3); border: 2px solid transparent; cursor: pointer;"></div>
+                            <button id="custom-bg-btn" title="Upload custom wallpaper photo" style="width: 24px; height: 24px; border-radius: 50%; background: rgba(128,128,128,0.2); border: 1px dashed var(--text-secondary); cursor: pointer; color: var(--text-primary); font-size: 13px; display: flex; align-items: center; justify-content: center;">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </button>
+                            <input type="file" id="custom-bg-input" accept="image/*" style="display: none;">
+                            <button id="reset-bg-btn" class="reset-bg-pill-btn">Reset</button>
+                        </div>
                     </div>
-                    <input type="range" id="blur-slider" min="0" max="40" value="16" style="width: 100%; height: 4px;">
+
+                    <div class="appearance-control-divider"></div>
+
+                    <div class="appearance-control-group" style="flex: 1; max-width: 190px;">
+                        <div class="control-label-row">
+                            <span class="control-group-label">Background Blur</span>
+                            <span id="blur-val-label" style="font-size: 10.5px; color: var(--text-secondary);">16px</span>
+                        </div>
+                        <input type="range" id="blur-slider" min="0" max="40" value="16" style="width: 100%; height: 4px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- View 2: Design Themes (Liquid Glass, Frosted Glass, Material 3) -->
+            <div class="appearance-view-container" id="appearance-view-themes">
+                <div class="theme-cards-container">
+                    <!-- Liquid Glass -->
+                    <div class="theme-option-card active" data-theme="liquid-glass" title="Activate Liquid Glass Theme">
+                        <div class="theme-card-icon liquid-preview">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 3a9 9 0 0 1 9 9"></path></svg>
+                        </div>
+                        <div class="theme-card-title">Liquid Glass</div>
+                        <div class="theme-card-desc">Refractive depth, chromatic specular borders &amp; vibrant fluid aesthetics</div>
+                        <span class="theme-card-badge">Active</span>
+                    </div>
+
+                    <!-- Frosted Glass -->
+                    <div class="theme-option-card" data-theme="frosted-glass" title="Activate Frosted Glass Theme">
+                        <div class="theme-card-icon frosted-preview">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#cbd5e1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                        </div>
+                        <div class="theme-card-title">Frosted Glass</div>
+                        <div class="theme-card-desc">Deep matte blur, ice-crystal frost &amp; minimalist subdued border contrast</div>
+                        <span class="theme-card-badge">Select</span>
+                    </div>
+
+                    <!-- Material 3 -->
+                    <div class="theme-option-card" data-theme="material3" title="Activate Material 3 Theme">
+                        <div class="theme-card-icon material-preview">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M4 12h16"></path></svg>
+                        </div>
+                        <div class="theme-card-title">Material 3</div>
+                        <div class="theme-card-desc">Solid tonal surfaces, zero blur transparency &amp; clean M3 elevation shadows</div>
+                        <span class="theme-card-badge">Select</span>
+                    </div>
                 </div>
             </div>
 
@@ -478,7 +529,7 @@
                 <div class="about-title-block">
                     <h3 class="about-name">ProGrid Workspace</h3>
                     <div class="about-badge-row">
-                        <span class="about-version-badge" id="about-app-version">v0.2.1</span>
+                        <span class="about-version-badge" id="about-app-version">v0.2.2</span>
                         <span class="about-license-badge">GNU GPLv3</span>
                     </div>
                 </div>
@@ -512,7 +563,7 @@
                     <div class="update-indicator-dot" id="update-indicator-dot"></div>
                     <div class="update-info-text">
                         <span class="update-title" id="update-status-title">System Up to Date</span>
-                        <span class="update-sub" id="update-status-sub">Running official v0.2.1 release</span>
+                        <span class="update-sub" id="update-status-sub">Running official v0.2.2 release</span>
                     </div>
                 </div>
                 <button id="about-check-update-btn" class="about-update-action-btn">

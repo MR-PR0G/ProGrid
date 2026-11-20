@@ -11,7 +11,7 @@ import '../widgets/folder.js';
 import '../widgets/clock.js';
 import '../widgets/notes.js';
 
-let state = { editMode: false, blurValue: 27, presetBg: '1', theme: 'dark', customBg: null, widgets: [] };
+let state = { editMode: false, blurValue: 27, presetBg: '1', theme: 'dark', designTheme: 'liquid-glass', customBg: null, widgets: [] };
 window.state = state;
 window.appState = state;
 
@@ -44,12 +44,14 @@ async function init() {
         state.blurValue = loaded.blurValue ?? 27;
         state.presetBg = loaded.presetBg || '1';
         state.theme = loaded.theme || 'dark';
+        state.designTheme = loaded.designTheme || 'liquid-glass';
         state.customBg = loaded.customBg || null;
         state.widgets = loaded.widgets;
     } else {
         state.blurValue = 27;
         state.presetBg = "1";
         state.theme = "dark";
+        state.designTheme = "liquid-glass";
         state.widgets = [
             { id: "w-clock-default", type: "clock", x: 0, y: 0, w: 2, h: 1, format24: true, showDate: true, isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 0, w: 2, h: 1, baseCols: 8 }, isHidden: false, centerDist: 0.5 },
             { id: "w-search-default", type: "search", x: 2, y: 0, w: 6, h: 1, engine: "google", placeholder: "Search...", isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 0, w: 6, h: 1, baseCols: 8 }, isHidden: false, centerDist: 1 },
@@ -79,6 +81,7 @@ async function init() {
     setupBackgroundActivationSensors();
     setupWidgetDrawer();
     setupWallpaperGallery();
+    setupAppearanceSubtabs();
     setupQuickMenuListeners();
     setupAboutModal();
 
@@ -108,6 +111,10 @@ async function init() {
 }
 
 function applyGlobalStyles() {
+    const currentTheme = state.designTheme || 'liquid-glass';
+    document.body.classList.remove('theme-liquid-glass', 'theme-frosted-glass', 'theme-material3');
+    document.body.classList.add(`theme-${currentTheme}`);
+
     if (blurOverlay) {
         blurOverlay.style.backdropFilter = `blur(${state.blurValue}px)`;
         blurOverlay.style.webkitBackdropFilter = `blur(${state.blurValue}px)`;
@@ -201,14 +208,32 @@ function createWidgetDOM(w) {
     wrapper.style.left = `${coords.x * (grid.cellSize + grid.gap)}px`;
     wrapper.style.top = `${coords.y * (grid.cellSize + grid.gap)}px`;
     
-    if (w.isGlass) {
-        wrapper.style.background = hexToRgba(w.bg || '#ffffff', state.theme === 'light' ? 0.3 : 0.1);
-        wrapper.style.backdropFilter = 'blur(20px)';
-        wrapper.style.webkitBackdropFilter = 'blur(20px)';
-        wrapper.style.border = '1px solid var(--panel-border)';
+    const currentTheme = state.designTheme || 'liquid-glass';
+    const isManual = w.manualGlassConfig === true;
+    const isGlass = isManual ? (w.isGlass !== false) : (currentTheme !== 'material3');
+
+    if (isGlass) {
+        if (currentTheme === 'frosted-glass') {
+            wrapper.style.background = hexToRgba(w.bg || '#ffffff', 0.08);
+            wrapper.style.backdropFilter = 'blur(35px)';
+            wrapper.style.webkitBackdropFilter = 'blur(35px)';
+            wrapper.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+            wrapper.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.25)';
+        } else {
+            // liquid-glass (default)
+            wrapper.style.background = hexToRgba(w.bg || '#ffffff', 0.12);
+            wrapper.style.backdropFilter = 'blur(20px)';
+            wrapper.style.webkitBackdropFilter = 'blur(20px)';
+            wrapper.style.border = '1px solid var(--panel-border)';
+            wrapper.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.35)';
+        }
     } else {
-        wrapper.style.background = w.bg || 'var(--panel-bg)';
-        wrapper.style.border = '1px solid var(--panel-border)';
+        // Solid Material 3 surface (or non-glass)
+        wrapper.style.background = (w.bg && w.bg !== '#ffffff') ? w.bg : '#22262e';
+        wrapper.style.backdropFilter = 'none';
+        wrapper.style.webkitBackdropFilter = 'none';
+        wrapper.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+        wrapper.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.4)';
     }
 
     const content = document.createElement('div');
@@ -1508,7 +1533,14 @@ function setupWallpaperGallery() {
     const resetBgBtn = document.getElementById('reset-bg-btn');
     if (!galleryContainer) return;
 
-    let html = '';
+    let html = `
+        <div class="wallpaper-thumb-card upload-custom-wp-card" id="gallery-upload-card" title="Upload Custom Photo / Wallpaper">
+            <div class="upload-wp-content">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                <span>Upload</span>
+            </div>
+        </div>
+    `;
     WALLPAPER_COLLECTION.forEach(wp => {
         const isCurrent = state.presetBg === 'custom' && (state.customBg === wp.full || localStorage.getItem('progrid_offline_wallpaper'));
         const fallbackGrad = wp.gradient || 'linear-gradient(135deg, #1e293b, #0f172a)';
@@ -1522,7 +1554,15 @@ function setupWallpaperGallery() {
 
     galleryContainer.innerHTML = html;
 
-    galleryContainer.querySelectorAll('.wallpaper-thumb-card').forEach(card => {
+    const uploadCard = document.getElementById('gallery-upload-card');
+    const customBgInput = document.getElementById('custom-bg-input');
+    if (uploadCard && customBgInput) {
+        uploadCard.addEventListener('click', () => {
+            customBgInput.click();
+        });
+    }
+
+    galleryContainer.querySelectorAll('.wallpaper-thumb-card:not(.upload-custom-wp-card)').forEach(card => {
         card.addEventListener('click', () => {
             galleryContainer.querySelectorAll('.wallpaper-thumb-card').forEach(c => c.classList.remove('active'));
             card.classList.add('active');
@@ -1553,6 +1593,60 @@ function setupWallpaperGallery() {
             if (navigator.vibrate) navigator.vibrate(25);
         });
     }
+}
+
+function setupAppearanceSubtabs() {
+    const subtabWallpapers = document.getElementById('app-subtab-wallpapers');
+    const subtabThemes = document.getElementById('app-subtab-themes');
+    const viewWallpapers = document.getElementById('appearance-view-wallpapers');
+    const viewThemes = document.getElementById('appearance-view-themes');
+
+    if (subtabWallpapers && subtabThemes && viewWallpapers && viewThemes) {
+        subtabWallpapers.addEventListener('click', () => {
+            subtabWallpapers.classList.add('active');
+            subtabThemes.classList.remove('active');
+            viewWallpapers.classList.add('active');
+            viewThemes.classList.remove('active');
+        });
+
+        subtabThemes.addEventListener('click', () => {
+            subtabThemes.classList.add('active');
+            subtabWallpapers.classList.remove('active');
+            viewThemes.classList.add('active');
+            viewWallpapers.classList.remove('active');
+        });
+    }
+
+    // Initialize Theme Option Cards
+    document.querySelectorAll('.theme-option-card').forEach(card => {
+        const theme = card.getAttribute('data-theme');
+        const isActive = (state.designTheme || 'liquid-glass') === theme;
+        card.classList.toggle('active', isActive);
+        const badge = card.querySelector('.theme-card-badge');
+        if (badge) badge.textContent = isActive ? 'Active' : 'Select';
+
+        card.addEventListener('click', () => {
+            if (navigator.vibrate) navigator.vibrate(25);
+            applyDesignTheme(theme);
+        });
+    });
+}
+
+function applyDesignTheme(theme) {
+    state.designTheme = theme;
+    document.body.classList.remove('theme-liquid-glass', 'theme-frosted-glass', 'theme-material3');
+    document.body.classList.add(`theme-${theme}`);
+    StorageEngine.save(state);
+
+    document.querySelectorAll('.theme-option-card').forEach(card => {
+        const cardTheme = card.getAttribute('data-theme');
+        const isActive = cardTheme === theme;
+        card.classList.toggle('active', isActive);
+        const badge = card.querySelector('.theme-card-badge');
+        if (badge) badge.textContent = isActive ? 'Active' : 'Select';
+    });
+
+    renderGrid();
 }
 
 function setupStoreDrag(itemEl) {
@@ -1981,7 +2075,8 @@ function openModal(w, isPreAdd = false) {
     currentWidgetBgSelection = w.bg || '#ffffff';
     updateColorUI('widgetBg', currentWidgetBgSelection);
     
-    document.getElementById('edit-w-glass-toggle').checked = w.isGlass !== false;
+    const currentTheme = state.designTheme || 'liquid-glass';
+    document.getElementById('edit-w-glass-toggle').checked = (w.manualGlassConfig === true) ? (w.isGlass !== false) : (currentTheme !== 'material3');
     overlay.style.display = 'flex';
 }
 
@@ -2021,6 +2116,7 @@ function saveWidgetSettings() {
             h: effH,
             ...JSON.parse(JSON.stringify(meta.defaultConfig || {})),
             isGlass: document.getElementById('edit-w-glass-toggle').checked,
+            manualGlassConfig: true,
             bg: currentWidgetBgSelection
         };
 
@@ -2059,6 +2155,7 @@ function saveWidgetSettings() {
     const w = state.widgets.find(item => item.id === id);
     if (w) {
         w.isGlass = document.getElementById('edit-w-glass-toggle').checked;
+        w.manualGlassConfig = true;
         w.bg = currentWidgetBgSelection;
         if (w.type === 'shortcut') {
             w.title = document.getElementById('edit-w-title').value;
@@ -2265,8 +2362,8 @@ function setupAboutModal() {
                 const res = await fetch(`./manifest.json?t=${Date.now()}`, { cache: 'no-store' });
                 if (res.ok) {
                     const remoteManifest = await res.json();
-                    const currentVersion = '0.2.1';
-                    const remoteVersion = remoteManifest.version || '0.2.1';
+                    const currentVersion = '0.2.2';
+                    const remoteVersion = remoteManifest.version || '0.2.2';
 
                     if (remoteVersion !== currentVersion) {
                         if (updateDot) updateDot.className = 'update-indicator-dot update-found';
@@ -2283,14 +2380,14 @@ function setupAboutModal() {
                 } else {
                     if (updateDot) updateDot.className = 'update-indicator-dot';
                     if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.2.1 is active.';
+                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.2.2 is active.';
                     if (btnLabel) btnLabel.textContent = 'Check Updates';
                 }
             } catch (err) {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Using cached standalone v0.2.1 release.';
+                if (updateSub) updateSub.textContent = 'Using cached standalone v0.2.2 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
             } finally {
                 isChecking = false;
