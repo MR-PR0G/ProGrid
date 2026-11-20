@@ -96,11 +96,16 @@ body.edit-mode.shelf-collapsed #app-container {
 }
 
 #blur-overlay {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
     pointer-events: none;
     z-index: 1;
-    transition: backdrop-filter 0.3s;
+    transition: backdrop-filter 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 #grid-scale-wrapper {
@@ -415,37 +420,44 @@ body.edit-mode #edit-panel {
 
 /* Store Scroll Lists & Native Mobile Cards */
 .store-list-container {
-    display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden;
-    padding: 6px 2px 6px 2px;
-    -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity;
+    display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden;
+    padding: 8px 6px;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scroll-behavior: smooth;
+    overscroll-behavior-x: contain;
     flex: 1;
     align-items: center;
 }
 .store-list-container::-webkit-scrollbar { height: 4px; }
-.store-list-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+.store-list-container::-webkit-scrollbar-track { background: transparent; }
+.store-list-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 4px; }
+.store-list-container::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35); }
 
 .store-card {
-    flex: 0 0 135px;
-    height: 140px;
+    flex: 0 0 144px;
+    width: 144px;
+    height: 144px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--panel-border);
     border-radius: 16px;
-    padding: 10px;
+    padding: 10px 12px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     gap: 6px;
     cursor: grab;
-    touch-action: none;
+    touch-action: pan-x;
     box-sizing: border-box;
     transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
     user-select: none;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
 }
 .store-card:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 0 16px rgba(59, 130, 246, 0.25);
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(59, 130, 246, 0.45);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
 }
 .store-card:active {
     cursor: grabbing;
@@ -466,20 +478,89 @@ body.edit-mode #edit-panel {
     font-size: 12px; font-weight: 700; color: var(--text-primary);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.store-card-author-row {
+    display: flex; align-items: center; gap: 4px; margin-top: 1px;
+}
+.store-card-author {
+    font-size: 10px; color: #60a5fa; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65px;
+}
+.store-card-info-btn {
+    background: none; border: none; font-size: 11px; cursor: pointer; padding: 0;
+    opacity: 0.65; transition: opacity 0.15s, transform 0.1s; display: inline-flex;
+    align-items: center; justify-content: center; line-height: 1; color: var(--text-secondary);
+}
+.store-card-info-btn:hover {
+    opacity: 1; transform: scale(1.2); color: #3b82f6;
+}
 .store-card-size {
-    font-size: 10px; color: var(--text-secondary); font-weight: 500;
+    font-size: 9.5px; color: var(--text-secondary); font-weight: 500;
 }
 .store-card-actions {
-    display: flex; align-items: center; justify-content: space-between; margin-top: auto;
+    display: flex; align-items: center; gap: 6px; margin-top: auto;
+}
+.store-config-btn {
+    width: 30px; height: 28px; border-radius: 9px;
+    background: rgba(255, 255, 255, 0.08); border: 1px solid var(--panel-border);
+    color: var(--text-primary); font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, transform 0.1s; flex-shrink: 0;
+}
+.store-config-btn:hover {
+    background: rgba(255, 255, 255, 0.16); transform: scale(1.05);
+}
+.store-config-btn:active {
+    transform: scale(0.94);
 }
 .store-add-btn {
-    width: 100%; padding: 6px 8px; border-radius: 9px; border: none;
+    flex: 1; height: 28px; padding: 0 8px; border-radius: 9px; border: none;
     background: #3b82f6; color: white; font-size: 11px; font-weight: 700;
     cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
     transition: background 0.15s, transform 0.1s;
 }
 .store-add-btn:hover { background: #2563eb; }
 .store-add-btn:active { transform: scale(0.96); }
+
+/* First-Time Visitor Onboarding Tip */
+.first-visit-tip {
+    position: fixed;
+    top: max(20px, calc(env(safe-area-inset-top, 0px) + 16px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 440px;
+    background: rgba(18, 24, 38, 0.92);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 20px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    z-index: 10001;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.25);
+    animation: tipSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    direction: rtl;
+    text-align: right;
+}
+@keyframes tipSlideDown {
+    from { opacity: 0; transform: translate(-50%, -20px) scale(0.96); }
+    to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+.tip-icon { font-size: 20px; flex-shrink: 0; }
+.tip-content { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.tip-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.tip-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+.tip-dismiss-btn {
+    background: #3b82f6; color: white; border: none; border-radius: 12px;
+    padding: 6px 14px; font-size: 11.5px; font-weight: 700; cursor: pointer;
+    flex-shrink: 0; transition: background 0.15s, transform 0.1s;
+}
+.tip-dismiss-btn:hover { background: #2563eb; }
+.tip-dismiss-btn:active { transform: scale(0.94); }
+body.edit-mode .first-visit-tip { display: none !important; }
 
 /* Marketplace Cards */
 .market-card {

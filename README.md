@@ -1,9 +1,9 @@
 <div align="center">
   <h1>🌟 ProGrid Workspace</h1>
-  <p><b>Version 0.1.9 | Developed by MR Prog</b></p>
+  <p><b>Version 0.2.0 | Developed by MR Prog</b></p>
   <p>A high-performance, modular, and fully customizable Liquid Glass workspace & dashboard for web, mobile, and browser extensions.</p>
 
-  <img src="https://img.shields.io/badge/Version-0.1.9-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.2.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Extension%20%7C%20PWA-success.svg" alt="Platform">
   <img src="https://img.shields.io/badge/Performance-0ms%20Cached%20Start-emerald.svg" alt="0ms Start">
   <img src="https://img.shields.io/badge/Offline-100%25%20First-purple.svg" alt="Offline First">
@@ -93,6 +93,9 @@ export default class MyWidget extends BaseWidget {
             type: 'mywidget',
             label: 'My Widget',
             icon: '🚀',
+            author: 'ProGrid',
+            version: '1.0.0',
+            description: 'Modular high-performance ProGrid widget component.',
             defaultW: 2, defaultH: 2,
             minW: 1, minH: 1,
             maxW: 4, maxH: 4,

@@ -5,6 +5,9 @@ export default class ChecklistWidget extends BaseWidget {
         return {
             type: 'checklist',
             label: 'Checklist',
+            author: 'ProGrid',
+            version: '1.0.0',
+            description: 'Interactive checklist and to-do tracker with instant local storage save.',
             icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
             defaultW: 2, defaultH: 2,
             minW: 2, minH: 2, maxW: 4, maxH: 4,
@@ -23,7 +26,7 @@ export default class ChecklistWidget extends BaseWidget {
                 tasksHtml += `
                     <div class="checklist-item" data-index="${i}" style="display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--panel-border);">
                         <input type="checkbox" class="checklist-check" ${t.done ? 'checked' : ''} style="accent-color: #3b82f6; width: 16px; height: 16px; cursor: pointer;">
-                        <span style="flex: 1; font-size: 13px; color: var(--text-primary); text-decoration: ${t.done ? 'line-through' : 'none'}; opacity: ${t.done ? '0.5' : '1'};">${t.text}</span>
+                        <span dir="auto" style="flex: 1; font-size: 13px; color: var(--text-primary); text-decoration: ${t.done ? 'line-through' : 'none'}; opacity: ${t.done ? '0.5' : '1'}; text-align: start;">${t.text}</span>
                         <button class="checklist-del" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px; opacity: 0.7;">✖</button>
                     </div>
                 `;
@@ -39,7 +42,7 @@ export default class ChecklistWidget extends BaseWidget {
                     ${tasksHtml}
                 </div>
                 <div style="display: flex; gap: 6px;">
-                    <input type="text" class="checklist-input" placeholder="Add task..." style="flex: 1; background: var(--input-bg); border: 1px solid var(--panel-border); padding: 6px 10px; border-radius: 8px; color: var(--text-primary); font-size: 12px;">
+                    <input type="text" class="checklist-input" placeholder="Add task..." dir="auto" style="flex: 1; background: var(--input-bg); border: 1px solid var(--panel-border); padding: 6px 10px; border-radius: 8px; color: var(--text-primary); font-size: 12px; text-align: start;">
                     <button class="checklist-add" style="background: #3b82f6; border: none; color: white; border-radius: 8px; width: 30px; cursor: pointer; font-weight: bold;">+</button>
                 </div>
             </div>

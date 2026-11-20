@@ -5,6 +5,9 @@ export default class ClockWidget extends BaseWidget {
         return {
             type: 'clock',
             label: 'Clock & Date',
+            author: 'ProGrid',
+            version: '1.0.0',
+            description: 'Precision digital clock with 12/24-hour format and live localized calendar date.',
             icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
             defaultW: 2,
             defaultH: 1,

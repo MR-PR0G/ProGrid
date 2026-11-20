@@ -9,7 +9,7 @@ export default class PomodoroWidget extends BaseWidget {
             defaultW: 2, defaultH: 1,
             minW: 2, minH: 1, maxW: 3, maxH: 2,
             category: 'productivity',
-            author: 'FocusLab',
+            author: 'ProGrid',
             version: '1.2.0',
             downloads: '5.1k',
             description: '25-minute focus session timer with audio chime and pause controls.',

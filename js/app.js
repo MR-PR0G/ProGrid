@@ -81,6 +81,24 @@ async function init() {
     setupWallpaperGallery();
     setupQuickMenuListeners();
 
+    // First visit guidance banner
+    try {
+        const hasSeenTip = localStorage.getItem('progrid_edit_tip_seen');
+        const tipEl = document.getElementById('first-visit-tip');
+        const dismissBtn = document.getElementById('first-visit-dismiss');
+        if (!hasSeenTip && tipEl) {
+            tipEl.style.display = 'flex';
+            if (dismissBtn) {
+                dismissBtn.addEventListener('click', () => {
+                    tipEl.style.display = 'none';
+                    localStorage.setItem('progrid_edit_tip_seen', '1');
+                });
+            }
+        }
+    } catch (e) {
+        console.warn('Storage tip check err:', e);
+    }
+
     // Asynchronously boot community widgets in background without blocking screen
     widgetHub.bootInstalledWidgets().then(() => {
         const hasCommunityWidget = state.widgets.some(w => !['shortcut', 'search', 'checklist', 'folder', 'clock', 'notes'].includes(w.type));
@@ -97,10 +115,6 @@ function applyGlobalStyles() {
     if (slider) slider.value = state.blurValue;
     const blurValLabel = document.getElementById('blur-val-label');
     if (blurValLabel) blurValLabel.textContent = `${state.blurValue}px`;
-    
-    document.body.classList.toggle('light-mode', state.theme === 'light');
-    const themeToggle = document.getElementById('theme-toggle');
-    if (themeToggle) themeToggle.checked = state.theme === 'light';
 
     document.querySelectorAll('.bg-thumb').forEach(t => t.style.borderColor = 'transparent');
     const activeThumb = document.querySelector(`.bg-thumb[data-preset="${state.presetBg}"]`);
@@ -111,7 +125,10 @@ function applyGlobalStyles() {
         const bgUrl = cachedWp || state.customBg;
         if (dynamicBgLayer && bgUrl) {
             dynamicBgLayer.className = 'bg-layer';
-            dynamicBgLayer.style.backgroundImage = `url("${bgUrl}")`;
+            const matchedWp = typeof WALLPAPER_COLLECTION !== 'undefined' ? WALLPAPER_COLLECTION.find(w => w.full === bgUrl || w.thumb === bgUrl) : null;
+            const fallbackGrad = matchedWp && matchedWp.gradient ? matchedWp.gradient : 'radial-gradient(ellipse at 50% 20%, #1a2238 0%, #080a10 100%)';
+            dynamicBgLayer.style.background = fallbackGrad;
+            dynamicBgLayer.style.backgroundImage = `url("${bgUrl}"), ${fallbackGrad}`;
             dynamicBgLayer.style.backgroundSize = 'cover';
             dynamicBgLayer.style.backgroundPosition = 'center center';
             dynamicBgLayer.style.backgroundRepeat = 'no-repeat';
@@ -628,11 +645,9 @@ function setupBackgroundActivationSensors() {
     window.addEventListener('touchmove', (e) => {
         if (state.editMode) return;
         if (touchStartedOnBg && e.touches && e.touches[0]) {
-            let diffY = touchStartY - e.touches[0].clientY;
-            if (diffY > 90) {
+            let diffY = Math.abs(touchStartY - e.touches[0].clientY);
+            if (diffY > 10) {
                 if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout);
-                if (navigator.vibrate) navigator.vibrate(50);
-                window.toggleEditMode(true);
                 touchStartedOnBg = false;
             }
         }
@@ -748,14 +763,6 @@ function setupGlobalEvents() {
         });
     }
 
-    const themeToggle = document.getElementById('theme-toggle');
-    if (themeToggle) {
-        themeToggle.addEventListener('change', (e) => {
-            state.theme = e.target.checked ? 'light' : 'dark';
-            applyGlobalStyles();
-            StorageEngine.save(state);
-        });
-    }
 
     const slider = document.getElementById('blur-slider');
     const blurValLabel = document.getElementById('blur-val-label');
@@ -1061,6 +1068,12 @@ window.toggleEditMode = function(forceState = null) {
         const collapseBtn = document.getElementById('panel-collapse-btn');
         if (collapseBtn) collapseBtn.setAttribute('title', 'Collapse Shelf');
         grid.resolveAllFinalOverlaps(state.widgets);
+    } else {
+        const tipEl = document.getElementById('first-visit-tip');
+        if (tipEl) {
+            tipEl.style.display = 'none';
+            try { localStorage.setItem('progrid_edit_tip_seen', '1'); } catch (e) {}
+        }
     }
     renderGrid();
     updateEditModeScale();
@@ -1071,7 +1084,7 @@ let activeDrawerSubtab = 'installed';
 
 function addWidgetDirectly(type) {
     const meta = window.WidgetGlobals ? window.WidgetGlobals.getMetadata(type) : null;
-    if (!meta) return;
+    if (!meta) return null;
 
     grid.updateMetrics();
     const effW = type === 'search' ? 2 : Math.min(meta.defaultW || 1, grid.columns);
@@ -1080,7 +1093,7 @@ function addWidgetDirectly(type) {
     const pos = grid.findFirstAvailablePos(effW, effH, state.widgets);
     if (!pos) {
         alert("No space available on grid! Rearrange or resize existing widgets.");
-        return;
+        return null;
     }
 
     const newWidget = {
@@ -1100,6 +1113,17 @@ function addWidgetDirectly(type) {
     renderGrid();
 
     if (navigator.vibrate) navigator.vibrate(35);
+    return newWidget;
+}
+
+function configureWidgetType(type) {
+    let existing = state.widgets.find(w => w.type === type);
+    if (!existing) {
+        existing = addWidgetDirectly(type);
+    }
+    if (existing) {
+        openModal(existing);
+    }
 }
 
 function renderInstalledDrawerList() {
@@ -1130,16 +1154,22 @@ function renderInstalledDrawerList() {
 
     let html = '';
     filtered.forEach(m => {
+        const author = m.author || 'ProGrid';
         html += `
             <div class="store-card" data-type="${m.type}">
                 <div class="store-card-header">
                     <div class="store-card-icon">${m.icon || '📦'}</div>
                     <div class="store-card-meta">
                         <span class="store-card-title">${m.label || m.name}</span>
+                        <div class="store-card-author-row">
+                            <span class="store-card-author">By ${author}</span>
+                            <button class="store-card-info-btn" data-type="${m.type}" title="Widget details">ℹ️</button>
+                        </div>
                         <span class="store-card-size">${m.defaultW || 1}×${m.defaultH || 1}</span>
                     </div>
                 </div>
                 <div class="store-card-actions">
+                    <button class="store-config-btn" data-type="${m.type}" title="Configure Widget">⚙️</button>
                     <button class="store-add-btn" data-type="${m.type}">
                         <span>+ Add</span>
                     </button>
@@ -1152,6 +1182,25 @@ function renderInstalledDrawerList() {
 
     listEl.querySelectorAll('.store-card').forEach(card => {
         setupStoreDrag(card);
+    });
+
+    listEl.querySelectorAll('.store-card-info-btn').forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const type = btn.getAttribute('data-type');
+            const meta = window.WidgetGlobals.getMetadata(type);
+            if (meta) openWidgetInfo(meta);
+        });
+    });
+
+    listEl.querySelectorAll('.store-config-btn').forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const type = btn.getAttribute('data-type');
+            configureWidgetType(type);
+        });
     });
 
     listEl.querySelectorAll('.store-add-btn').forEach(btn => {
@@ -1361,9 +1410,10 @@ function setupWallpaperGallery() {
     let html = '';
     WALLPAPER_COLLECTION.forEach(wp => {
         const isCurrent = state.presetBg === 'custom' && (state.customBg === wp.full || localStorage.getItem('progrid_offline_wallpaper'));
+        const fallbackGrad = wp.gradient || 'linear-gradient(135deg, #1e293b, #0f172a)';
         html += `
-            <div class="wallpaper-thumb-card ${isCurrent ? 'active' : ''}" data-url="${wp.full}" data-id="${wp.id}" title="${wp.name}">
-                <img src="${wp.thumb}" alt="${wp.name}" loading="lazy" />
+            <div class="wallpaper-thumb-card ${isCurrent ? 'active' : ''}" data-url="${wp.full}" data-id="${wp.id}" title="${wp.name}" style="background: ${fallbackGrad};">
+                <img src="${wp.thumb}" alt="${wp.name}" loading="lazy" onerror="this.style.opacity='0';" />
                 <span class="wp-label">${wp.name}</span>
             </div>
         `;
@@ -1420,12 +1470,9 @@ function setupStoreDrag(itemEl) {
 
     itemEl.addEventListener('pointerdown', (e) => {
         if (!state.editMode) return;
-        itemEl.setPointerCapture(e.pointerId);
         startX = e.clientX;
         startY = e.clientY;
         isDraggingInitiated = false;
-        itemEl.style.transform = 'scale(0.94)';
-        itemEl.style.opacity = '0.75';
     });
 
     itemEl.addEventListener('pointermove', (e) => {
@@ -1436,19 +1483,22 @@ function setupStoreDrag(itemEl) {
             const diffY = startY - e.clientY;
             const diffX = Math.abs(e.clientX - startX);
             
-            if (diffY > 24 && diffY > diffX) {
+            if (diffY > 24 && diffY > diffX * 1.2) {
                 grid.updateMetrics();
                 effectiveW = Math.min(meta.defaultW, grid.columns);
                 effectiveH = Math.min(meta.defaultH, grid.rowsCount);
 
                 if (!grid.canFit(effectiveW, effectiveH, state.widgets)) {
-                    itemEl.releasePointerCapture(e.pointerId);
-                    itemEl.style.transform = '';
-                    itemEl.style.opacity = '';
                     return;
                 }
 
+                try {
+                    itemEl.setPointerCapture(e.pointerId);
+                } catch (err) {}
+
                 isDraggingInitiated = true;
+                itemEl.style.transform = 'scale(0.94)';
+                itemEl.style.opacity = '0.75';
                 if (navigator.vibrate) navigator.vibrate(40);
                 initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
 
@@ -1517,11 +1567,19 @@ function setupStoreDrag(itemEl) {
 
         // اگر انگشت فقط تپ شده بود و به سمت گرید کشیده نشده بود: هیچ کاری نکن و ویجت اضافه نکن
         if (!isDraggingInitiated || !dummy) {
-            itemEl.releasePointerCapture(e.pointerId);
+            try {
+                if (itemEl.hasPointerCapture && itemEl.hasPointerCapture(e.pointerId)) {
+                    itemEl.releasePointerCapture(e.pointerId);
+                }
+            } catch (err) {}
             return;
         }
 
-        itemEl.releasePointerCapture(e.pointerId);
+        try {
+            if (itemEl.hasPointerCapture && itemEl.hasPointerCapture(e.pointerId)) {
+                itemEl.releasePointerCapture(e.pointerId);
+            }
+        } catch (err) {}
         dummy.remove();
         dummy = null;
         isDraggingInitiated = false;
@@ -1561,6 +1619,22 @@ function setupStoreDrag(itemEl) {
         grid.resolveAllFinalOverlaps(state.widgets);
         StorageEngine.save(state);
         renderGrid();
+    });
+
+    itemEl.addEventListener('pointercancel', (e) => {
+        itemEl.style.transform = '';
+        itemEl.style.opacity = '';
+        if (dummy) {
+            dummy.remove();
+            dummy = null;
+        }
+        isDraggingInitiated = false;
+        if (ghost) ghost.classList.remove('active');
+        try {
+            if (itemEl.hasPointerCapture && itemEl.hasPointerCapture(e.pointerId)) {
+                itemEl.releasePointerCapture(e.pointerId);
+            }
+        } catch (err) {}
     });
 }
 
@@ -1864,23 +1938,52 @@ function closeWidgetQuickMenu() {
     activeQuickMenuWidget = null;
 }
 
-function openWidgetInfo(w) {
-    if (!w) return;
+function openWidgetInfo(wOrMeta) {
+    if (!wOrMeta) return;
     const modal = document.getElementById('widget-info-modal');
     if (!modal) return;
 
-    const meta = window.WidgetGlobals ? window.WidgetGlobals.getMetadata(w.type) : null;
+    let meta = null;
+    let title = '';
+    let type = '';
+    let w = 1, h = 1;
+    let author = 'ProGrid';
+    let version = '1.0.0';
+    let desc = '';
+
+    if (wOrMeta.type && window.WidgetGlobals) {
+        meta = window.WidgetGlobals.getMetadata(wOrMeta.type);
+    }
+    if (!meta && wOrMeta.id && window.WidgetGlobals) {
+        meta = window.WidgetGlobals.getMetadata(wOrMeta.id);
+    }
+    if (!meta) {
+        meta = wOrMeta;
+    }
+
+    type = wOrMeta.type || (meta && meta.type) || 'widget';
+    title = wOrMeta.title || (meta && (meta.label || meta.name)) || type;
+    w = wOrMeta.w || (meta && meta.defaultW) || 1;
+    h = wOrMeta.h || (meta && meta.defaultH) || 1;
+    author = (meta && meta.author) || wOrMeta.author || 'ProGrid';
+    version = (meta && meta.version) || wOrMeta.version || '1.0.0';
+    desc = (meta && meta.description) || widgetDescriptions[type] || 'Modular ProGrid fluid widget component.';
+
     const iconEl = document.getElementById('info-w-icon');
     const labelEl = document.getElementById('info-w-label');
     const typeEl = document.getElementById('info-w-type');
     const sizeEl = document.getElementById('info-w-size');
     const descEl = document.getElementById('info-w-desc');
+    const authorEl = document.getElementById('info-w-author');
+    const versionEl = document.getElementById('info-w-version');
 
     if (iconEl) iconEl.innerHTML = (meta && meta.icon) ? meta.icon : '📦';
-    if (labelEl) labelEl.textContent = w.title || (meta && meta.label) || w.type;
-    if (typeEl) typeEl.textContent = `${w.type} widget`;
-    if (sizeEl) sizeEl.textContent = `${w.w || 1} × ${w.h || 1}`;
-    if (descEl) descEl.textContent = widgetDescriptions[w.type] || 'Modular ProGrid fluid widget component.';
+    if (labelEl) labelEl.textContent = title;
+    if (typeEl) typeEl.textContent = `${type} widget`;
+    if (sizeEl) sizeEl.textContent = `${w} × ${h}`;
+    if (descEl) descEl.textContent = desc;
+    if (authorEl) authorEl.textContent = author;
+    if (versionEl) versionEl.textContent = version;
 
     modal.style.display = 'flex';
     requestAnimationFrame(() => {

@@ -9,7 +9,7 @@ export default class QuoteWidget extends BaseWidget {
             defaultW: 2, defaultH: 1,
             minW: 2, minH: 1, maxW: 3, maxH: 2,
             category: 'lifestyle',
-            author: 'ProGrid Studio',
+            author: 'ProGrid',
             version: '1.0.0',
             downloads: '3.9k',
             description: 'Handpicked daily inspiration and wisdom to keep you energized.',

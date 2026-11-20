@@ -89,6 +89,9 @@ export default class SearchWidget extends BaseWidget {
         return {
             type: 'search',
             label: 'Search Bar',
+            author: 'ProGrid',
+            version: '1.0.0',
+            description: 'Multi-engine web search with live Google autocomplete, search history, RTL support, and 4 custom shape themes.',
             icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`,
             defaultW: 3, defaultH: 1,
             minW: 2, minH: 1, maxW: 8, maxH: 1,
@@ -173,8 +176,11 @@ export default class SearchWidget extends BaseWidget {
                     font-size: 15px;
                     font-weight: 500;
                     outline: none;
-                    padding: 0 2px;
+                    padding: 0 4px;
                     min-width: 0;
+                    text-align: start;
+                    direction: auto;
+                    unicode-bidi: plaintext;
                 }
                 .search-input-field::placeholder {
                     color: var(--text-secondary);
@@ -227,21 +233,37 @@ export default class SearchWidget extends BaseWidget {
                     top: calc(100% + 6px);
                     left: 4px;
                     right: 4px;
-                    background: rgba(18, 24, 38, 0.92);
-                    backdrop-filter: blur(28px) saturate(190%);
-                    -webkit-backdrop-filter: blur(28px) saturate(190%);
-                    border: 1px solid rgba(255, 255, 255, 0.14);
+                    background: rgba(13, 16, 26, 0.95);
+                    backdrop-filter: blur(36px) saturate(200%);
+                    -webkit-backdrop-filter: blur(36px) saturate(200%);
+                    border: 1px solid rgba(255, 255, 255, 0.16);
                     border-radius: 16px;
-                    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.25);
-                    max-height: 260px;
+                    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.3);
+                    max-height: 280px;
                     overflow-y: auto;
                     overflow-x: hidden;
+                    scroll-behavior: smooth;
+                    -webkit-overflow-scrolling: touch;
+                    overscroll-behavior: contain;
                     z-index: 9999;
                     padding: 6px;
                     display: flex;
                     flex-direction: column;
                     gap: 2px;
                     animation: searchDropFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                .search-dropdown-menu::-webkit-scrollbar {
+                    width: 5px;
+                }
+                .search-dropdown-menu::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .search-dropdown-menu::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.2);
+                    border-radius: 4px;
+                }
+                .search-dropdown-menu::-webkit-scrollbar-thumb:hover {
+                    background: rgba(255, 255, 255, 0.35);
                 }
                 @keyframes searchDropFade {
                     from { opacity: 0; transform: translateY(-6px) scale(0.98); }
@@ -372,7 +394,7 @@ export default class SearchWidget extends BaseWidget {
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
                     </span>
-                    <input type="text" name="q" id="input-${id}" class="search-input-field" placeholder="${placeholder}" required autocomplete="off" spellcheck="false">
+                    <input type="text" name="q" id="input-${id}" class="search-input-field" placeholder="${placeholder}" required autocomplete="off" spellcheck="false" dir="auto">
                     <button type="button" id="clear-${id}" class="search-clear-btn" aria-label="Clear query" style="display: none;" title="Clear">✕</button>
                     <button type="submit" class="search-submit-btn" aria-label="Search" title="Search">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -427,10 +449,10 @@ export default class SearchWidget extends BaseWidget {
                     : '';
 
                 html += `
-                    <div class="search-suggest-item" data-index="${index}" data-text="${encodeURIComponent(item)}">
+                    <div class="search-suggest-item" data-index="${index}" data-text="${encodeURIComponent(item)}" dir="auto">
                         <div class="suggest-left">
                             ${iconSvg}
-                            <span class="suggest-text">${item}</span>
+                            <span class="suggest-text" dir="auto">${item}</span>
                         </div>
                         ${delBtnHtml}
                     </div>

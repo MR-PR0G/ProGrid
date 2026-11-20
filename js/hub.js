@@ -44,7 +44,7 @@ export class WidgetHubEngine {
             {
                 id: "calculator",
                 name: "Quick Calculator",
-                author: "MR Prog",
+                author: "ProGrid",
                 version: "1.0.0",
                 downloads: "4.8k",
                 category: "tools",
@@ -57,7 +57,7 @@ export class WidgetHubEngine {
             {
                 id: "quote",
                 name: "Daily Quote",
-                author: "ProGrid Studio",
+                author: "ProGrid",
                 version: "1.0.0",
                 downloads: "3.9k",
                 category: "lifestyle",
@@ -70,7 +70,7 @@ export class WidgetHubEngine {
             {
                 id: "pomodoro",
                 name: "Pomodoro Timer",
-                author: "FocusLab",
+                author: "ProGrid",
                 version: "1.2.0",
                 downloads: "5.1k",
                 category: "productivity",

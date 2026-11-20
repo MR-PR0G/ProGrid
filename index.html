@@ -63,9 +63,9 @@
 </head>
 <body style="background-color: #1a1d22;">
     <div id="dynamic-bg-layer" class="bg-layer" style="background: radial-gradient(circle at 50% 25%, #2c3038 0%, #1a1d22 60%, #111316 100%);"></div>
+    <div id="blur-overlay"></div>
     
     <div id="app-container">
-        <div id="blur-overlay"></div>
         <div id="grid-scale-wrapper">
             <div id="grid-container">
                 <div id="ghost-guide"></div>
@@ -80,6 +80,16 @@
     </button>
     <div id="edit-mode-hint" class="edit-hint-pill">✨ Drag to organize • Resize from corner • Tap widget for options</div>
     
+    <!-- First-Time Visitor Onboarding Tip -->
+    <aside id="first-visit-tip" class="first-visit-tip" style="display: none;" aria-label="First-time guidance">
+        <div class="tip-icon">💡</div>
+        <div class="tip-content">
+            <span class="tip-title">شخصی‌سازی و ادیت صفحه • Edit Mode</span>
+            <span class="tip-desc">برای افزودن ویجت، چیدمان یا تغییر پس‌زمینه، انگشت خود را روی صفحه نگه‌دارید (Long Press).</span>
+        </div>
+        <button id="tip-dismiss-btn" class="tip-dismiss-btn">فهمیدم</button>
+    </aside>
+
     <!-- Floating Web Install Toast (Elegant, dismissible, native-style) -->
     <aside id="web-install-banner" class="web-install-banner" style="display: none;" aria-label="Install App">
         <div class="install-banner-left">
@@ -117,8 +127,8 @@
                         <span class="subnav-pill-badge" id="installed-count-pill">6</span>
                     </button>
                     <button class="subnav-pill" id="subtab-marketplace-btn" data-sub="marketplace">
-                        <span>Online Hub</span>
-                        <span class="subnav-pill-badge hub">Online</span>
+                        <span>Widget Store</span>
+                        <span class="subnav-pill-badge hub">Store</span>
                     </button>
                 </div>
 
@@ -175,22 +185,12 @@
 
                 <div class="appearance-control-divider"></div>
 
-                <div class="appearance-control-group" style="flex: 1; max-width: 140px;">
+                <div class="appearance-control-group" style="flex: 1; max-width: 180px;">
                     <div class="control-label-row">
-                        <span class="control-group-label">Blur</span>
+                        <span class="control-group-label">Background Blur</span>
                         <span id="blur-val-label" style="font-size: 10.5px; color: var(--text-secondary);">16px</span>
                     </div>
                     <input type="range" id="blur-slider" min="0" max="40" value="16" style="width: 100%; height: 4px;">
-                </div>
-
-                <div class="appearance-control-divider"></div>
-
-                <div class="appearance-control-group" style="align-items: center;">
-                    <span class="control-group-label">Theme</span>
-                    <label class="glass-toggle-switch">
-                        <input type="checkbox" id="theme-toggle">
-                        <span class="toggle-slider"></span>
-                    </label>
                 </div>
             </div>
 
@@ -204,7 +204,7 @@
             
             <div class="modal-field id-shortcut-only" style="display: flex; flex-direction: column; gap: 6px;">
                 <label style="color: var(--text-secondary); font-size: 12px;">Title</label>
-                <input type="text" class="modal-input" id="edit-w-title">
+                <input type="text" class="modal-input" id="edit-w-title" dir="auto">
             </div>
             
             <div class="modal-field id-shortcut-only" style="display: flex; flex-direction: column; gap: 6px;">
@@ -240,7 +240,7 @@
 
             <div class="modal-field id-folder-only" style="display: flex; flex-direction: column; gap: 6px;">
                 <label style="color: var(--text-secondary); font-size: 12px;">Folder Name</label>
-                <input type="text" class="modal-input" id="edit-folder-title">
+                <input type="text" class="modal-input" id="edit-folder-title" dir="auto">
             </div>
 
             <div class="modal-field id-search-only" style="display: flex; flex-direction: column; gap: 6px;">
@@ -256,7 +256,7 @@
             </div>
             <div class="modal-field id-search-only" style="display: flex; flex-direction: column; gap: 6px;">
                 <label style="color: var(--text-secondary); font-size: 12px;">Placeholder</label>
-                <input type="text" class="modal-input" id="edit-search-placeholder">
+                <input type="text" class="modal-input" id="edit-search-placeholder" dir="auto">
             </div>
             <div class="modal-field id-search-only" style="display: flex; flex-direction: column; gap: 6px;">
                 <label style="color: var(--text-secondary); font-size: 12px;">Bar Shape & Aesthetic Theme</label>
@@ -367,8 +367,8 @@
             </div>
             <div id="info-w-desc" class="info-desc">Widget details and description.</div>
             <div class="info-rows">
-                <div class="info-row"><span class="info-label">Author:</span><span class="info-val">MR Prog</span></div>
-                <div class="info-row"><span class="info-label">Version:</span><span class="info-val">0.0.9</span></div>
+                <div class="info-row"><span class="info-label">Author:</span><span id="info-w-author" class="info-val">ProGrid</span></div>
+                <div class="info-row"><span class="info-label">Version:</span><span id="info-w-version" class="info-val">1.0.0</span></div>
                 <div class="info-row"><span class="info-label">Dimensions:</span><span id="info-w-size" class="info-val">2 × 1</span></div>
                 <div class="info-row"><span class="info-label">Engine:</span><span class="info-val">ProGrid Fluid Grid</span></div>
             </div>
