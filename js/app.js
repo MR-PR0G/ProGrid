@@ -416,7 +416,7 @@ function attachInteractionEngine(el, w, instance) {
         pointerDownTime = Date.now();
 
         if (!state.editMode) {
-            // پشتیبانی از لمس طولانی برای باز کردن منوی گزینه‌های هوشمند ویجت
+            // Long press support to trigger widget quick actions
             widgetLongPressTimer = setTimeout(() => {
                 if (!isPointerMoved) {
                     if (navigator.vibrate) navigator.vibrate(50);
@@ -813,7 +813,7 @@ document.addEventListener('focusout', (e) => {
 function setupGlobalEvents() {
     let resizeTimer = null;
     window.addEventListener('resize', () => {
-        // جلوگیری از تغییرات ناخواسته ساختار گرید هنگام بالا آمدن کیبورد در گوشی
+        // Prevent layout reflow when mobile soft keyboard triggers viewport resize
         if (isInputActive) return;
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
@@ -1333,29 +1333,30 @@ function renderInstalledDrawerList() {
                 </div>
                 <div class="store-card-author-row">
                     <span class="store-card-author">By ${author} • ${verStr}</span>
-                    <div class="store-card-tools">
-                        <button class="store-card-tool-btn store-config-btn" data-type="${m.type}" title="Configure widget" aria-label="Configure widget">
-                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="3"></circle>
-                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    <button class="store-card-info-btn" data-type="${m.type}" title="Widget details" aria-label="Widget details">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="store-card-subactions">
+                    <button class="store-config-btn" data-type="${m.type}" title="Configure widget" aria-label="Configure widget">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        <span>Config</span>
+                    </button>
+                    ${!isCore ? `
+                        <button class="store-uninstall-btn" data-type="${m.type}" title="Uninstall widget from device" aria-label="Uninstall widget">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                             </svg>
                         </button>
-                        <button class="store-card-tool-btn store-card-info-btn" data-type="${m.type}" title="Widget details" aria-label="Widget details">
-                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="16" x2="12" y2="12"></line>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                            </svg>
-                        </button>
-                        ${!isCore ? `
-                            <button class="store-card-tool-btn store-uninstall-btn" data-type="${m.type}" title="Uninstall widget from device" aria-label="Uninstall widget">
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        ` : ''}
-                    </div>
+                    ` : ''}
                 </div>
                 <div class="store-card-actions">
                     <button class="store-add-btn" data-type="${m.type}">
@@ -1854,7 +1855,7 @@ function setupStoreDrag(itemEl) {
     itemEl.addEventListener('pointermove', (e) => {
         if (!state.editMode) return;
 
-        // فقط در صورتی که کاربر دستش را به سمت بالا (به طرف گرید) کشید درگ فعال شود
+        // Only engage drag session when swipe gesture is directed upward towards the grid
         if (!isDraggingInitiated) {
             const diffY = startY - e.clientY;
             const diffX = Math.abs(e.clientX - startX);
@@ -1941,7 +1942,7 @@ function setupStoreDrag(itemEl) {
         itemEl.style.transform = '';
         itemEl.style.opacity = '';
 
-        // اگر انگشت فقط تپ شده بود و به سمت گرید کشیده نشده بود: هیچ کاری نکن و ویجت اضافه نکن
+        // If user tapped without dragging towards grid, abort without adding widget
         if (!isDraggingInitiated || !dummy) {
             try {
                 if (itemEl.hasPointerCapture && itemEl.hasPointerCapture(e.pointerId)) {

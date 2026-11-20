@@ -2,31 +2,39 @@ export class BaseWidget {
     constructor(config) {
         this.config = config || {};
     }
-    
+
     /**
-     * رندر محتوای HTML داخلی ویجت
+     * Render widget inner HTML markup.
+     * @returns {string} HTML markup string
      */
     render() {
         return '';
     }
-    
+
     /**
-     * اجرای کدها، تایمرها و رویدادها پس از درج المان در DOM
+     * Post-mount lifecycle hook: initialize DOM listeners, timers, and animations.
+     * @param {HTMLElement} el
      */
     postRender(el) {}
 
     /**
-     * فراخوانی هنگام تغییر ابعاد ویجت توسط کاربر در گرید
+     * Resize lifecycle hook invoked when widget dimensions change on the grid.
+     * @param {number} w Width in grid columns
+     * @param {number} h Height in grid rows
+     * @param {HTMLElement} el
      */
     onResize(w, h, el) {}
 
     /**
-     * پاکسازی منابع، تایمرها و رویدادها هنگام تخریب یا ری‌رندر ویجت
+     * Teardown lifecycle hook: dispose timers, listeners, and resources upon destruction or re-render.
+     * @param {HTMLElement} el
      */
     onDestroy(el) {}
 
     /**
-     * متد کمکی برای ذخیره و به‌روزرسانی کانفیگ ویجت در استوریج و استیت سراسری
+     * Persist partial configuration changes to storage and global application state.
+     * @param {Object} partialConfig
+     * @param {boolean} [shouldRender=true]
      */
     updateConfig(partialConfig, shouldRender = true) {
         if (this.config && this.config.id && window.updateWidgetConfigDirectly) {

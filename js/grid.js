@@ -15,14 +15,14 @@ export class GridEngine {
         const isMobile = width < 640;
 
         if (isMobile) {
-            // در گوشی‌ها گرید ۴ ستونه و ردیف‌ها هوشمند با فضای کافی برای جابجایی روان ویجت‌ها
+            // Mobile: 4-column layout with dynamically calculated cell size and comfortable row capacity
             this.cols = 4;
             this.GAP = 12;
             const availableW = Math.max(280, width - 24);
             const calculatedCell = Math.floor((availableW - (3 * this.GAP)) / 4);
             this.CELL_SIZE = Math.max(72, Math.min(84, calculatedCell));
             const availableH = Math.max(300, height - (height < 700 ? 70 : 90));
-            // حداقل ۶ ردیف یا بر اساس نیاز ویجت‌ها برای جلوگیری از قفل شدن جابجایی
+            // Minimum 6 rows or expanded based on viewport to prevent drag deadlocks
             this.rows = Math.max(6, Math.floor((availableH + this.GAP) / (this.CELL_SIZE + this.GAP)));
         } else {
             const availableW = width * 0.85;
@@ -219,11 +219,11 @@ export class GridEngine {
             }
         }
 
-        // اگر هل‌دادن آبشاری به مانع خورد، ابتدا Position Swap یا انتقال به نزدیک‌ترین سلول خالی انجام می‌شود:
+        // If cascade push reaches boundary constraints, fallback to position swap or nearest vacant slot
         if (failed && itemsToProcess.length > 0) {
             const directlyOverlapped = itemsToProcess.filter(it => this.checkOverlap(it, activeWidget));
             if (directlyOverlapped.length > 0) {
-                // تلاش برای swap یا پیدا کردن موقعیت آزاد برای آیتم‌های متداخل
+                // Attempt mutual position swap for single-item overlap collisions
                 let canSwapAll = true;
                 const priorX = activeWidget.idealLayout ? activeWidget.idealLayout.x : activeWidget.x;
                 const priorY = activeWidget.idealLayout ? activeWidget.idealLayout.y : activeWidget.y;
@@ -246,7 +246,7 @@ export class GridEngine {
                 }
                 
                 if (failed) {
-                    // جستجوی نزدیک‌ترین خانه خالی در گرید
+                    // Search for first available free cell in matrix grid
                     snapshots.forEach(snap => {
                         let realItem = itemsToProcess.find(it => it.id === snap.id);
                         if (realItem) { realItem.x = snap.x; realItem.y = snap.y; }
