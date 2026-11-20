@@ -149,18 +149,12 @@ function applyGlobalStyles() {
     document.body.classList.add(`theme-${currentTheme}`);
     document.body.classList.toggle('light-mode', state.theme === 'light');
 
-    const m3Section = document.getElementById('m3-color-mode-section');
-    if (m3Section) {
-        m3Section.style.display = currentTheme === 'material3' ? 'block' : 'none';
-    }
     const m3DarkBtn = document.getElementById('m3-tone-dark-btn');
     const m3LightBtn = document.getElementById('m3-tone-light-btn');
-    const m3Status = document.getElementById('m3-mode-status');
     if (m3DarkBtn && m3LightBtn) {
         const isLight = state.theme === 'light';
         m3DarkBtn.classList.toggle('active', !isLight);
         m3LightBtn.classList.toggle('active', isLight);
-        if (m3Status) m3Status.textContent = isLight ? 'Light Tone' : 'Dark Tone';
     }
 
     if (blurOverlay) {
@@ -1772,30 +1766,37 @@ function setupAppearanceSubtabs() {
 
     const m3DarkBtn = document.getElementById('m3-tone-dark-btn');
     const m3LightBtn = document.getElementById('m3-tone-light-btn');
-    const m3Status = document.getElementById('m3-mode-status');
 
     if (m3DarkBtn && m3LightBtn) {
-        m3DarkBtn.addEventListener('click', () => {
+        m3DarkBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             state.theme = 'dark';
             document.body.classList.remove('light-mode');
             m3DarkBtn.classList.add('active');
             m3LightBtn.classList.remove('active');
-            if (m3Status) m3Status.textContent = 'Dark Tone';
-            StorageEngine.save(state);
-            applyGlobalStyles();
-            renderGrid();
+            if (state.designTheme !== 'material3') {
+                applyDesignTheme('material3');
+            } else {
+                StorageEngine.save(state);
+                applyGlobalStyles();
+                renderGrid();
+            }
             if (navigator.vibrate) navigator.vibrate(25);
         });
 
-        m3LightBtn.addEventListener('click', () => {
+        m3LightBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             state.theme = 'light';
             document.body.classList.add('light-mode');
             m3LightBtn.classList.add('active');
             m3DarkBtn.classList.remove('active');
-            if (m3Status) m3Status.textContent = 'Light Tone';
-            StorageEngine.save(state);
-            applyGlobalStyles();
-            renderGrid();
+            if (state.designTheme !== 'material3') {
+                applyDesignTheme('material3');
+            } else {
+                StorageEngine.save(state);
+                applyGlobalStyles();
+                renderGrid();
+            }
             if (navigator.vibrate) navigator.vibrate(25);
         });
     }
@@ -1811,11 +1812,6 @@ function applyDesignTheme(theme) {
     document.body.classList.remove('theme-liquid-glass', 'theme-frosted-glass', 'theme-material3');
     document.body.classList.add(`theme-${theme}`);
     StorageEngine.save(state);
-
-    const m3Section = document.getElementById('m3-color-mode-section');
-    if (m3Section) {
-        m3Section.style.display = theme === 'material3' ? 'block' : 'none';
-    }
 
     document.querySelectorAll('.theme-option-card').forEach(card => {
         const cardTheme = card.getAttribute('data-theme');

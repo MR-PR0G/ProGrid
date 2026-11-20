@@ -1259,33 +1259,47 @@ body.edit-mode .first-visit-tip { display: none !important; }
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Material 3 Tone Controls */
-.m3-tone-btn {
+/* Material 3 Tone Controls Inside Theme Card */
+.m3-card-tone-toggle {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+    width: 100%;
+    max-width: 108px;
+    margin: 4px auto 6px auto;
+    box-sizing: border-box;
+}
+.m3-card-tone-btn {
     flex: 1;
-    height: 32px;
-    border-radius: 9px;
-    border: 1px solid var(--panel-border);
-    background: rgba(255, 255, 255, 0.05);
+    height: 20px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
     color: var(--text-secondary);
-    font-size: 11px;
+    font-size: 9.5px;
     font-weight: 600;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 3px;
+    padding: 0 4px;
     transition: all 0.15s ease;
+    user-select: none;
 }
-.m3-tone-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+.m3-card-tone-btn:hover {
     color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.08);
 }
-.m3-tone-btn.active {
+.m3-card-tone-btn.active {
     background: #f59e0b;
-    border-color: #f59e0b;
-    color: #000;
+    color: #111;
     font-weight: 700;
-    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+    box-shadow: 0 1px 6px rgba(245, 158, 11, 0.35);
 }
 
 /* Material 3 System Theming */
