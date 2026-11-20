@@ -176,6 +176,10 @@ body.edit-mode .widget-wrapper:not(.dragging):not(.resizing) {
     contain: content;
 }
 
+body.edit-mode .widget-content * {
+    pointer-events: none !important;
+}
+
 .widget-wrapper.dragging, .widget-wrapper.resizing {
     opacity: 0.85; z-index: 1000;
     box-shadow: 0 25px 50px rgba(0,0,0,0.5);

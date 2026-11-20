@@ -28,9 +28,9 @@ export class BaseWidget {
     /**
      * متد کمکی برای ذخیره و به‌روزرسانی کانفیگ ویجت در استوریج و استیت سراسری
      */
-    updateConfig(partialConfig) {
+    updateConfig(partialConfig, shouldRender = true) {
         if (this.config && this.config.id && window.updateWidgetConfigDirectly) {
-            window.updateWidgetConfigDirectly(this.config.id, partialConfig);
+            window.updateWidgetConfigDirectly(this.config.id, partialConfig, shouldRender);
         }
     }
 }

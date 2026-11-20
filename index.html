@@ -333,6 +333,43 @@
                 </label>
             </div>
 
+            <!-- Clock Widget Customization Options -->
+            <div class="modal-field id-clock-only" style="display: none; flex-direction: column; gap: 6px;">
+                <label style="color: var(--text-secondary); font-size: 12px;">Calendar System & Date</label>
+                <select class="modal-input" id="edit-clock-calendar">
+                    <option value="gregorian">Gregorian (میلادی)</option>
+                    <option value="jalali">Solar Hijri / Shamsi (خورشیدی شمسی)</option>
+                    <option value="islamic">Lunar Hijri (هجری قمری)</option>
+                    <option value="none">Hide Date (مخفی کردن تاریخ)</option>
+                </select>
+            </div>
+            <div class="modal-field id-clock-only" style="display: none; flex-direction: column; gap: 6px;">
+                <label style="color: var(--text-secondary); font-size: 12px;">Time Zone / منطقه زمانی</label>
+                <select class="modal-input" id="edit-clock-timezone">
+                    <option value="local">Local Device Time (زمان محلی دستگاه)</option>
+                    <option value="Asia/Tehran">Tehran, Iran (تهران +03:30)</option>
+                    <option value="UTC">UTC / GMT (جهانی)</option>
+                    <option value="Europe/London">London (لندن)</option>
+                    <option value="America/New_York">New York (نیویورک)</option>
+                    <option value="Asia/Tokyo">Tokyo (توکیو)</option>
+                    <option value="Asia/Dubai">Dubai (دبی)</option>
+                </select>
+            </div>
+            <div class="modal-field id-clock-only" style="display: none; align-items: center; justify-content: space-between; padding: 4px 0;">
+                <label style="color: var(--text-secondary); font-size: 12px;">24-Hour Format</label>
+                <label class="glass-toggle-switch">
+                    <input type="checkbox" id="edit-clock-24h" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="modal-field id-clock-only" style="display: none; align-items: center; justify-content: space-between; padding: 4px 0;">
+                <label style="color: var(--text-secondary); font-size: 12px;">Show Seconds</label>
+                <label class="glass-toggle-switch">
+                    <input type="checkbox" id="edit-clock-seconds">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
             <div style="width: 100%; height: 1px; background: var(--panel-border); margin: 4px 0;"></div>
 
             <div style="display: flex; flex-direction: column; gap: 6px;">
@@ -441,7 +478,7 @@
                 <div class="about-title-block">
                     <h3 class="about-name">ProGrid Workspace</h3>
                     <div class="about-badge-row">
-                        <span class="about-version-badge" id="about-app-version">v0.2.0</span>
+                        <span class="about-version-badge" id="about-app-version">v0.2.1</span>
                         <span class="about-license-badge">GNU GPLv3</span>
                     </div>
                 </div>
@@ -475,7 +512,7 @@
                     <div class="update-indicator-dot" id="update-indicator-dot"></div>
                     <div class="update-info-text">
                         <span class="update-title" id="update-status-title">System Up to Date</span>
-                        <span class="update-sub" id="update-status-sub">Running official v0.2.0 release</span>
+                        <span class="update-sub" id="update-status-sub">Running official v0.2.1 release</span>
                     </div>
                 </div>
                 <button id="about-check-update-btn" class="about-update-action-btn">

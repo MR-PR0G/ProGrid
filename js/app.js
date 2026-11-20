@@ -343,15 +343,10 @@ function attachInteractionEngine(el, w, instance) {
             return;
         }
 
-        if (w.type === 'checklist') {
-            if (e.target.closest('.checklist-item') || e.target.closest('.checklist-add') || e.target.closest('.checklist-input')) return;
-        }
-        
-        if (w.type === 'shortcut' || w.type === 'folder') {
-            if (e.target.closest('a')) e.preventDefault();
-        }
+        try {
+            el.setPointerCapture(e.pointerId);
+        } catch (err) {}
 
-        el.setPointerCapture(e.pointerId);
         initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
 
         grid.updateMetrics();
@@ -360,21 +355,18 @@ function attachInteractionEngine(el, w, instance) {
 
         if (e.target.classList.contains('resize-handle')) {
             isResizing = true;
+            isDragging = false;
             el.classList.add('resizing');
             startW = el.offsetWidth;
             startH = el.offsetHeight;
             if (ghost) ghost.classList.add('active');
             updateGhost(w);
         } else {
-            isDragging = true;
-            el.classList.add('dragging');
-            if (ghost) ghost.classList.add('active');
-            
+            isResizing = false;
+            isDragging = false;
             const rect = el.getBoundingClientRect();
             dragOffsetX = (e.clientX - rect.left) / cachedScale;
             dragOffsetY = (e.clientY - rect.top) / cachedScale;
-            
-            updateGhost(w);
         }
         e.stopPropagation();
     });
@@ -386,6 +378,18 @@ function attachInteractionEngine(el, w, instance) {
                 if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
             }
             return;
+        }
+
+        if (!isResizing && !isDragging) {
+            if (Math.hypot(e.clientX - initialX, e.clientY - initialY) > 5) {
+                isDragging = true;
+                isPointerMoved = true;
+                el.classList.add('dragging');
+                if (ghost) ghost.classList.add('active');
+                updateGhost(w);
+            } else {
+                return;
+            }
         }
 
         if (!isDragging && !isResizing) return;
@@ -534,8 +538,21 @@ function attachInteractionEngine(el, w, instance) {
     el.addEventListener('pointerup', (e) => {
         if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
         if (!state.editMode) return;
-        el.releasePointerCapture(e.pointerId);
         
+        try {
+            if (el.hasPointerCapture && el.hasPointerCapture(e.pointerId)) {
+                el.releasePointerCapture(e.pointerId);
+            }
+        } catch (err) {}
+
+        // Single click / tap in edit mode (without drag): Open widget config/edit modal!
+        if (!isPointerMoved && !isDragging && !isResizing) {
+            el.classList.remove('dragging', 'resizing', 'burn-effect', 'max-limit-reached');
+            if (ghost) ghost.classList.remove('active', 'max-limit-reached');
+            openModal(w);
+            return;
+        }
+
         el.classList.remove('dragging');
         el.classList.remove('resizing');
         el.classList.remove('burn-effect');
@@ -607,8 +624,18 @@ function attachInteractionEngine(el, w, instance) {
         renderGrid();
     });
 
-    el.addEventListener('pointercancel', () => {
+    el.addEventListener('pointercancel', (e) => {
         if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
+        try {
+            if (el.hasPointerCapture && el.hasPointerCapture(e.pointerId)) {
+                el.releasePointerCapture(e.pointerId);
+            }
+        } catch (err) {}
+        isDragging = false;
+        isResizing = false;
+        isPointerMoved = false;
+        el.classList.remove('dragging', 'resizing', 'burn-effect', 'max-limit-reached');
+        if (ghost) ghost.classList.remove('active', 'max-limit-reached');
     });
 }
 
@@ -1047,12 +1074,14 @@ function setupGlobalEvents() {
     });
 }
 
-window.updateWidgetConfigDirectly = function(id, partialConfig) {
+window.updateWidgetConfigDirectly = function(id, partialConfig, shouldRender = true) {
     const w = state.widgets.find(item => item.id === id);
     if (w) {
         Object.assign(w, partialConfig);
         StorageEngine.save(state);
-        renderGrid();
+        if (shouldRender) {
+            renderGrid();
+        }
     }
 };
 
@@ -1910,6 +1939,7 @@ function openModal(w, isPreAdd = false) {
     document.querySelectorAll('.id-shortcut-only').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.id-search-only').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.id-folder-only').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.id-clock-only').forEach(el => el.style.display = 'none');
 
     if (w.type === 'shortcut') {
         document.querySelectorAll('.id-shortcut-only').forEach(el => el.style.display = 'flex');
@@ -1934,6 +1964,18 @@ function openModal(w, isPreAdd = false) {
 
         currentSearchShapeSelection = w.searchShape || 'pill';
         document.querySelectorAll('.search-shape-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-shape') === currentSearchShapeSelection));
+    } else if (w.type === 'clock') {
+        document.querySelectorAll('.id-clock-only').forEach(el => {
+            el.style.display = el.classList.contains('glass-toggle-switch') ? 'inline-block' : 'flex';
+        });
+        const calSelect = document.getElementById('edit-clock-calendar');
+        if (calSelect) calSelect.value = w.calendarType || (w.showDate === false ? 'none' : 'gregorian');
+        const tzSelect = document.getElementById('edit-clock-timezone');
+        if (tzSelect) tzSelect.value = w.timezone || 'local';
+        const h24Check = document.getElementById('edit-clock-24h');
+        if (h24Check) h24Check.checked = w.format24 !== false;
+        const secCheck = document.getElementById('edit-clock-seconds');
+        if (secCheck) secCheck.checked = !!w.showSeconds;
     }
     
     currentWidgetBgSelection = w.bg || '#ffffff';
@@ -1995,6 +2037,13 @@ function saveWidgetSettings() {
             newWidget.placeholder = document.getElementById('edit-search-placeholder').value;
             newWidget.searchShape = currentSearchShapeSelection || 'pill';
             newWidget.showSuggestions = document.getElementById('edit-search-suggestions').checked;
+        } else if (type === 'clock') {
+            const cal = document.getElementById('edit-clock-calendar').value;
+            newWidget.calendarType = cal;
+            newWidget.showDate = cal !== 'none';
+            newWidget.timezone = document.getElementById('edit-clock-timezone').value;
+            newWidget.format24 = document.getElementById('edit-clock-24h').checked;
+            newWidget.showSeconds = document.getElementById('edit-clock-seconds').checked;
         }
 
         newWidget.idealLayout = { x: newWidget.x, y: newWidget.y, w: newWidget.w, h: newWidget.h, baseCols: grid.columns };
@@ -2024,6 +2073,13 @@ function saveWidgetSettings() {
             w.placeholder = document.getElementById('edit-search-placeholder').value;
             w.searchShape = currentSearchShapeSelection || 'pill';
             w.showSuggestions = document.getElementById('edit-search-suggestions').checked;
+        } else if (w.type === 'clock') {
+            const cal = document.getElementById('edit-clock-calendar').value;
+            w.calendarType = cal;
+            w.showDate = cal !== 'none';
+            w.timezone = document.getElementById('edit-clock-timezone').value;
+            w.format24 = document.getElementById('edit-clock-24h').checked;
+            w.showSeconds = document.getElementById('edit-clock-seconds').checked;
         }
         
         w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: grid.columns };
@@ -2209,8 +2265,8 @@ function setupAboutModal() {
                 const res = await fetch(`./manifest.json?t=${Date.now()}`, { cache: 'no-store' });
                 if (res.ok) {
                     const remoteManifest = await res.json();
-                    const currentVersion = '0.2.0';
-                    const remoteVersion = remoteManifest.version || '0.2.0';
+                    const currentVersion = '0.2.1';
+                    const remoteVersion = remoteManifest.version || '0.2.1';
 
                     if (remoteVersion !== currentVersion) {
                         if (updateDot) updateDot.className = 'update-indicator-dot update-found';
@@ -2227,14 +2283,14 @@ function setupAboutModal() {
                 } else {
                     if (updateDot) updateDot.className = 'update-indicator-dot';
                     if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.2.0 is active.';
+                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.2.1 is active.';
                     if (btnLabel) btnLabel.textContent = 'Check Updates';
                 }
             } catch (err) {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Using cached standalone v0.2.0 release.';
+                if (updateSub) updateSub.textContent = 'Using cached standalone v0.2.1 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
             } finally {
                 isChecking = false;
@@ -2275,6 +2331,12 @@ function setupQuickMenuListeners() {
         qmLayout.addEventListener('click', () => {
             closeWidgetQuickMenu();
             window.toggleEditMode(true);
+            const editPanel = document.getElementById('edit-panel');
+            const collapseBtn = document.getElementById('panel-collapse-btn');
+            if (editPanel) editPanel.classList.add('collapsed');
+            document.body.classList.add('shelf-collapsed');
+            if (collapseBtn) collapseBtn.setAttribute('title', 'Expand Shelf');
+            updateEditModeScale();
         });
     }
 

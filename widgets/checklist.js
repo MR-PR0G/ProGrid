@@ -48,7 +48,9 @@ export default class ChecklistWidget extends BaseWidget {
                 </div>
                 <div style="display: flex; gap: 6px;">
                     <input type="text" class="checklist-input" placeholder="Add task..." dir="auto" style="flex: 1; background: var(--input-bg); border: 1px solid var(--panel-border); padding: 6px 10px; border-radius: 8px; color: var(--text-primary); font-size: 12px; text-align: start;">
-                    <button class="checklist-add" style="background: #3b82f6; border: none; color: white; border-radius: 8px; width: 30px; cursor: pointer; font-weight: bold;">+</button>
+                    <button class="checklist-add" style="background: #3b82f6; border: none; color: white; border-radius: 8px; width: 32px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Add task">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
                 </div>
             </div>
         `;
@@ -63,7 +65,7 @@ export default class ChecklistWidget extends BaseWidget {
             if (val) {
                 if (!this.config.tasks) this.config.tasks = [];
                 this.config.tasks.push({ text: val, done: false });
-                window.updateWidgetConfigDirectly(this.config.id, { tasks: this.config.tasks });
+                window.updateWidgetConfigDirectly(this.config.id, { tasks: this.config.tasks }, true);
             }
         };
 
@@ -74,9 +76,15 @@ export default class ChecklistWidget extends BaseWidget {
 
         el.querySelectorAll('.checklist-check').forEach(chk => {
             chk.addEventListener('change', (e) => {
-                const idx = parseInt(e.target.closest('.checklist-item').getAttribute('data-index'));
+                const item = e.target.closest('.checklist-item');
+                const idx = parseInt(item.getAttribute('data-index'));
                 this.config.tasks[idx].done = e.target.checked;
-                window.updateWidgetConfigDirectly(this.config.id, { tasks: this.config.tasks });
+                const span = item.querySelector('span');
+                if (span) {
+                    span.style.textDecoration = e.target.checked ? 'line-through' : 'none';
+                    span.style.opacity = e.target.checked ? '0.5' : '1';
+                }
+                window.updateWidgetConfigDirectly(this.config.id, { tasks: this.config.tasks }, false);
             });
         });
 
@@ -84,7 +92,7 @@ export default class ChecklistWidget extends BaseWidget {
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(e.target.closest('.checklist-item').getAttribute('data-index'));
                 this.config.tasks.splice(idx, 1);
-                window.updateWidgetConfigDirectly(this.config.id, { tasks: this.config.tasks });
+                window.updateWidgetConfigDirectly(this.config.id, { tasks: this.config.tasks }, true);
             });
         });
     }

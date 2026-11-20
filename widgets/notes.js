@@ -86,7 +86,7 @@ export default class NotesWidget extends BaseWidget {
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(() => {
                 this.config.content = textarea.value;
-                window.updateWidgetConfigDirectly(this.config.id, { content: textarea.value });
+                window.updateWidgetConfigDirectly(this.config.id, { content: textarea.value }, false);
             }, 300);
         });
 

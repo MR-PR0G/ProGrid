@@ -26,26 +26,30 @@ export default class CalculatorWidget extends BaseWidget {
                     <div class="calc-expr" style="font-size: 11px; color: var(--text-secondary); min-height: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.config.expression || ''}</div>
                     <div class="calc-val" style="font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${result}</div>
                 </div>
-                <div class="calc-keys" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 6px;">
-                    <button class="calc-key op" data-val="C" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(239,68,68,0.25); color: #fca5a5; font-size: 12px; font-weight: 700; cursor: pointer;">C</button>
-                    <button class="calc-key op" data-val="/" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(59,130,246,0.25); color: #93c5fd; font-size: 13px; font-weight: 700; cursor: pointer;">÷</button>
-                    <button class="calc-key op" data-val="*" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(59,130,246,0.25); color: #93c5fd; font-size: 13px; font-weight: 700; cursor: pointer;">×</button>
-                    <button class="calc-key op" data-val="DEL" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(255,255,255,0.08); color: var(--text-primary); font-size: 11px; font-weight: 600; cursor: pointer;">⌫</button>
+                <div class="calc-keys" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 5px;">
+                    <button class="calc-key op" data-val="C" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(239,68,68,0.25); color: #fca5a5; font-size: 11px; font-weight: 700; cursor: pointer;">C</button>
+                    <button class="calc-key op" data-val="DEL" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(255,255,255,0.08); color: var(--text-primary); font-size: 11px; font-weight: 600; cursor: pointer;">⌫</button>
+                    <button class="calc-key op" data-val="%" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(59,130,246,0.25); color: #93c5fd; font-size: 12px; font-weight: 700; cursor: pointer;">%</button>
+                    <button class="calc-key op" data-val="/" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(59,130,246,0.25); color: #93c5fd; font-size: 13px; font-weight: 700; cursor: pointer;">÷</button>
                     
-                    <button class="calc-key num" data-val="7" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 13px; font-weight: 600; cursor: pointer;">7</button>
-                    <button class="calc-key num" data-val="8" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 13px; font-weight: 600; cursor: pointer;">8</button>
-                    <button class="calc-key num" data-val="9" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 13px; font-weight: 600; cursor: pointer;">9</button>
-                    <button class="calc-key op" data-val="-" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(59,130,246,0.25); color: #93c5fd; font-size: 14px; font-weight: 700; cursor: pointer;">−</button>
+                    <button class="calc-key num" data-val="7" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer;">7</button>
+                    <button class="calc-key num" data-val="8" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer;">8</button>
+                    <button class="calc-key num" data-val="9" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer;">9</button>
+                    <button class="calc-key op" data-val="*" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(59,130,246,0.25); color: #93c5fd; font-size: 13px; font-weight: 700; cursor: pointer;">×</button>
 
-                    <button class="calc-key num" data-val="4" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 13px; font-weight: 600; cursor: pointer;">4</button>
-                    <button class="calc-key num" data-val="5" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 13px; font-weight: 600; cursor: pointer;">5</button>
-                    <button class="calc-key num" data-val="6" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 13px; font-weight: 600; cursor: pointer;">6</button>
-                    <button class="calc-key op" data-val="+" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(59,130,246,0.25); color: #93c5fd; font-size: 14px; font-weight: 700; cursor: pointer;">+</button>
+                    <button class="calc-key num" data-val="4" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer;">4</button>
+                    <button class="calc-key num" data-val="5" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer;">5</button>
+                    <button class="calc-key num" data-val="6" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer;">6</button>
+                    <button class="calc-key op" data-val="-" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(59,130,246,0.25); color: #93c5fd; font-size: 14px; font-weight: 700; cursor: pointer;">−</button>
 
-                    <button class="calc-key num" data-val="1" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 13px; font-weight: 600; cursor: pointer;">1</button>
-                    <button class="calc-key num" data-val="2" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 13px; font-weight: 600; cursor: pointer;">2</button>
-                    <button class="calc-key num" data-val="3" style="padding: 7px 0; border: none; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 13px; font-weight: 600; cursor: pointer;">3</button>
-                    <button class="calc-key op" data-val="=" style="padding: 7px 0; border: none; border-radius: 8px; background: #3b82f6; color: white; font-size: 14px; font-weight: 700; cursor: pointer;">=</button>
+                    <button class="calc-key num" data-val="1" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer;">1</button>
+                    <button class="calc-key num" data-val="2" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer;">2</button>
+                    <button class="calc-key num" data-val="3" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer;">3</button>
+                    <button class="calc-key op" data-val="+" style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(59,130,246,0.25); color: #93c5fd; font-size: 14px; font-weight: 700; cursor: pointer;">+</button>
+
+                    <button class="calc-key num" data-val="0" style="grid-column: span 2; padding: 5px 0; border: none; border-radius: 7px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer;">0</button>
+                    <button class="calc-key num" data-val="." style="padding: 5px 0; border: none; border-radius: 7px; background: rgba(255,255,255,0.06); color: var(--text-primary); font-size: 13px; font-weight: 700; cursor: pointer;">.</button>
+                    <button class="calc-key op" data-val="=" style="padding: 5px 0; border: none; border-radius: 7px; background: #3b82f6; color: white; font-size: 13px; font-weight: 700; cursor: pointer;">=</button>
                 </div>
             </div>
         `;
@@ -101,6 +105,12 @@ export default class CalculatorWidget extends BaseWidget {
                     if (currentExpr) {
                         const res = calculateSafe(currentExpr);
                         currentExpr = `${currentExpr} =`;
+                        currentVal = res;
+                    }
+                } else if (val === '%') {
+                    if (currentExpr && !currentExpr.includes('=')) {
+                        const res = calculateSafe(`(${currentExpr})/100`);
+                        currentExpr = `${currentExpr}%`;
                         currentVal = res;
                     }
                 } else {

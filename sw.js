@@ -1,4 +1,4 @@
-const CACHE_NAME = 'progrid-cache-v0.2.1';
+const CACHE_NAME = 'progrid-cache-v0.2.2';
 const urlsToCache = [
   './',
   './index.html',
@@ -20,6 +20,7 @@ const urlsToCache = [
   './widgets/community/pomodoro.js',
   './widgets/registry.json',
   './favicon.svg',
+  './icons/app-icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './manifest.json'

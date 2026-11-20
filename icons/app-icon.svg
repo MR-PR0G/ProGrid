@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181c24"/>
+      <stop offset="50%" stop-color="#0f1217"/>
+      <stop offset="100%" stop-color="#080a0d"/>
+    </linearGradient>
+
+    <!-- Outer Glow / Ambient Lighting -->
+    <radialGradient id="ambientGlow" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.25"/>
+      <stop offset="50%" stop-color="#8b5cf6" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Top Left Cyan Block Gradient -->
+    <linearGradient id="cyanBlock" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <!-- Bottom Right Violet/Purple Block Gradient -->
+    <linearGradient id="purpleBlock" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+
+    <!-- Frosted Glass Gradient -->
+    <linearGradient id="frostGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.06"/>
+    </linearGradient>
+
+    <!-- Glass Specular Highlight -->
+    <linearGradient id="specularGlint" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Border Stroke Gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.25"/>
+    </linearGradient>
+
+    <!-- Drop Shadow Filter -->
+    <filter id="shadowFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+
+    <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- App Icon Base Squircle (iOS / Android Adaptive Safe) -->
+  <rect x="0" y="0" width="512" height="512" rx="115" fill="url(#bgGrad)"/>
+  <rect x="0" y="0" width="512" height="512" rx="115" fill="url(#ambientGlow)"/>
+  
+  <!-- Outer Specular Ring -->
+  <rect x="2" y="2" width="508" height="508" rx="113" fill="none" stroke="url(#borderGrad)" stroke-width="3"/>
+
+  <!-- Subtle Top Specular Sheen -->
+  <path d="M 0,115 Q 0,0 115,0 L 397,0 Q 512,0 512,115 C 400,160 112,160 0,115 Z" fill="url(#specularGlint)" opacity="0.18"/>
+
+  <!-- Centered Grid Graphic Container (Safe zone: within 100 to 412) -->
+  <g filter="url(#shadowFilter)" transform="translate(0, 0)">
+    
+    <!-- Tile 1: Top-Left (Electric Cyan Hero Tile) -->
+    <g filter="url(#tileShadow)">
+      <rect x="116" y="116" width="130" height="130" rx="34" fill="url(#cyanBlock)"/>
+      <!-- Inner Specular Bevel -->
+      <rect x="117" y="117" width="128" height="128" rx="33" fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.5"/>
+      <path d="M 124,142 C 124,128 136,122 152,122 L 210,122 C 226,122 238,128 238,142 C 190,154 150,154 124,142 Z" fill="#ffffff" opacity="0.4"/>
+      <!-- Minimalist Pulse Dot -->
+      <circle cx="154" cy="154" r="8" fill="#ffffff" opacity="0.9"/>
+    </g>
+
+    <!-- Tile 2: Top-Right (Frosted Liquid Glass Tile) -->
+    <g filter="url(#tileShadow)">
+      <rect x="266" y="116" width="130" height="130" rx="34" fill="url(#frostGlass)"/>
+      <rect x="266" y="116" width="130" height="130" rx="34" fill="none" stroke="url(#borderGrad)" stroke-width="2"/>
+      <!-- Top Glint -->
+      <path d="M 274,142 C 274,128 286,122 302,122 L 360,122 C 376,122 388,128 388,142 C 340,152 300,152 274,142 Z" fill="#ffffff" opacity="0.3"/>
+      <!-- Horizontal Micro-bars (Representing widget components) -->
+      <rect x="296" y="162" width="70" height="7" rx="3.5" fill="#ffffff" opacity="0.7"/>
+      <rect x="296" y="177" width="46" height="7" rx="3.5" fill="#ffffff" opacity="0.35"/>
+    </g>
+
+    <!-- Tile 3: Bottom-Left (Frosted Liquid Glass Tile with Accent Dot) -->
+    <g filter="url(#tileShadow)">
+      <rect x="116" y="266" width="130" height="130" rx="34" fill="url(#frostGlass)"/>
+      <rect x="116" y="266" width="130" height="130" rx="34" fill="none" stroke="url(#borderGrad)" stroke-width="2"/>
+      <!-- Top Glint -->
+      <path d="M 124,292 C 124,278 136,272 152,272 L 210,272 C 226,272 238,278 238,292 C 190,302 150,302 124,292 Z" fill="#ffffff" opacity="0.3"/>
+      <!-- Metric Graph Arc / Pulse -->
+      <path d="M 144,342 Q 166,310 181,324 T 218,300" fill="none" stroke="#38bdf8" stroke-width="4.5" stroke-linecap="round" opacity="0.85"/>
+      <circle cx="218" cy="300" r="5" fill="#38bdf8"/>
+    </g>
+
+    <!-- Tile 4: Bottom-Right (Royal Purple Hero Tile) -->
+    <g filter="url(#tileShadow)">
+      <rect x="266" y="266" width="130" height="130" rx="34" fill="url(#purpleBlock)"/>
+      <rect x="267" y="267" width="128" height="128" rx="33" fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.45"/>
+      <path d="M 274,292 C 274,278 286,272 302,272 L 360,272 C 376,272 388,278 388,292 C 340,304 300,304 274,292 Z" fill="#ffffff" opacity="0.35"/>
+      <!-- Modern ProGrid Diamond Matrix -->
+      <rect x="317" y="317" width="28" height="28" rx="7" fill="#ffffff" opacity="0.9" transform="rotate(45 331 331)"/>
+    </g>
+
+    <!-- Center Interconnect Core Glow -->
+    <circle cx="256" cy="256" r="16" fill="#38bdf8" opacity="0.3" filter="blur(6px)"/>
+    <circle cx="256" cy="256" r="5" fill="#ffffff" opacity="0.95"/>
+  </g>
+</svg>
