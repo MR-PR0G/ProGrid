@@ -2644,6 +2644,19 @@ function closeWidgetInfo() {
     }, 220);
 }
 
+function isNewerVersion(remote, current) {
+    if (!remote || !current) return false;
+    const r = remote.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+    const c = current.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+    for (let i = 0; i < Math.max(r.length, c.length); i++) {
+        const rv = r[i] || 0;
+        const cv = c[i] || 0;
+        if (rv > cv) return true;
+        if (rv < cv) return false;
+    }
+    return false;
+}
+
 function launchUpdateSplashScreen(targetVer = 'v0.3.0') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
@@ -2664,22 +2677,33 @@ function launchUpdateSplashScreen(targetVer = 'v0.3.0') {
             setTimeout(() => {
                 stepEl.textContent = text;
                 stepEl.style.opacity = '1';
-            }, 120);
+            }, 80);
         }
         if (fillEl) fillEl.style.width = `${percent}%`;
     };
 
-    // Stage 1: Initializing & State Check
-    setStep('Syncing local databases & widget states...', 25);
+    setStep('Fetching latest update from repository...', 30);
 
-    // Stage 2: Cache & Service Worker Activation
+    // Stage 1: Purge existing CacheStorage
+    try {
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => caches.delete(name));
+            });
+        }
+    } catch (e) {}
+
+    // Stage 2: Service Worker Skip Waiting
     setTimeout(async () => {
-        setStep(`Activating ${formattedVer} engine & service worker...`, 60);
+        setStep(`Installing ${formattedVer} engine...`, 70);
         if ('serviceWorker' in navigator) {
             try {
                 const reg = await navigator.serviceWorker.getRegistration();
-                if (reg && reg.waiting) {
-                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                if (reg) {
+                    if (reg.waiting) {
+                        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                    await reg.update();
                 }
             } catch (e) {}
         }
@@ -2688,16 +2712,15 @@ function launchUpdateSplashScreen(targetVer = 'v0.3.0') {
         } catch (e) {}
     }, 450);
 
-    // Stage 3: Purging old cache layers & preparing reload
+    // Stage 3: Workspace reload
     setTimeout(() => {
-        setStep('Restarting ProGrid Workspace...', 90);
-    }, 950);
+        setStep('Restarting ProGrid Workspace...', 95);
+    }, 900);
 
-    // Stage 4: Seamless Reload
     setTimeout(() => {
         if (fillEl) fillEl.style.width = '100%';
         window.location.reload(true);
-    }, 1350);
+    }, 1250);
 }
 
 function showUpdateSuccessToast(verStr) {
@@ -2748,7 +2771,8 @@ function setupAboutModal() {
         checkUpdateBtn.addEventListener('click', async () => {
             if (isChecking) return;
 
-            if (checkUpdateBtn.getAttribute('data-action') === 'reload') {
+            // Only launch splash screen if an actual new update was found and verified
+            if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
                 const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.3.0';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
@@ -2760,7 +2784,7 @@ function setupAboutModal() {
             if (btnLabel) btnLabel.textContent = 'Checking...';
             if (updateDot) updateDot.className = 'update-indicator-dot checking';
             if (updateTitle) updateTitle.textContent = 'Checking for updates...';
-            if (updateSub) updateSub.textContent = 'Contacting server & cache verification';
+            if (updateSub) updateSub.textContent = 'Querying repository & cache verification...';
 
             try {
                 if ('serviceWorker' in navigator) {
@@ -2768,43 +2792,56 @@ function setupAboutModal() {
                     if (reg) await reg.update();
                 }
 
-                const res = await fetch(`./manifest.json?t=${Date.now()}`, { cache: 'no-store' });
-                if (res.ok) {
-                    const remoteManifest = await res.json();
-                    const currentVersion = '0.3.0';
-                    const remoteVersion = remoteManifest.version || '0.3.0';
+                let remoteVersion = null;
+                const currentVersion = '0.3.0';
 
-                    if (remoteVersion !== currentVersion) {
-                        if (updateDot) updateDot.className = 'update-indicator-dot update-found';
-                        if (updateTitle) updateTitle.textContent = `New Update v${remoteVersion} Available!`;
-                        if (updateSub) updateSub.textContent = 'Click to upgrade & restart with clean cache.';
-                        if (btnLabel) btnLabel.textContent = 'Restart & Update';
-                        checkUpdateBtn.setAttribute('data-action', 'reload');
-                        checkUpdateBtn.setAttribute('data-target-ver', `v${remoteVersion}`);
-                    } else {
-                        if (updateDot) updateDot.className = 'update-indicator-dot';
-                        if (updateTitle) updateTitle.textContent = 'System Up to Date';
-                        if (updateSub) updateSub.textContent = `ProGrid v${currentVersion} is the latest verified release.`;
-                        if (btnLabel) btnLabel.textContent = 'Re-sync Engine';
-                        checkUpdateBtn.setAttribute('data-action', 'reload');
-                        checkUpdateBtn.setAttribute('data-target-ver', `v${currentVersion}`);
+                // Attempt live check against GitHub raw repo first
+                try {
+                    const gitRes = await fetch(`https://raw.githubusercontent.com/MR-PR0G/ProGrid/main/manifest.json?t=${Date.now()}`, {
+                        cache: 'no-store',
+                        signal: AbortSignal.timeout(3000)
+                    });
+                    if (gitRes.ok) {
+                        const gitData = await gitRes.json();
+                        if (gitData && gitData.version) {
+                            remoteVersion = gitData.version;
+                        }
                     }
+                } catch (e) {
+                    // Fallback to local manifest if GitHub raw is unreachable
+                }
+
+                if (!remoteVersion) {
+                    const res = await fetch(`./manifest.json?t=${Date.now()}`, { cache: 'no-store' });
+                    if (res.ok) {
+                        const localData = await res.json();
+                        remoteVersion = localData.version || currentVersion;
+                    }
+                }
+
+                if (remoteVersion && isNewerVersion(remoteVersion, currentVersion)) {
+                    if (updateDot) updateDot.className = 'update-indicator-dot update-found';
+                    if (updateTitle) updateTitle.textContent = `New Update v${remoteVersion} Available!`;
+                    if (updateSub) updateSub.textContent = 'A new release is ready on GitHub. Click to upgrade.';
+                    if (btnLabel) btnLabel.textContent = `Update to v${remoteVersion}`;
+                    checkUpdateBtn.setAttribute('data-action', 'apply-update');
+                    checkUpdateBtn.setAttribute('data-target-ver', `v${remoteVersion}`);
                 } else {
                     if (updateDot) updateDot.className = 'update-indicator-dot';
-                    if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.3.0 is active.';
-                    if (btnLabel) btnLabel.textContent = 'Re-sync Engine';
-                    checkUpdateBtn.setAttribute('data-action', 'reload');
-                    checkUpdateBtn.setAttribute('data-target-ver', 'v0.3.0');
+                    if (updateTitle) updateTitle.textContent = 'System Up to Date';
+                    if (updateSub) updateSub.textContent = `ProGrid v${currentVersion} is the latest verified release.`;
+                    if (btnLabel) btnLabel.textContent = 'Check Updates';
+                    checkUpdateBtn.setAttribute('data-action', 'check');
+                    checkUpdateBtn.removeAttribute('data-target-ver');
                 }
             } catch (err) {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Using cached standalone v0.3.0 release.';
-                if (btnLabel) btnLabel.textContent = 'Re-sync Engine';
-                checkUpdateBtn.setAttribute('data-action', 'reload');
-                checkUpdateBtn.setAttribute('data-target-ver', 'v0.3.0');
+                if (updateSub) updateSub.textContent = 'Running standalone v0.3.0 release.';
+                if (btnLabel) btnLabel.textContent = 'Check Updates';
+                checkUpdateBtn.setAttribute('data-action', 'check');
+                checkUpdateBtn.removeAttribute('data-target-ver');
             } finally {
                 isChecking = false;
                 checkUpdateBtn.classList.remove('spin');
