@@ -1331,6 +1331,7 @@ function renderInstalledDrawerList() {
                         <span>Add to Grid</span>
                     </button>
                 </div>
+            </div>
         `;
     });
 
@@ -2111,6 +2112,64 @@ window.closeFolderPopup = function() {
     }, 220);
 };
 
+const FINANCE_ASSET_INFO = {
+    'BTC': { name: 'Bitcoin', symbol: 'BTC', icon: '₿' },
+    'USDIRR': { name: 'US Dollar (Toman)', symbol: 'USD/TMN', icon: '💵' },
+    'ETH': { name: 'Ethereum', symbol: 'ETH', icon: 'Ξ' },
+    'SOL': { name: 'Solana', symbol: 'SOL', icon: '◎' },
+    'TON': { name: 'Toncoin', symbol: 'TON', icon: '💎' },
+    'GOLD': { name: 'Gold (Ounce)', symbol: 'XAU', icon: '🟡' },
+    'OIL': { name: 'Brent Crude', symbol: 'OIL', icon: '🛢️' },
+    'SILVER': { name: 'Silver (Ounce)', symbol: 'XAG', icon: '⚪' },
+    'EURUSD': { name: 'Euro / Dollar', symbol: 'EUR', icon: '💶' },
+    'GBPUSD': { name: 'British Pound', symbol: 'GBP', icon: '💷' }
+};
+
+let currentFinanceAssets = ['BTC', 'USDIRR'];
+
+function renderFinanceAssetChips() {
+    const chipsContainer = document.getElementById('finance-asset-chips');
+    const countEl = document.getElementById('finance-asset-count');
+    const hiddenInput = document.getElementById('edit-finance-assets');
+    const addBtn = document.getElementById('edit-finance-add-btn');
+    const addSelect = document.getElementById('edit-finance-add-select');
+    if (!chipsContainer || !hiddenInput) return;
+
+    hiddenInput.value = JSON.stringify(currentFinanceAssets);
+    if (countEl) countEl.textContent = `${currentFinanceAssets.length} / 4`;
+
+    chipsContainer.innerHTML = '';
+    currentFinanceAssets.forEach((assetId, index) => {
+        const info = FINANCE_ASSET_INFO[assetId] || { name: assetId, symbol: assetId, icon: '📈' };
+        const chip = document.createElement('div');
+        chip.className = 'finance-chip';
+        chip.innerHTML = `
+            <span class="finance-chip-icon">${info.icon}</span>
+            <span class="finance-chip-name">${info.symbol}</span>
+            ${currentFinanceAssets.length > 1 ? `
+                <button type="button" class="finance-chip-remove" title="Remove ${info.symbol}">
+                    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            ` : ''}
+        `;
+        const removeBtn = chip.querySelector('.finance-chip-remove');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (currentFinanceAssets.length > 1) {
+                    currentFinanceAssets.splice(index, 1);
+                    renderFinanceAssetChips();
+                }
+            });
+        }
+        chipsContainer.appendChild(chip);
+    });
+
+    const isFull = currentFinanceAssets.length >= 4;
+    if (addBtn) addBtn.disabled = isFull;
+    if (addSelect) addSelect.disabled = isFull;
+}
+
 function openModal(w, isPreAdd = false) {
     const overlay = document.getElementById('modal-overlay');
     if (!overlay) return;
@@ -2183,24 +2242,31 @@ function openModal(w, isPreAdd = false) {
         document.querySelectorAll('.id-finance-only').forEach(el => {
             el.style.display = el.classList.contains('glass-toggle-switch') ? 'inline-block' : 'flex';
         });
-        const modeSelect = document.getElementById('edit-finance-mode');
-        const primarySelect = document.getElementById('edit-finance-primary');
-        const secondarySelect = document.getElementById('edit-finance-secondary');
+
+        if (Array.isArray(w.assets) && w.assets.length > 0) {
+            currentFinanceAssets = [...w.assets.slice(0, 4)];
+        } else {
+            currentFinanceAssets = [w.primaryAsset || 'BTC', w.secondaryAsset || 'USDIRR'].filter(Boolean);
+        }
+        if (currentFinanceAssets.length === 0) currentFinanceAssets = ['BTC', 'USDIRR'];
+
+        renderFinanceAssetChips();
+
+        const addBtn = document.getElementById('edit-finance-add-btn');
+        const addSelect = document.getElementById('edit-finance-add-select');
+        if (addBtn && addSelect) {
+            addBtn.onclick = (e) => {
+                e.preventDefault();
+                const sel = addSelect.value;
+                if (currentFinanceAssets.length < 4 && !currentFinanceAssets.includes(sel)) {
+                    currentFinanceAssets.push(sel);
+                    renderFinanceAssetChips();
+                }
+            };
+        }
+
         const chartToggle = document.getElementById('edit-finance-chart');
-        const secondaryWrap = document.getElementById('edit-finance-secondary-wrap');
-
-        if (modeSelect) modeSelect.value = w.viewMode || 'single';
-        if (primarySelect) primarySelect.value = w.primaryAsset || 'BTC';
-        if (secondarySelect) secondarySelect.value = w.secondaryAsset || 'USDIRR';
         if (chartToggle) chartToggle.checked = w.showChart !== false;
-
-        const syncSecondary = () => {
-            if (secondaryWrap) {
-                secondaryWrap.style.display = (modeSelect && modeSelect.value === 'dual') ? 'flex' : 'none';
-            }
-        };
-        if (modeSelect) modeSelect.onchange = syncSecondary;
-        syncSecondary();
     }
     
     currentWidgetBgSelection = w.bg || '#ffffff';
@@ -2271,9 +2337,11 @@ function saveWidgetSettings() {
             newWidget.format24 = document.getElementById('edit-clock-24h').checked;
             newWidget.showSeconds = document.getElementById('edit-clock-seconds').checked;
         } else if (type === 'finance') {
-            newWidget.viewMode = document.getElementById('edit-finance-mode').value;
-            newWidget.primaryAsset = document.getElementById('edit-finance-primary').value;
-            newWidget.secondaryAsset = document.getElementById('edit-finance-secondary').value;
+            const rawAssets = JSON.parse(document.getElementById('edit-finance-assets').value || '["BTC"]');
+            newWidget.assets = Array.isArray(rawAssets) && rawAssets.length > 0 ? rawAssets.slice(0, 4) : ['BTC'];
+            newWidget.primaryAsset = newWidget.assets[0];
+            newWidget.secondaryAsset = newWidget.assets[1] || 'USDIRR';
+            newWidget.viewMode = newWidget.assets.length === 1 ? 'single' : (newWidget.assets.length === 2 ? 'dual' : 'grid');
             newWidget.showChart = document.getElementById('edit-finance-chart').checked;
         }
 
@@ -2315,9 +2383,11 @@ function saveWidgetSettings() {
             w.format24 = document.getElementById('edit-clock-24h').checked;
             w.showSeconds = document.getElementById('edit-clock-seconds').checked;
         } else if (w.type === 'finance') {
-            w.viewMode = document.getElementById('edit-finance-mode').value;
-            w.primaryAsset = document.getElementById('edit-finance-primary').value;
-            w.secondaryAsset = document.getElementById('edit-finance-secondary').value;
+            const rawAssets = JSON.parse(document.getElementById('edit-finance-assets').value || '["BTC"]');
+            w.assets = Array.isArray(rawAssets) && rawAssets.length > 0 ? rawAssets.slice(0, 4) : ['BTC'];
+            w.primaryAsset = w.assets[0];
+            w.secondaryAsset = w.assets[1] || 'USDIRR';
+            w.viewMode = w.assets.length === 1 ? 'single' : (w.assets.length === 2 ? 'dual' : 'grid');
             w.showChart = document.getElementById('edit-finance-chart').checked;
         }
         
