@@ -11,7 +11,6 @@ const BASE_DOWNLOADS = {
     notes: 7910,
     pomodoro: 6840,
     finance: 9250,
-    calculator: 5310,
     quote: 4620
 };
 
@@ -63,7 +62,7 @@ export class WidgetHubEngine {
                 const parsed = JSON.parse(raw);
                 if (Array.isArray(parsed)) {
                     // Filter out legacy automatic defaults if user never placed them
-                    list = parsed.filter(id => !['folder', 'shortcut', 'search', 'clock'].includes(id));
+                    list = parsed.filter(id => !['folder', 'shortcut', 'search', 'clock', 'calculator'].includes(id));
                 }
             }
 
@@ -73,7 +72,7 @@ export class WidgetHubEngine {
                 const parsed = JSON.parse(savedState);
                 if (parsed.widgets && Array.isArray(parsed.widgets)) {
                     parsed.widgets.forEach(w => {
-                        if (w.type && !['shortcut', 'search', 'clock', 'folder'].includes(w.type) && !list.includes(w.type)) {
+                        if (w.type && !['shortcut', 'search', 'clock', 'folder', 'calculator'].includes(w.type) && !list.includes(w.type)) {
                             list.push(w.type);
                         }
                     });
@@ -160,19 +159,6 @@ export class WidgetHubEngine {
                 scriptUrl: "./widgets/community/finance.js"
             },
             {
-                id: "calculator",
-                name: "Quick Calculator",
-                author: "MR Prog",
-                version: "1.2.0",
-                downloads: this.getDownloads("calculator"),
-                category: "tools",
-                defaultW: 2,
-                defaultH: 2,
-                verified: true,
-                description: "Compact glassmorphic calculator for rapid computations.",
-                scriptUrl: "./widgets/community/calculator.js"
-            },
-            {
                 id: "quote",
                 name: "Daily Inspiration",
                 author: "MR Prog",
@@ -188,11 +174,12 @@ export class WidgetHubEngine {
         ];
     }
 
-    resolveScriptUrl(url) {
-        if (typeof document !== 'undefined' && document.baseURI) {
-            return new URL(url, document.baseURI).href;
-        }
-        return url;
+    resolveScriptUrl(url, version = '1.2.0') {
+        const full = (typeof document !== 'undefined' && document.baseURI) 
+            ? new URL(url, document.baseURI).href 
+            : url;
+        const sep = full.includes('?') ? '&' : '?';
+        return `${full}${sep}v=${version}`;
     }
 
     async bootInstalledWidgets() {
@@ -200,7 +187,7 @@ export class WidgetHubEngine {
         for (const item of list) {
             if (this.installedIds.includes(item.id)) {
                 try {
-                    const resolved = this.resolveScriptUrl(item.scriptUrl);
+                    const resolved = this.resolveScriptUrl(item.scriptUrl, item.version);
                     await import(resolved);
                 } catch (err) {
                     console.error(`Failed to load community widget ${item.id}:`, err);
@@ -223,7 +210,7 @@ export class WidgetHubEngine {
         }
 
         try {
-            const resolved = this.resolveScriptUrl(item.scriptUrl);
+            const resolved = this.resolveScriptUrl(item.scriptUrl, item.version);
             await import(resolved);
             if (!this.installedIds.includes(item.id)) {
                 this.installedIds.push(item.id);

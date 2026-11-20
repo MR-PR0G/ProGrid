@@ -1,4 +1,4 @@
-const CACHE_NAME = 'progrid-cache-v0.3.1';
+const CACHE_NAME = 'progrid-cache-v0.3.2';
 const urlsToCache = [
   './',
   './index.html',
@@ -15,7 +15,6 @@ const urlsToCache = [
   './widgets/checklist.js',
   './widgets/clock.js',
   './widgets/notes.js',
-  './widgets/community/calculator.js',
   './widgets/community/quote.js',
   './widgets/community/pomodoro.js',
   './widgets/community/finance.js',
@@ -59,33 +58,18 @@ self.addEventListener('fetch', event => {
   // Allow cross-origin requests (e.g. Unsplash, search engines) to run natively
   if (url.origin !== self.location.origin) return;
 
-  // 1. Navigation Requests: Cache-First for instant 0ms launch & resilience against network drops
+  // 1. Navigation Requests: Network-First for instant freshness when online, cache when offline
   if (event.request.mode === 'navigate' || event.request.destination === 'document') {
     event.respondWith(
-      caches.match('./index.html').then(cachedHtml => {
-        // Background revalidation
-        const networkUpdate = fetch(event.request).then(networkResponse => {
+      fetch(event.request)
+        .then(networkResponse => {
           if (networkResponse && networkResponse.ok) {
             const clone = networkResponse.clone();
             caches.open(CACHE_NAME).then(cache => cache.put('./index.html', clone));
           }
           return networkResponse;
-        }).catch(() => null);
-
-        if (cachedHtml) {
-          // Serve from cache instantly
-          return cachedHtml;
-        }
-
-        // If not yet in cache, await network
-        return networkUpdate.then(async netResp => {
-          if (netResp) return netResp;
-          return (await caches.match('./index.html')) || (await caches.match('./')) || new Response(
-            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>ProGrid</title></head><body style="background:#1e2126;color:#fff;font-family:sans-serif;text-align:center;padding:50px;"><h2>ProGrid Workspace</h2><p>Please check your connection and refresh.</p></body></html>',
-            { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-          );
-        });
-      })
+        })
+        .catch(() => caches.match('./index.html'))
     );
     return;
   }

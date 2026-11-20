@@ -504,51 +504,55 @@ body.edit-mode #edit-panel {
     font-size: 9.5px; color: #60a5fa; font-weight: 600;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.store-card-info-btn {
-    background: none; border: none; cursor: pointer; padding: 0;
-    opacity: 0.7; transition: opacity 0.15s, transform 0.1s, color 0.15s;
-    display: inline-flex; align-items: center; justify-content: center;
-    color: var(--text-secondary); line-height: 1;
+.store-card-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
 }
-.store-card-info-btn:hover {
-    opacity: 1; transform: scale(1.2); color: #3b82f6;
+.store-card-tool-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+    line-height: 1;
+}
+.store-card-tool-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--text-primary);
+    transform: scale(1.08);
+}
+.store-card-tool-btn:active {
+    transform: scale(0.95);
+}
+.store-card-tool-btn.store-uninstall-btn {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+.store-card-tool-btn.store-uninstall-btn:hover {
+    background: rgba(239, 68, 68, 0.26);
+    color: #ef4444;
 }
 .store-card-actions {
-    display: flex; align-items: center; gap: 6px; margin-top: auto;
-}
-.store-config-btn {
-    flex: 1; height: 28px; padding: 0 4px; border-radius: 9px;
-    background: rgba(255, 255, 255, 0.08); border: 1px solid var(--panel-border);
-    color: var(--text-primary); font-size: 11px; font-weight: 600; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 4px;
-    transition: background 0.15s, transform 0.1s;
-}
-.store-config-btn:hover {
-    background: rgba(255, 255, 255, 0.16); transform: scale(1.02);
-}
-.store-config-btn:active {
-    transform: scale(0.96);
+    display: flex; align-items: center; gap: 6px; margin-top: auto; width: 100%;
 }
 .store-add-btn {
-    flex: 1; height: 28px; padding: 0 4px; border-radius: 9px; border: none;
-    background: #3b82f6; color: white; font-size: 11px; font-weight: 700;
-    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
+    width: 100%; height: 30px; padding: 0 8px; border-radius: 9px; border: none;
+    background: #3b82f6; color: white; font-size: 11.5px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
     transition: background 0.15s, transform 0.1s;
 }
 .store-add-btn:hover { background: #2563eb; transform: scale(1.02); }
 .store-add-btn:active { transform: scale(0.96); }
-.store-uninstall-btn {
-    width: 28px; height: 28px; flex-shrink: 0; border-radius: 9px;
-    background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25);
-    color: #f87171; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-    transition: background 0.15s, color 0.15s, transform 0.1s;
-}
-.store-uninstall-btn:hover {
-    background: rgba(239, 68, 68, 0.28); color: #ef4444; transform: scale(1.05);
-}
-.store-uninstall-btn:active {
-    transform: scale(0.95);
-}
 
 /* First-Time Visitor Onboarding Tip */
 .first-visit-tip {

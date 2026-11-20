@@ -53,19 +53,6 @@
     "scriptUrl": "./widgets/community/finance.js"
   },
   {
-    "id": "calculator",
-    "name": "Quick Calculator",
-    "author": "MR Prog",
-    "version": "1.2.0",
-    "downloads": "5.3k",
-    "category": "tools",
-    "defaultW": 2,
-    "defaultH": 2,
-    "verified": true,
-    "description": "Compact glassmorphic calculator for rapid computations.",
-    "scriptUrl": "./widgets/community/calculator.js"
-  },
-  {
     "id": "quote",
     "name": "Daily Inspiration",
     "author": "MR Prog",

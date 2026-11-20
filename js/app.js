@@ -10,6 +10,9 @@ import '../widgets/checklist.js';
 import '../widgets/folder.js';
 import '../widgets/clock.js';
 import '../widgets/notes.js';
+import '../widgets/community/finance.js';
+import '../widgets/community/pomodoro.js';
+import '../widgets/community/quote.js';
 
 let state = { editMode: false, blurValue: 27, presetBg: '1', theme: 'dark', designTheme: 'frosted-glass', customBg: null, widgets: [] };
 window.state = state;
@@ -46,7 +49,7 @@ async function init() {
         state.theme = loaded.theme || 'dark';
         state.designTheme = (loaded.designTheme === 'liquid-glass') ? 'frosted-glass' : (loaded.designTheme || 'frosted-glass');
         state.customBg = loaded.customBg || null;
-        state.widgets = loaded.widgets;
+        state.widgets = (loaded.widgets || []).filter(w => w.type !== 'calculator');
     } else {
         state.blurValue = 27;
         state.presetBg = "1";
@@ -1295,39 +1298,39 @@ function renderInstalledDrawerList() {
                 </div>
                 <div class="store-card-author-row">
                     <span class="store-card-author">By ${author} • ${verStr}</span>
-                    <button class="store-card-info-btn" data-type="${m.type}" title="Widget details" aria-label="Widget details">
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                        </svg>
-                    </button>
-                </div>
-                <div class="store-card-actions">
-                    ${!isCore ? `
-                        <button class="store-uninstall-btn" data-type="${m.type}" title="Uninstall widget from device" aria-label="Uninstall widget">
-                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="3 6 5 6 21 6"></polyline>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <div class="store-card-tools">
+                        <button class="store-card-tool-btn store-config-btn" data-type="${m.type}" title="Configure widget" aria-label="Configure widget">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                             </svg>
                         </button>
-                    ` : ''}
-                    <button class="store-config-btn" data-type="${m.type}" title="Configure & Add">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                        </svg>
-                        <span>Config</span>
-                    </button>
+                        <button class="store-card-tool-btn store-card-info-btn" data-type="${m.type}" title="Widget details" aria-label="Widget details">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </button>
+                        ${!isCore ? `
+                            <button class="store-card-tool-btn store-uninstall-btn" data-type="${m.type}" title="Uninstall widget from device" aria-label="Uninstall widget">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="store-card-actions">
                     <button class="store-add-btn" data-type="${m.type}">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                        <span>Add</span>
+                        <span>Add to Grid</span>
                     </button>
                 </div>
-            </div>
         `;
     });
 
@@ -2343,7 +2346,6 @@ const widgetDescriptions = {
     checklist: 'Interactive daily tasks checklist to prioritize and manage everyday todos.',
     pomodoro: 'Engineered focus sessions and countdown timer with chime notification.',
     finance: 'Interactive financial tracker with 24h hourly charts, single/dual currency focus, and Iranian Toman rates.',
-    calculator: 'Compact glassmorphic calculator for rapid computations.',
     quote: 'Daily motivational wisdom to keep you inspired while working in your new tab.'
 };
 
