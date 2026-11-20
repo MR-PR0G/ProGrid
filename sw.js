@@ -1,4 +1,4 @@
-const CACHE_NAME = 'progrid-cache-v0.2.6';
+const CACHE_NAME = 'progrid-cache-v0.2.7';
 const urlsToCache = [
   './',
   './index.html',
@@ -23,6 +23,8 @@ const urlsToCache = [
   './icons/app-icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './icons/maskable-icon-192.png',
+  './icons/maskable-icon-512.png',
   './manifest.json'
 ];
 

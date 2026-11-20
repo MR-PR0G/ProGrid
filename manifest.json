@@ -2,7 +2,7 @@
   "name": "ProGrid Workspace",
   "short_name": "ProGrid",
   "id": "progrid-workspace-app",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Customizable Liquid Glass Workspace & New Tab Dashboard by MR Prog",
   "start_url": "index.html",
   "scope": "./",
@@ -20,19 +20,19 @@
       "purpose": "any"
     },
     {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icons/maskable-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/maskable-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

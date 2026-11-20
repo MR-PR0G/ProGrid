@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient (Full Bleed for Maskable Safe Zone) -->
+    <linearGradient id="mBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#161a22"/>
+      <stop offset="50%" stop-color="#0e1116"/>
+      <stop offset="100%" stop-color="#08090d"/>
+    </linearGradient>
+
+    <!-- Ambient Subtle Glow -->
+    <radialGradient id="mAmbientGlow" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.25"/>
+      <stop offset="60%" stop-color="#1d4ed8" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Blue Gradient 1: Bright Electric Blue -->
+    <linearGradient id="mBrightBlueTile" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+
+    <!-- Blue Gradient 2: Darker Sapphire Blue -->
+    <linearGradient id="mDarkerBlueTile" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e40af"/>
+      <stop offset="100%" stop-color="#172554"/>
+    </linearGradient>
+
+    <!-- Gray Gradient 1: Cool Slate Gray -->
+    <linearGradient id="mSlateGrayTile" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+
+    <!-- Gray Gradient 2: Deep Charcoal Gray -->
+    <linearGradient id="mDarkGrayTile" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+
+    <!-- Tile Border Highlight -->
+    <linearGradient id="mTileBorderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.12"/>
+    </linearGradient>
+
+    <filter id="mShadowFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+
+    <filter id="mTileShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Full Bleed Solid Background (Mandatory for Android Maskable Icons, 0 transparency) -->
+  <rect x="0" y="0" width="512" height="512" fill="url(#mBgGrad)"/>
+  <rect x="0" y="0" width="512" height="512" fill="url(#mAmbientGlow)"/>
+
+  <!-- Centered Scaled Content in Safe Zone (Scale 0.82 centered at 256, 256) -->
+  <g transform="translate(256, 256) scale(0.82) translate(-256, -256)" filter="url(#mShadowFilter)">
+    
+    <!-- ==================== TILE 1: TOP-LEFT (Bright Electric Blue - Search) ==================== -->
+    <g filter="url(#mTileShadow)">
+      <rect x="97" y="97" width="150" height="150" rx="38" fill="url(#mBrightBlueTile)"/>
+      <rect x="98" y="98" width="148" height="148" rx="37" fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.5"/>
+      <!-- Top Bevel Glint -->
+      <path d="M 106,124 C 106,110 120,103 136,103 L 208,103 C 224,103 238,110 238,124 C 190,135 145,135 106,124 Z" fill="#ffffff" opacity="0.4"/>
+      <!-- Search Icon (Magnifying Glass) -->
+      <g transform="translate(172, 172)" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <circle cx="-4" cy="-4" r="21" stroke="#ffffff"/>
+        <line x1="12" y1="12" x2="28" y2="28" stroke="#ffffff" stroke-width="6.5"/>
+        <path d="M -17,-7 A 14 14 0 0 1 -7,-17" stroke="#ffffff" stroke-width="2.8" opacity="0.6"/>
+      </g>
+    </g>
+
+    <!-- ==================== TILE 2: TOP-RIGHT (Cool Slate Gray - AI Sparkle) ==================== -->
+    <g filter="url(#mTileShadow)">
+      <rect x="265" y="97" width="150" height="150" rx="38" fill="url(#mSlateGrayTile)"/>
+      <rect x="265" y="97" width="150" height="150" rx="38" fill="none" stroke="url(#mTileBorderGrad)" stroke-width="2"/>
+      <!-- Top Bevel Glint -->
+      <path d="M 274,124 C 274,110 288,103 304,103 L 376,103 C 392,103 406,110 406,124 C 358,135 313,135 274,124 Z" fill="#ffffff" opacity="0.25"/>
+      <!-- AI Intelligence Star -->
+      <g transform="translate(340, 172)">
+        <circle cx="0" cy="0" r="18" fill="#38bdf8" opacity="0.2" filter="blur(6px)"/>
+        <path d="M 0,-32 Q 0,0 32,0 Q 0,0 0,32 Q 0,0 -32,0 Q 0,0 0,-32 Z" fill="#ffffff" opacity="0.95"/>
+        <path d="M 20,-20 Q 20,-11 29,-11 Q 20,-11 20,-2 Q 20,-11 11,-11 Q 20,-11 20,-20 Z" fill="#38bdf8" opacity="0.95"/>
+      </g>
+    </g>
+
+    <!-- ==================== TILE 3: BOTTOM-LEFT (Deep Charcoal Gray - Trading Chart) ==================== -->
+    <g filter="url(#mTileShadow)">
+      <rect x="97" y="265" width="150" height="150" rx="38" fill="url(#mDarkGrayTile)"/>
+      <rect x="98" y="266" width="148" height="148" rx="37" fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.25"/>
+      <!-- Top Bevel Glint -->
+      <path d="M 106,292 C 106,278 120,271 136,271 L 208,271 C 224,271 238,278 238,292 C 190,303 145,303 106,292 Z" fill="#ffffff" opacity="0.25"/>
+      <!-- Trading Candlesticks & Surge Wave -->
+      <g transform="translate(172, 340)">
+        <line x1="-34" y1="2" x2="-34" y2="26" stroke="#94a3b8" stroke-width="2.2" opacity="0.7"/>
+        <rect x="-40" y="8" width="12" height="13" rx="2.5" fill="#cbd5e1" opacity="0.85"/>
+        
+        <line x1="-14" y1="-8" x2="-14" y2="20" stroke="#94a3b8" stroke-width="2.2" opacity="0.7"/>
+        <rect x="-20" y="-3" width="12" height="18" rx="2.5" fill="#e2e8f0" opacity="0.9"/>
+
+        <line x1="6" y1="-24" x2="6" y2="12" stroke="#38bdf8" stroke-width="2.5" opacity="0.9"/>
+        <rect x="0" y="-18" width="12" height="22" rx="2.5" fill="#38bdf8"/>
+
+        <!-- Dynamic Ascent Trend Curve -->
+        <path d="M -44,22 C -25,20 -15,8 5,-8 C 18,-18 26,-15 32,-14" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="32" cy="-14" r="4.5" fill="#ffffff"/>
+      </g>
+    </g>
+
+    <!-- ==================== TILE 4: BOTTOM-RIGHT (Darker Sapphire Blue - Tasks & Productivity) ==================== -->
+    <g filter="url(#mTileShadow)">
+      <rect x="265" y="265" width="150" height="150" rx="38" fill="url(#mDarkerBlueTile)"/>
+      <rect x="265" y="265" width="150" height="150" rx="38" fill="none" stroke="url(#mTileBorderGrad)" stroke-width="2"/>
+      <!-- Top Bevel Glint -->
+      <path d="M 274,292 C 274,278 288,271 304,271 L 376,271 C 392,271 406,278 406,292 C 358,303 313,303 274,292 Z" fill="#ffffff" opacity="0.25"/>
+      <!-- Productivity Checklist -->
+      <g transform="translate(340, 340)">
+        <!-- Item 1 (Checked) -->
+        <circle cx="-28" cy="-22" r="9" fill="#38bdf8"/>
+        <polyline points="-31,-22 -29,-20 -25,-24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="-11" y="-25.5" width="46" height="7" rx="3.5" fill="#ffffff"/>
+
+        <!-- Item 2 (Checked) -->
+        <circle cx="-28" cy="0" r="8" fill="none" stroke="#38bdf8" stroke-width="2"/>
+        <polyline points="-30,0 -29,1 -26,-2" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="-11" y="-3.5" width="34" height="7" rx="3.5" fill="#cbd5e1" opacity="0.9"/>
+
+        <!-- Item 3 (Pending Task) -->
+        <circle cx="-28" cy="22" r="8" fill="none" stroke="#60a5fa" stroke-width="2" opacity="0.7"/>
+        <rect x="-11" y="18.5" width="26" height="7" rx="3.5" fill="#64748b" opacity="0.75"/>
+      </g>
+    </g>
+
+  </g>
+</svg>
