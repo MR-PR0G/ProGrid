@@ -1,4 +1,4 @@
-const CACHE_NAME = 'progrid-cache-v0.2.9';
+const CACHE_NAME = 'progrid-cache-v0.3.0';
 const urlsToCache = [
   './',
   './index.html',
@@ -44,6 +44,12 @@ self.addEventListener('activate', event => {
       keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
     )).then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', event => {

@@ -122,6 +122,16 @@ async function init() {
         console.warn('Storage tip check err:', e);
     }
 
+    try {
+        const updatedToast = sessionStorage.getItem('progrid_updated_toast');
+        if (updatedToast) {
+            sessionStorage.removeItem('progrid_updated_toast');
+            setTimeout(() => {
+                showUpdateSuccessToast(updatedToast);
+            }, 350);
+        }
+    } catch (e) {}
+
     // Asynchronously boot community widgets in background without blocking screen
     widgetHub.bootInstalledWidgets().then(() => {
         const hasCommunityWidget = state.widgets.some(w => !['shortcut', 'search', 'checklist', 'folder', 'clock', 'notes'].includes(w.type));
@@ -2440,6 +2450,77 @@ function closeWidgetInfo() {
     }, 220);
 }
 
+function launchUpdateSplashScreen(targetVer = 'v0.2.5') {
+    const splash = document.getElementById('update-splash-screen');
+    const stepEl = document.getElementById('update-splash-step');
+    const fillEl = document.getElementById('update-splash-bar-progress');
+    const verEl = document.getElementById('update-splash-ver');
+    
+    const formattedVer = targetVer.startsWith('v') ? targetVer : `v${targetVer}`;
+    if (verEl) verEl.textContent = `Upgrading to ${formattedVer}`;
+    
+    if (splash) {
+        splash.style.display = 'flex';
+        requestAnimationFrame(() => splash.classList.add('active'));
+    }
+
+    const setStep = (text, percent) => {
+        if (stepEl) {
+            stepEl.style.opacity = '0';
+            setTimeout(() => {
+                stepEl.textContent = text;
+                stepEl.style.opacity = '1';
+            }, 120);
+        }
+        if (fillEl) fillEl.style.width = `${percent}%`;
+    };
+
+    // Stage 1: Initializing & State Check
+    setStep('Syncing local databases & widget states...', 25);
+
+    // Stage 2: Cache & Service Worker Activation
+    setTimeout(async () => {
+        setStep(`Activating ${formattedVer} engine & service worker...`, 60);
+        if ('serviceWorker' in navigator) {
+            try {
+                const reg = await navigator.serviceWorker.getRegistration();
+                if (reg && reg.waiting) {
+                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                }
+            } catch (e) {}
+        }
+        try {
+            sessionStorage.setItem('progrid_updated_toast', formattedVer);
+        } catch (e) {}
+    }, 450);
+
+    // Stage 3: Purging old cache layers & preparing reload
+    setTimeout(() => {
+        setStep('Restarting ProGrid Workspace...', 90);
+    }, 950);
+
+    // Stage 4: Seamless Reload
+    setTimeout(() => {
+        if (fillEl) fillEl.style.width = '100%';
+        window.location.reload(true);
+    }, 1350);
+}
+
+function showUpdateSuccessToast(verStr) {
+    const toast = document.getElementById('update-success-toast');
+    const textEl = document.getElementById('update-toast-text');
+    if (!toast) return;
+
+    if (textEl) {
+        textEl.textContent = `ProGrid updated to ${verStr} successfully!`;
+    }
+
+    toast.classList.add('active');
+    setTimeout(() => {
+        toast.classList.remove('active');
+    }, 3800);
+}
+
 function setupAboutModal() {
     const aboutBtn = document.getElementById('panel-about-btn');
     const aboutModal = document.getElementById('about-modal');
@@ -2474,13 +2555,9 @@ function setupAboutModal() {
             if (isChecking) return;
 
             if (checkUpdateBtn.getAttribute('data-action') === 'reload') {
-                if ('serviceWorker' in navigator) {
-                    const reg = await navigator.serviceWorker.getRegistration();
-                    if (reg && reg.waiting) {
-                        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                    }
-                }
-                window.location.reload(true);
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.2.5';
+                aboutModal.style.display = 'none';
+                launchUpdateSplashScreen(targetVer);
                 return;
             }
 
@@ -2500,33 +2577,40 @@ function setupAboutModal() {
                 const res = await fetch(`./manifest.json?t=${Date.now()}`, { cache: 'no-store' });
                 if (res.ok) {
                     const remoteManifest = await res.json();
-                    const currentVersion = '0.2.2';
-                    const remoteVersion = remoteManifest.version || '0.2.2';
+                    const currentVersion = '0.2.5';
+                    const remoteVersion = remoteManifest.version || '0.2.5';
 
                     if (remoteVersion !== currentVersion) {
                         if (updateDot) updateDot.className = 'update-indicator-dot update-found';
                         if (updateTitle) updateTitle.textContent = `New Update v${remoteVersion} Available!`;
-                        if (updateSub) updateSub.textContent = 'Click to reload and apply latest version.';
-                        if (btnLabel) btnLabel.textContent = 'Reload to Apply';
+                        if (updateSub) updateSub.textContent = 'Click to upgrade & restart with clean cache.';
+                        if (btnLabel) btnLabel.textContent = 'Restart & Update';
                         checkUpdateBtn.setAttribute('data-action', 'reload');
+                        checkUpdateBtn.setAttribute('data-target-ver', `v${remoteVersion}`);
                     } else {
                         if (updateDot) updateDot.className = 'update-indicator-dot';
                         if (updateTitle) updateTitle.textContent = 'System Up to Date';
                         if (updateSub) updateSub.textContent = `ProGrid v${currentVersion} is the latest verified release.`;
-                        if (btnLabel) btnLabel.textContent = 'Check Updates';
+                        if (btnLabel) btnLabel.textContent = 'Re-sync Engine';
+                        checkUpdateBtn.setAttribute('data-action', 'reload');
+                        checkUpdateBtn.setAttribute('data-target-ver', `v${currentVersion}`);
                     }
                 } else {
                     if (updateDot) updateDot.className = 'update-indicator-dot';
                     if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.2.4 is active.';
-                    if (btnLabel) btnLabel.textContent = 'Check Updates';
+                    if (updateSub) updateSub.textContent = 'Local ProGrid version v0.2.5 is active.';
+                    if (btnLabel) btnLabel.textContent = 'Re-sync Engine';
+                    checkUpdateBtn.setAttribute('data-action', 'reload');
+                    checkUpdateBtn.setAttribute('data-target-ver', 'v0.2.5');
                 }
             } catch (err) {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Using cached standalone v0.2.4 release.';
-                if (btnLabel) btnLabel.textContent = 'Check Updates';
+                if (updateSub) updateSub.textContent = 'Using cached standalone v0.2.5 release.';
+                if (btnLabel) btnLabel.textContent = 'Re-sync Engine';
+                checkUpdateBtn.setAttribute('data-action', 'reload');
+                checkUpdateBtn.setAttribute('data-target-ver', 'v0.2.5');
             } finally {
                 isChecking = false;
                 checkUpdateBtn.classList.remove('spin');

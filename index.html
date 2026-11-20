@@ -526,7 +526,7 @@
                 <div class="about-title-block">
                     <h3 class="about-name">ProGrid Workspace</h3>
                     <div class="about-badge-row">
-                        <span class="about-version-badge" id="about-app-version">v0.2.4</span>
+                        <span class="about-version-badge" id="about-app-version">v0.2.5</span>
                         <span class="about-license-badge">GNU GPLv3</span>
                     </div>
                 </div>
@@ -560,7 +560,7 @@
                     <div class="update-indicator-dot" id="update-indicator-dot"></div>
                     <div class="update-info-text">
                         <span class="update-title" id="update-status-title">System Up to Date</span>
-                        <span class="update-sub" id="update-status-sub">Running official v0.2.4 release</span>
+                        <span class="update-sub" id="update-status-sub">Running official v0.2.5 release</span>
                     </div>
                 </div>
                 <button id="about-check-update-btn" class="about-update-action-btn">
@@ -600,6 +600,30 @@
                 Close
             </button>
         </div>
+    </div>
+
+    <!-- Update & Restart Splash Screen Overlay -->
+    <div id="update-splash-screen" class="update-splash-overlay" style="display: none;">
+        <div class="update-splash-content">
+            <div class="update-splash-logo-wrap">
+                <div class="update-splash-glow"></div>
+                <img src="icons/icon-192.png" alt="ProGrid" class="update-splash-logo" width="76" height="76" />
+            </div>
+            <h2 class="update-splash-title">Updating ProGrid Workspace</h2>
+            <p id="update-splash-step" class="update-splash-step">Preparing system upgrade...</p>
+            <div class="update-splash-bar-track">
+                <div id="update-splash-bar-progress" class="update-splash-bar-fill"></div>
+            </div>
+            <span id="update-splash-ver" class="update-splash-version">Upgrading to v0.2.5</span>
+        </div>
+    </div>
+
+    <!-- Post-Update Success Toast -->
+    <div id="update-success-toast" class="update-success-toast">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span id="update-toast-text">ProGrid updated to v0.2.5 successfully</span>
     </div>
 
     <script type="text/javascript">

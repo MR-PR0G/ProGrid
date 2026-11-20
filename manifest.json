@@ -2,7 +2,7 @@
   "name": "ProGrid Workspace",
   "short_name": "ProGrid",
   "id": "progrid-workspace-app",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Customizable Liquid Glass Workspace & New Tab Dashboard by MR Prog",
   "start_url": "index.html",
   "scope": "./",
