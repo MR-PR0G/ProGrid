@@ -158,6 +158,7 @@
             </button>
             <div class="panel-tabs">
                 <button class="panel-tab active" data-tab="widgets">Widgets</button>
+                <button class="panel-tab" data-tab="workspaces">Workspaces</button>
                 <button class="panel-tab" data-tab="appearance">Appearance</button>
             </div>
             <button id="panel-collapse-btn" class="panel-collapse-btn" title="Collapse Shelf" aria-label="Toggle Shelf">
@@ -214,6 +215,82 @@
 
             <!-- Online Hub Marketplace List -->
             <div class="store-list-container" id="store-marketplace-list" style="display: none;"></div>
+        </div>
+
+        <!-- Workspaces & Layout Presets Tab (Skins) -->
+        <div class="panel-content" id="tab-workspaces" style="flex-direction: column; gap: 8px;">
+            <!-- Segmented Sub-navigation: Curated Presets vs Custom Workspaces -->
+            <div class="appearance-subtabs-row">
+                <button type="button" class="appearance-subtab-btn active" id="ws-subtab-curated">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <span>Curated Skins</span>
+                </button>
+                <button type="button" class="appearance-subtab-btn" id="ws-subtab-custom">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    <span>My Custom Skins (1-3)</span>
+                </button>
+            </div>
+
+            <!-- View 1: Curated Workspaces List -->
+            <div class="workspaces-view-container active" id="ws-view-curated">
+                <div class="workspaces-cards-scroll">
+                    <!-- Preset 1: Default Minimalist -->
+                    <div class="workspace-card" data-preset="default">
+                        <div class="workspace-card-header">
+                            <span class="workspace-badge default">Default</span>
+                            <span class="workspace-widgets-count">4 Widgets</span>
+                        </div>
+                        <div class="workspace-card-title">Minimalist Daily</div>
+                        <div class="workspace-card-desc">Google Search pill, Dual Calendar clock, Google Suite folder &amp; Daily Wisdom.</div>
+                        <div class="workspace-card-preview-icons">
+                            <span>🔍</span><span>⏰</span><span>📁</span><span>💬</span>
+                        </div>
+                        <button type="button" class="workspace-apply-btn" data-preset="default">Apply Layout</button>
+                    </div>
+
+                    <!-- Preset 2: Market & Trading Hub -->
+                    <div class="workspace-card" data-preset="trading">
+                        <div class="workspace-card-header">
+                            <span class="workspace-badge trading">Markets</span>
+                            <span class="workspace-widgets-count">4 Widgets</span>
+                        </div>
+                        <div class="workspace-card-title">Trading Hub</div>
+                        <div class="workspace-card-desc">Live Markets &amp; Crypto (BTC/ETH/USDIRR), Web search, Trading folder &amp; Wisdom.</div>
+                        <div class="workspace-card-preview-icons">
+                            <span>📈</span><span>🔍</span><span>📁</span><span>💬</span>
+                        </div>
+                        <button type="button" class="workspace-apply-btn" data-preset="trading">Apply Layout</button>
+                    </div>
+
+                    <!-- Preset 3: Focus & Productivity Desk -->
+                    <div class="workspace-card" data-preset="productivity">
+                        <div class="workspace-card-header">
+                            <span class="workspace-badge focus">Productivity</span>
+                            <span class="workspace-widgets-count">4 Widgets</span>
+                        </div>
+                        <div class="workspace-card-title">Focus &amp; Tasks</div>
+                        <div class="workspace-card-desc">Material 3 Pomodoro timer, Interactive Checklist tasks, Smart Notes &amp; Clock.</div>
+                        <div class="workspace-card-preview-icons">
+                            <span>⏳</span><span>✅</span><span>📝</span><span>⏰</span>
+                        </div>
+                        <button type="button" class="workspace-apply-btn" data-preset="productivity">Apply Layout</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View 2: Custom User Slots (1 to 3) -->
+            <div class="workspaces-view-container" id="ws-view-custom">
+                <div class="custom-workspaces-grid" id="custom-workspaces-slots-container"></div>
+            </div>
         </div>
 
         <!-- Appearance & Wallpaper Gallery Tab (Grouped by Wallpapers vs Design Themes) -->

@@ -5,19 +5,31 @@
 
 const STORAGE_KEY_INSTALLED = 'progrid_installed_community_widgets';
 const STORAGE_KEY_DOWNLOADS = 'progrid_widget_download_counts';
+const STORAGE_KEY_LIKES = 'progrid_widget_likes_counts';
+const STORAGE_KEY_USER_LIKED = 'progrid_widget_user_liked_set';
 
 const BASE_DOWNLOADS = {
     checklist: 8420,
     notes: 7910,
-    pomodoro: 6840,
-    finance: 9250,
-    quote: 4620
+    pomodoro: 7400,
+    finance: 10450,
+    quote: 5210
+};
+
+const BASE_LIKES = {
+    checklist: 1420,
+    notes: 1210,
+    pomodoro: 1150,
+    finance: 2340,
+    quote: 940
 };
 
 export class WidgetHubEngine {
     constructor() {
         this.registryCache = [];
         this.downloads = this.loadDownloads();
+        this.likes = this.loadLikes();
+        this.userLiked = this.loadUserLiked();
         this.installedIds = this.loadInstalledIds();
     }
 
@@ -50,6 +62,68 @@ export class WidgetHubEngine {
         }
         this.downloads[id] += 1;
         this.saveDownloads();
+    }
+
+    loadLikes() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY_LIKES);
+            return raw ? JSON.parse(raw) : { ...BASE_LIKES };
+        } catch {
+            return { ...BASE_LIKES };
+        }
+    }
+
+    saveLikes() {
+        try {
+            localStorage.setItem(STORAGE_KEY_LIKES, JSON.stringify(this.likes));
+        } catch {}
+    }
+
+    loadUserLiked() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY_USER_LIKED);
+            return raw ? JSON.parse(raw) : {};
+        } catch {
+            return {};
+        }
+    }
+
+    saveUserLiked() {
+        try {
+            localStorage.setItem(STORAGE_KEY_USER_LIKED, JSON.stringify(this.userLiked));
+        } catch {}
+    }
+
+    getLikes(id) {
+        const count = this.likes[id] || BASE_LIKES[id] || 800;
+        if (count >= 1000) {
+            return (count / 1000).toFixed(1) + 'k';
+        }
+        return count.toLocaleString();
+    }
+
+    isLiked(id) {
+        return !!this.userLiked[id];
+    }
+
+    toggleLike(id) {
+        if (!this.likes[id]) {
+            this.likes[id] = BASE_LIKES[id] || 800;
+        }
+        const currentlyLiked = !!this.userLiked[id];
+        if (currentlyLiked) {
+            delete this.userLiked[id];
+            this.likes[id] = Math.max(0, this.likes[id] - 1);
+        } else {
+            this.userLiked[id] = true;
+            this.likes[id] += 1;
+        }
+        this.saveLikes();
+        this.saveUserLiked();
+        return {
+            liked: !currentlyLiked,
+            countStr: this.getLikes(id)
+        };
     }
 
     loadInstalledIds() {

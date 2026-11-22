@@ -85,6 +85,7 @@ async function init() {
     setupWidgetDrawer();
     setupWallpaperGallery();
     setupAppearanceSubtabs();
+    setupWorkspacesUI();
     setupQuickMenuListeners();
     setupAboutModal();
 
@@ -415,7 +416,6 @@ function attachInteractionEngine(el, w, instance) {
                 } else {
                     isDragging = true;
                     el.classList.add('dragging');
-                    container.appendChild(el);
                 }
                 if (ghost) ghost.classList.add('active');
                 updateGhost(w);
@@ -535,6 +535,7 @@ function attachInteractionEngine(el, w, instance) {
         window.removeEventListener('pointermove', onGlobalPointerMove);
         window.removeEventListener('pointerup', onGlobalPointerUp);
         window.removeEventListener('pointercancel', onGlobalPointerUp);
+        window.removeEventListener('blur', onGlobalPointerUp);
 
         if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
         if (!state.editMode) return;
@@ -691,6 +692,7 @@ function attachInteractionEngine(el, w, instance) {
         window.addEventListener('pointermove', onGlobalPointerMove, { passive: false });
         window.addEventListener('pointerup', onGlobalPointerUp);
         window.addEventListener('pointercancel', onGlobalPointerUp);
+        window.addEventListener('blur', onGlobalPointerUp);
 
         e.stopPropagation();
     });
@@ -1422,6 +1424,8 @@ async function renderMarketplaceDrawerList() {
         const isInstalled = widgetHub.isInstalled(item.id);
         const iconSvg = getWidgetIconSvg(item.id);
         const downloadsStr = widgetHub.getDownloads(item.id);
+        const isLiked = widgetHub.isLiked(item.id);
+        const likesStr = widgetHub.getLikes(item.id);
         html += `
             <div class="market-card" data-id="${item.id}">
                 <div class="market-card-top">
@@ -1440,14 +1444,22 @@ async function renderMarketplaceDrawerList() {
                 </div>
                 <div class="market-card-desc" title="${item.description}">${item.description}</div>
                 <div class="market-card-footer">
-                    <span class="market-downloads-tag">
-                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        <span>${downloadsStr}</span>
-                    </span>
+                    <div class="market-stats-group">
+                        <button type="button" class="market-like-btn ${isLiked ? 'liked' : ''}" data-id="${item.id}" title="${isLiked ? 'Liked' : 'Like'}">
+                            <svg viewBox="0 0 24 24" width="11" height="11" fill="${isLiked ? '#ef4444' : 'none'}" stroke="${isLiked ? '#ef4444' : 'currentColor'}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                            <span class="like-count">${likesStr}</span>
+                        </button>
+                        <span class="market-downloads-tag">
+                            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>${downloadsStr}</span>
+                        </span>
+                    </div>
                     <button class="market-install-btn ${isInstalled ? 'installed' : ''}" data-id="${item.id}">
                         ${isInstalled ? `
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -1468,6 +1480,24 @@ async function renderMarketplaceDrawerList() {
     });
 
     listEl.innerHTML = html;
+
+    listEl.querySelectorAll('.market-like-btn').forEach(likeBtn => {
+        likeBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        likeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = likeBtn.getAttribute('data-id');
+            const res = widgetHub.toggleLike(id);
+            likeBtn.classList.toggle('liked', res.liked);
+            const countEl = likeBtn.querySelector('.like-count');
+            const svgEl = likeBtn.querySelector('svg');
+            if (countEl) countEl.textContent = res.countStr;
+            if (svgEl) {
+                svgEl.setAttribute('fill', res.liked ? '#ef4444' : 'none');
+                svgEl.setAttribute('stroke', res.liked ? '#ef4444' : 'currentColor');
+            }
+            if (navigator.vibrate) navigator.vibrate(25);
+        });
+    });
 
     listEl.querySelectorAll('.market-info-btn').forEach(btn => {
         btn.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -1490,6 +1520,7 @@ async function renderMarketplaceDrawerList() {
             btn.textContent = 'Installing...';
             const ok = await widgetHub.installWidget(targetItem);
             if (ok) {
+                widgetHub.incrementDownload(id);
                 btn.innerHTML = `
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="20 6 9 17 4 12"></polyline>
@@ -1686,6 +1717,280 @@ function setupWallpaperGallery() {
             if (navigator.vibrate) navigator.vibrate(25);
         });
     }
+}
+
+/* ==========================================================================
+   Workspaces & Skins Engine (Curated Presets + Custom Slots 1-3)
+   ========================================================================== */
+const WORKSPACE_PRESETS = {
+    default: {
+        id: 'default',
+        name: 'Minimalist Daily',
+        widgets: [
+            { id: "w-search-default", type: "search", x: 0, y: 0, w: 4, h: 1, engine: "google", placeholder: "Search web, apps & bookmarks...", searchShape: "pill", isGlass: true, bg: "#ffffff" },
+            { id: "w-clock-default", type: "clock", x: 0, y: 1, w: 2, h: 1, format24: true, showDate: true, calendarType: "gregorian", isGlass: true, bg: "#ffffff" },
+            { id: "w-quote-default", type: "quote", x: 2, y: 1, w: 2, h: 1, category: "all", language: "all", quoteTheme: "default", isGlass: true, bg: "#ffffff" },
+            {
+                id: "w-folder-google",
+                type: "folder",
+                title: "Google Apps",
+                x: 0, y: 2, w: 2, h: 2,
+                isGlass: true,
+                bg: "#ffffff",
+                children: [
+                    { id: "g-search", type: "shortcut", title: "Google", url: "https://google.com", icon: "", shape: "20px", iconBg: "#4285F4" },
+                    { id: "g-mail", type: "shortcut", title: "Gmail", url: "https://mail.google.com", icon: "", shape: "20px", iconBg: "#EA4335" },
+                    { id: "g-drive", type: "shortcut", title: "Drive", url: "https://drive.google.com", icon: "", shape: "20px", iconBg: "#34A853" },
+                    { id: "g-yt", type: "shortcut", title: "YouTube", url: "https://youtube.com", icon: "", shape: "20px", iconBg: "#FF0000" },
+                    { id: "g-maps", type: "shortcut", title: "Maps", url: "https://maps.google.com", icon: "", shape: "20px", iconBg: "#FBBC05" },
+                    { id: "g-trans", type: "shortcut", title: "Translate", url: "https://translate.google.com", icon: "", shape: "20px", iconBg: "#4285F4" }
+                ]
+            }
+        ]
+    },
+    trading: {
+        id: 'trading',
+        name: 'Trading & Market Hub',
+        widgets: [
+            { id: "w-search-trading", type: "search", x: 0, y: 0, w: 4, h: 1, engine: "google", placeholder: "Search ticker, crypto, markets...", searchShape: "pill", isGlass: true, bg: "#ffffff" },
+            { id: "w-finance-trading", type: "finance", x: 0, y: 1, w: 2, h: 2, assets: ["BTC", "USDIRR", "ETH"], primaryAsset: "BTC", secondaryAsset: "USDIRR", baseCurrency: "USD", showChart: true, isGlass: true, bg: "#ffffff" },
+            { id: "w-quote-trading", type: "quote", x: 2, y: 1, w: 2, h: 1, category: "philosophy", language: "all", quoteTheme: "amber", isGlass: true, bg: "#ffffff" },
+            {
+                id: "w-folder-trading",
+                type: "folder",
+                title: "Financial Hub",
+                x: 2, y: 2, w: 2, h: 2,
+                isGlass: true,
+                bg: "#ffffff",
+                children: [
+                    { id: "f-tv", type: "shortcut", title: "TradingView", url: "https://tradingview.com", icon: "", shape: "20px", iconBg: "#2962FF" },
+                    { id: "f-nobitex", type: "shortcut", title: "Nobitex", url: "https://nobitex.ir", icon: "", shape: "20px", iconBg: "#10B981" },
+                    { id: "f-binance", type: "shortcut", title: "Binance", url: "https://binance.com", icon: "", shape: "20px", iconBg: "#F3BA2F" },
+                    { id: "f-cmc", type: "shortcut", title: "CoinMarketCap", url: "https://coinmarketcap.com", icon: "", shape: "20px", iconBg: "#172554" }
+                ]
+            }
+        ]
+    },
+    productivity: {
+        id: 'productivity',
+        name: 'Focus & Tasks Desk',
+        widgets: [
+            { id: "w-clock-prod", type: "clock", x: 0, y: 0, w: 2, h: 1, format24: true, showDate: true, calendarType: "gregorian", isGlass: true, bg: "#ffffff" },
+            { id: "w-quote-prod", type: "quote", x: 2, y: 0, w: 2, h: 1, category: "science", language: "all", quoteTheme: "emerald", isGlass: true, bg: "#ffffff" },
+            { id: "w-pomo-prod", type: "pomodoro", x: 0, y: 1, w: 2, h: 2, targetMinutes: 25, timeLeft: 1500, isRunning: false, isGlass: true, bg: "#ffffff" },
+            {
+                id: "w-check-prod",
+                type: "checklist",
+                x: 2, y: 1, w: 2, h: 2,
+                isGlass: true,
+                bg: "#ffffff",
+                tasks: [
+                    { id: 1, text: "Sprint goals & review", done: true },
+                    { id: 2, text: "Focus block (25m)", done: false },
+                    { id: 3, text: "Check inbox & updates", done: false }
+                ]
+            }
+        ]
+    }
+};
+
+function loadCustomWorkspaces() {
+    try {
+        const raw = localStorage.getItem('progrid_user_workspaces');
+        return raw ? JSON.parse(raw) : { slot1: null, slot2: null, slot3: null };
+    } catch {
+        return { slot1: null, slot2: null, slot3: null };
+    }
+}
+
+function saveCustomWorkspaces(data) {
+    try {
+        localStorage.setItem('progrid_user_workspaces', JSON.stringify(data));
+    } catch {}
+}
+
+function applyWorkspacePreset(presetId) {
+    let targetWidgets = null;
+    let name = '';
+
+    if (WORKSPACE_PRESETS[presetId]) {
+        targetWidgets = JSON.parse(JSON.stringify(WORKSPACE_PRESETS[presetId].widgets));
+        name = WORKSPACE_PRESETS[presetId].name;
+    } else {
+        const customSlots = loadCustomWorkspaces();
+        if (customSlots[presetId] && customSlots[presetId].widgets) {
+            targetWidgets = JSON.parse(JSON.stringify(customSlots[presetId].widgets));
+            name = customSlots[presetId].name || 'Custom Skin';
+        }
+    }
+
+    if (!targetWidgets) return;
+
+    // Ensure all community widgets required by this workspace are registered as installed
+    targetWidgets.forEach(w => {
+        if (!['shortcut', 'search', 'clock', 'folder'].includes(w.type)) {
+            if (!widgetHub.isInstalled(w.type)) {
+                widgetHub.installedIds.push(w.type);
+            }
+        }
+    });
+    widgetHub.saveInstalledIds();
+
+    grid.updateMetrics();
+    state.widgets = targetWidgets;
+    state.widgets.forEach(w => {
+        w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: grid.columns };
+    });
+    grid.resolveAllFinalOverlaps(state.widgets);
+    StorageEngine.save(state);
+    renderGrid();
+    renderInstalledDrawerList();
+
+    if (window.showToast) window.showToast(`Applied '${name}' layout`);
+    if (navigator.vibrate) navigator.vibrate(40);
+}
+
+function saveCurrentLayoutToSlot(slotKey) {
+    const customSlots = loadCustomWorkspaces();
+    const count = (state.widgets || []).filter(w => !w.isHidden).length;
+    const slotNum = slotKey.replace('slot', '');
+    const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    customSlots[slotKey] = {
+        name: `Custom Skin ${slotNum}`,
+        date: dateStr,
+        count: count,
+        widgets: JSON.parse(JSON.stringify(state.widgets))
+    };
+
+    saveCustomWorkspaces(customSlots);
+    renderCustomWorkspacesUI();
+    if (window.showToast) window.showToast(`Saved layout as Custom Skin ${slotNum}`);
+    if (navigator.vibrate) navigator.vibrate(35);
+}
+
+function clearCustomWorkspaceSlot(slotKey) {
+    const customSlots = loadCustomWorkspaces();
+    customSlots[slotKey] = null;
+    saveCustomWorkspaces(customSlots);
+    renderCustomWorkspacesUI();
+    if (window.showToast) window.showToast('Skin slot reset');
+}
+
+function renderCustomWorkspacesUI() {
+    const container = document.getElementById('custom-workspaces-slots-container');
+    if (!container) return;
+
+    const customSlots = loadCustomWorkspaces();
+    let html = '';
+
+    ['slot1', 'slot2', 'slot3'].forEach((slotKey, idx) => {
+        const slotData = customSlots[slotKey];
+        const num = idx + 1;
+        if (!slotData) {
+            html += `
+                <div class="custom-workspace-slot empty" data-slot="${slotKey}">
+                    <div class="custom-slot-save-icon">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </div>
+                    <span class="custom-slot-empty-title">Save Skin ${num}</span>
+                    <span style="font-size: 8.5px; color: var(--text-secondary); opacity: 0.7;">Click to save current</span>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="custom-workspace-slot" data-slot="${slotKey}">
+                    <div class="custom-slot-active-top">
+                        <span class="custom-slot-name">${slotData.name || `Skin ${num}`}</span>
+                        <span class="custom-slot-meta">${slotData.count || 0} widgets</span>
+                    </div>
+                    <div style="font-size: 8.5px; color: var(--text-secondary); margin: 2px 0;">Saved ${slotData.date || 'Recently'}</div>
+                    <div class="custom-slot-actions">
+                        <button type="button" class="custom-slot-apply-btn" data-slot="${slotKey}">Apply</button>
+                        <button type="button" class="custom-slot-icon-btn custom-slot-overwrite-btn" data-slot="${slotKey}" title="Overwrite with current layout">
+                            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="custom-slot-icon-btn custom-slot-clear-btn" data-slot="${slotKey}" title="Clear slot">
+                            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    });
+
+    container.innerHTML = html;
+
+    container.querySelectorAll('.custom-workspace-slot.empty').forEach(emptySlot => {
+        emptySlot.addEventListener('click', () => {
+            const slotKey = emptySlot.getAttribute('data-slot');
+            saveCurrentLayoutToSlot(slotKey);
+        });
+    });
+
+    container.querySelectorAll('.custom-slot-apply-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const slotKey = btn.getAttribute('data-slot');
+            applyWorkspacePreset(slotKey);
+        });
+    });
+
+    container.querySelectorAll('.custom-slot-overwrite-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const slotKey = btn.getAttribute('data-slot');
+            saveCurrentLayoutToSlot(slotKey);
+        });
+    });
+
+    container.querySelectorAll('.custom-slot-clear-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const slotKey = btn.getAttribute('data-slot');
+            clearCustomWorkspaceSlot(slotKey);
+        });
+    });
+}
+
+function setupWorkspacesUI() {
+    const curatedSubtabBtn = document.getElementById('ws-subtab-curated');
+    const customSubtabBtn = document.getElementById('ws-subtab-custom');
+    const curatedView = document.getElementById('ws-view-curated');
+    const customView = document.getElementById('ws-view-custom');
+
+    if (curatedSubtabBtn && customSubtabBtn) {
+        curatedSubtabBtn.addEventListener('click', () => {
+            curatedSubtabBtn.classList.add('active');
+            customSubtabBtn.classList.remove('active');
+            if (curatedView) curatedView.classList.add('active');
+            if (customView) customView.classList.remove('active');
+        });
+
+        customSubtabBtn.addEventListener('click', () => {
+            customSubtabBtn.classList.add('active');
+            curatedSubtabBtn.classList.remove('active');
+            if (customView) customView.classList.add('active');
+            if (curatedView) curatedView.classList.remove('active');
+            renderCustomWorkspacesUI();
+        });
+    }
+
+    document.querySelectorAll('.workspace-apply-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const presetId = btn.getAttribute('data-preset');
+            applyWorkspacePreset(presetId);
+        });
+    });
+
+    renderCustomWorkspacesUI();
 }
 
 function setupAppearanceSubtabs() {
@@ -2714,7 +3019,7 @@ function launchUpdateSplashScreen(targetVer = 'v0.3.0') {
 
     setTimeout(() => {
         if (fillEl) fillEl.style.width = '100%';
-        window.location.reload(true);
+        window.location.href = window.location.pathname + '?upgraded=' + Date.now();
     }, 1250);
 }
 
@@ -2790,20 +3095,34 @@ function setupAboutModal() {
                 let remoteVersion = null;
                 const currentVersion = '0.3.0';
 
-                // Attempt live check against GitHub raw repo first
+                // 1. Direct GitHub Releases API check
                 try {
-                    const gitRes = await fetch(`https://raw.githubusercontent.com/MR-PR0G/ProGrid/main/manifest.json?t=${Date.now()}`, {
-                        cache: 'no-store',
-                        signal: AbortSignal.timeout(3000)
+                    const releaseRes = await fetch('https://api.github.com/repos/MR-PR0G/ProGrid/releases/latest', {
+                        headers: { 'Accept': 'application/vnd.github.v3+json' },
+                        signal: AbortSignal.timeout(3500)
                     });
-                    if (gitRes.ok) {
-                        const gitData = await gitRes.json();
-                        if (gitData && gitData.version) {
-                            remoteVersion = gitData.version;
+                    if (releaseRes.ok) {
+                        const relData = await releaseRes.json();
+                        if (relData && relData.tag_name) {
+                            remoteVersion = relData.tag_name.replace(/^v/, '');
                         }
                     }
-                } catch (e) {
-                    // Fallback to local manifest if GitHub raw is unreachable
+                } catch (_) {}
+
+                // 2. Raw Repository Manifest Check
+                if (!remoteVersion) {
+                    try {
+                        const gitRes = await fetch(`https://raw.githubusercontent.com/MR-PR0G/ProGrid/main/manifest.json?t=${Date.now()}`, {
+                            cache: 'no-store',
+                            signal: AbortSignal.timeout(3500)
+                        });
+                        if (gitRes.ok) {
+                            const gitData = await gitRes.json();
+                            if (gitData && gitData.version) {
+                                remoteVersion = gitData.version;
+                            }
+                        }
+                    } catch (_) {}
                 }
 
                 if (!remoteVersion) {
