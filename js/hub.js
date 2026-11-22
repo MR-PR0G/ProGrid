@@ -9,19 +9,19 @@ const STORAGE_KEY_LIKES = 'progrid_widget_likes_counts';
 const STORAGE_KEY_USER_LIKED = 'progrid_widget_user_liked_set';
 
 const BASE_DOWNLOADS = {
-    checklist: 8420,
-    notes: 7910,
-    pomodoro: 7400,
-    finance: 10450,
-    quote: 5210
+    checklist: 48,
+    notes: 36,
+    pomodoro: 52,
+    finance: 64,
+    quote: 29
 };
 
 const BASE_LIKES = {
-    checklist: 1420,
-    notes: 1210,
-    pomodoro: 1150,
-    finance: 2340,
-    quote: 940
+    checklist: 14,
+    notes: 9,
+    pomodoro: 17,
+    finance: 22,
+    quote: 8
 };
 
 export class WidgetHubEngine {
@@ -36,7 +36,20 @@ export class WidgetHubEngine {
     loadDownloads() {
         try {
             const raw = localStorage.getItem(STORAGE_KEY_DOWNLOADS);
-            return raw ? JSON.parse(raw) : { ...BASE_DOWNLOADS };
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                // Migrate any legacy inflated baseline (> 500)
+                let needsReset = false;
+                for (const k in parsed) {
+                    if (typeof parsed[k] === 'number' && parsed[k] > 500) {
+                        needsReset = true;
+                        break;
+                    }
+                }
+                if (!needsReset) return parsed;
+            }
+            localStorage.setItem(STORAGE_KEY_DOWNLOADS, JSON.stringify(BASE_DOWNLOADS));
+            return { ...BASE_DOWNLOADS };
         } catch {
             return { ...BASE_DOWNLOADS };
         }
@@ -49,16 +62,16 @@ export class WidgetHubEngine {
     }
 
     getDownloads(id) {
-        const count = this.downloads[id] || BASE_DOWNLOADS[id] || 4200;
+        const count = this.downloads[id] !== undefined ? this.downloads[id] : (BASE_DOWNLOADS[id] || 25);
         if (count >= 1000) {
             return (count / 1000).toFixed(1) + 'k';
         }
-        return count.toLocaleString();
+        return String(count);
     }
 
     incrementDownload(id) {
-        if (!this.downloads[id]) {
-            this.downloads[id] = BASE_DOWNLOADS[id] || 4200;
+        if (this.downloads[id] === undefined) {
+            this.downloads[id] = BASE_DOWNLOADS[id] || 25;
         }
         this.downloads[id] += 1;
         this.saveDownloads();
@@ -67,7 +80,20 @@ export class WidgetHubEngine {
     loadLikes() {
         try {
             const raw = localStorage.getItem(STORAGE_KEY_LIKES);
-            return raw ? JSON.parse(raw) : { ...BASE_LIKES };
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                // Migrate any legacy inflated baseline (> 500)
+                let needsReset = false;
+                for (const k in parsed) {
+                    if (typeof parsed[k] === 'number' && parsed[k] > 500) {
+                        needsReset = true;
+                        break;
+                    }
+                }
+                if (!needsReset) return parsed;
+            }
+            localStorage.setItem(STORAGE_KEY_LIKES, JSON.stringify(BASE_LIKES));
+            return { ...BASE_LIKES };
         } catch {
             return { ...BASE_LIKES };
         }
@@ -95,11 +121,11 @@ export class WidgetHubEngine {
     }
 
     getLikes(id) {
-        const count = this.likes[id] || BASE_LIKES[id] || 800;
+        const count = this.likes[id] !== undefined ? this.likes[id] : (BASE_LIKES[id] || 10);
         if (count >= 1000) {
             return (count / 1000).toFixed(1) + 'k';
         }
-        return count.toLocaleString();
+        return String(count);
     }
 
     isLiked(id) {
@@ -107,8 +133,8 @@ export class WidgetHubEngine {
     }
 
     toggleLike(id) {
-        if (!this.likes[id]) {
-            this.likes[id] = BASE_LIKES[id] || 800;
+        if (this.likes[id] === undefined) {
+            this.likes[id] = BASE_LIKES[id] || 10;
         }
         const currentlyLiked = !!this.userLiked[id];
         if (currentlyLiked) {
