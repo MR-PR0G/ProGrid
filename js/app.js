@@ -243,9 +243,14 @@ function hexToRgba(hex, alpha = 0.1) {
 
 function createWidgetDOM(w) {
     const coords = grid.getRenderCoords(w);
+    w.h = coords.h;
+    w.w = coords.w;
     const wrapper = document.createElement('div');
     wrapper.className = 'widget-wrapper';
     wrapper.id = w.id;
+    wrapper.setAttribute('data-h', coords.h);
+    wrapper.setAttribute('data-w', coords.w);
+    wrapper.classList.toggle('is-h1', coords.h === 1);
     wrapper.style.width = `${coords.w * grid.cellSize + (coords.w - 1) * grid.gap}px`;
     wrapper.style.height = `${coords.h * grid.cellSize + (coords.h - 1) * grid.gap}px`;
     wrapper.style.left = `${coords.x * (grid.cellSize + grid.gap)}px`;
@@ -2561,17 +2566,40 @@ function openModal(w, isPreAdd = false) {
 
     if (w.type === 'shortcut') {
         document.querySelectorAll('.id-shortcut-only').forEach(el => el.style.display = 'flex');
-        document.getElementById('edit-w-title').value = w.title || '';
-        document.getElementById('edit-w-url').value = w.url || '';
+        const titleInput = document.getElementById('edit-w-title');
+        const urlInput = document.getElementById('edit-w-url');
         const iconUrlInput = document.getElementById('edit-w-icon-url');
+        const iconLetterInput = document.getElementById('edit-w-icon');
+
+        titleInput.value = w.title || '';
+        urlInput.value = w.url || '';
         if (iconUrlInput) iconUrlInput.value = w.iconUrl || '';
-        document.getElementById('edit-w-icon').value = w.icon !== undefined ? w.icon : '';
+        if (iconLetterInput) iconLetterInput.value = w.icon !== undefined ? w.icon : '';
         
         currentShapeSelection = w.shape || '20px';
         document.querySelectorAll('.shape-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-shape') === currentShapeSelection));
         
         currentIconBgSelection = w.iconBg || 'transparent';
         updateColorUI('iconBg', currentIconBgSelection);
+
+        // Smart dynamic auto-fill when URL changes
+        urlInput.oninput = () => {
+            const val = urlInput.value.toLowerCase().trim();
+            if (!titleInput.value || titleInput.value === 'Link' || titleInput.value === 'Google') {
+                if (val.includes('mail.google.com') || val.includes('gmail.com')) titleInput.value = 'Gmail';
+                else if (val.includes('youtube.com') || val.includes('youtu.be')) titleInput.value = 'YouTube';
+                else if (val.includes('github.com')) titleInput.value = 'GitHub';
+                else if (val.includes('telegram.org') || val.includes('t.me')) titleInput.value = 'Telegram';
+                else if (val.includes('twitter.com') || val.includes('x.com')) titleInput.value = 'X';
+                else if (val.includes('instagram.com')) titleInput.value = 'Instagram';
+                else if (val.includes('chatgpt.com') || val.includes('openai.com')) titleInput.value = 'ChatGPT';
+                else if (val.includes('whatsapp.com')) titleInput.value = 'WhatsApp';
+                else if (val.includes('spotify.com')) titleInput.value = 'Spotify';
+                else if (val.includes('discord.com')) titleInput.value = 'Discord';
+                else if (val.includes('reddit.com')) titleInput.value = 'Reddit';
+                else if (val.includes('linkedin.com')) titleInput.value = 'LinkedIn';
+            }
+        };
 
     } else if (w.type === 'folder') {
         document.querySelectorAll('.id-folder-only').forEach(el => el.style.display = 'flex');
@@ -3073,7 +3101,7 @@ function setupAboutModal() {
 
             // Only launch splash screen if an actual new update was found and verified
             if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.3.0';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.3.1';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -3093,7 +3121,7 @@ function setupAboutModal() {
                 }
 
                 let remoteVersion = null;
-                const currentVersion = '0.3.0';
+                const currentVersion = '0.3.1';
 
                 // 1. Direct GitHub Releases API check
                 try {

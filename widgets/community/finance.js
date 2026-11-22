@@ -18,7 +18,7 @@ const ASSET_SVGS = {
 
 const ASSET_REGISTRY = [
     { id: 'BTC', name: 'Bitcoin', symbol: 'BTC', price: 91450, change: 2.34, high: 92800, low: 89400, icon: ASSET_SVGS.BTC, type: 'crypto', unit: '$' },
-    { id: 'USDIRR', name: 'US Dollar (Toman)', symbol: 'USD/TMN', price: 71500, change: 0.65, high: 71900, low: 70800, icon: ASSET_SVGS.USDIRR, type: 'forex', unit: 'Toman' },
+    { id: 'USDIRR', name: 'US Dollar (Toman)', symbol: 'USD/TMN', price: 215000, change: 0.65, high: 218000, low: 212000, icon: ASSET_SVGS.USDIRR, type: 'forex', unit: 'Toman' },
     { id: 'ETH', name: 'Ethereum', symbol: 'ETH', price: 3120, change: -0.85, high: 3190, low: 3080, icon: ASSET_SVGS.ETH, type: 'crypto', unit: '$' },
     { id: 'SOL', name: 'Solana', symbol: 'SOL', price: 198.4, change: 4.12, high: 202.5, low: 189.0, icon: ASSET_SVGS.SOL, type: 'crypto', unit: '$' },
     { id: 'TON', name: 'Toncoin', symbol: 'TON', price: 5.45, change: 1.15, high: 5.62, low: 5.38, icon: ASSET_SVGS.TON, type: 'crypto', unit: '$' },
@@ -40,7 +40,7 @@ export default class FinanceWidget extends BaseWidget {
             category: 'finance',
             author: 'MR Prog',
             version: '1.5.0',
-            downloads: '10.2k',
+            downloads: '10.4k',
             description: 'Professional financial tracker with live market rates, customizable base currency (USD/Toman), and dynamic responsive layouts.',
             defaultConfig: {
                 assets: ['BTC', 'USDIRR'],
@@ -109,7 +109,7 @@ export default class FinanceWidget extends BaseWidget {
 
     getUsdToTomanRate() {
         const usdirr = this.assets.find(a => a.id === 'USDIRR');
-        return (usdirr && usdirr.price > 1000) ? usdirr.price : 71500;
+        return (usdirr && usdirr.price > 10000) ? usdirr.price : 215000;
     }
 
     generateSynthetic24h(asset) {
@@ -170,7 +170,6 @@ export default class FinanceWidget extends BaseWidget {
 
     async fetchLiveRates() {
         if (this.isLoading) return;
-        // Never fetch or mutate rates when offline
         if (!navigator.onLine) return;
         this.isLoading = true;
 
@@ -194,7 +193,7 @@ export default class FinanceWidget extends BaseWidget {
                 }
             }
         } catch {
-            // Secondary Fallback: CoinGecko Free Public API (no key required)
+            // Secondary Fallback: CoinGecko Free Public API
             try {
                 const cgRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,the-open-network&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=false', { signal: AbortSignal.timeout(3500) });
                 if (cgRes.ok) {
@@ -223,25 +222,93 @@ export default class FinanceWidget extends BaseWidget {
             } catch {}
         }
 
-        // 2. Fetch Live USDIRR / Gold Live Rates
+        // 2. Fetch Live USDIRR / Domestic Exchange Rates (Nobitex -> Wallex -> FawazAhmed CDN -> Open Exchange Rates)
+        let irRateFetched = false;
         try {
             const nobitexRes = await fetch('https://api.nobitex.ir/market/stats', { signal: AbortSignal.timeout(3500) });
             if (nobitexRes.ok) {
                 const nobitexData = await nobitexRes.json();
+                let usdtRial = 0;
                 if (nobitexData && nobitexData.global && nobitexData.global.usdt) {
-                    const usdtRial = parseFloat(nobitexData.global.usdt);
-                    if (usdtRial > 0) {
-                        const usdtToman = Math.round(usdtRial / 10);
-                        const tmnTarget = this.assets.find(f => f.id === 'USDIRR');
-                        if (tmnTarget) {
-                            tmnTarget.price = usdtToman;
-                            tmnTarget.high = Math.round(usdtToman * 1.006);
-                            tmnTarget.low = Math.round(usdtToman * 0.994);
-                        }
+                    usdtRial = parseFloat(nobitexData.global.usdt);
+                } else if (nobitexData && nobitexData['usdt-rls'] && nobitexData['usdt-rls'].latest) {
+                    usdtRial = parseFloat(nobitexData['usdt-rls'].latest);
+                }
+                if (usdtRial > 100000) {
+                    const usdtToman = Math.round(usdtRial / 10);
+                    const tmnTarget = this.assets.find(f => f.id === 'USDIRR');
+                    if (tmnTarget) {
+                        tmnTarget.price = usdtToman;
+                        tmnTarget.high = Math.round(usdtToman * 1.008);
+                        tmnTarget.low = Math.round(usdtToman * 0.992);
                     }
+                    irRateFetched = true;
                 }
             }
         } catch {}
+
+        if (!irRateFetched) {
+            try {
+                const wallexRes = await fetch('https://api.wallex.ir/v1/currencies/stats', { signal: AbortSignal.timeout(3500) });
+                if (wallexRes.ok) {
+                    const wData = await wallexRes.json();
+                    if (wData && wData.result && wData.result.currencies && wData.result.currencies.USDT) {
+                        const usdtPrice = parseFloat(wData.result.currencies.USDT.price);
+                        if (usdtPrice > 10000) {
+                            const tmnTarget = this.assets.find(f => f.id === 'USDIRR');
+                            if (tmnTarget) {
+                                tmnTarget.price = Math.round(usdtPrice);
+                                tmnTarget.high = Math.round(usdtPrice * 1.008);
+                                tmnTarget.low = Math.round(usdtPrice * 0.992);
+                            }
+                            irRateFetched = true;
+                        }
+                    }
+                }
+            } catch {}
+        }
+
+        if (!irRateFetched) {
+            try {
+                const cdnRes = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json', { signal: AbortSignal.timeout(3500) });
+                if (cdnRes.ok) {
+                    const cdnData = await cdnRes.json();
+                    if (cdnData && cdnData.usd && cdnData.usd.irr) {
+                        const tomanRate = Math.round(cdnData.usd.irr / 10);
+                        if (tomanRate > 10000) {
+                            const tmnTarget = this.assets.find(f => f.id === 'USDIRR');
+                            if (tmnTarget) {
+                                tmnTarget.price = tomanRate;
+                                tmnTarget.high = Math.round(tomanRate * 1.008);
+                                tmnTarget.low = Math.round(tomanRate * 0.992);
+                            }
+                            irRateFetched = true;
+                        }
+                    }
+                }
+            } catch {}
+        }
+
+        if (!irRateFetched) {
+            try {
+                const erRes = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(3500) });
+                if (erRes.ok) {
+                    const erData = await erRes.json();
+                    if (erData && erData.rates && erData.rates.IRR) {
+                        const tomanRate = Math.round(erData.rates.IRR / 10);
+                        if (tomanRate > 10000) {
+                            const tmnTarget = this.assets.find(f => f.id === 'USDIRR');
+                            if (tmnTarget) {
+                                tmnTarget.price = tomanRate;
+                                tmnTarget.high = Math.round(tomanRate * 1.008);
+                                tmnTarget.low = Math.round(tomanRate * 0.992);
+                            }
+                            irRateFetched = true;
+                        }
+                    }
+                }
+            } catch {}
+        }
 
         // 3. Update synthetic 24h history points from real prices
         this.assets.forEach(a => {
@@ -258,14 +325,15 @@ export default class FinanceWidget extends BaseWidget {
         const isIRT = (this.config.baseCurrency === 'IRT');
         const usdToTmn = this.getUsdToTomanRate();
 
-        // USDIRR asset itself is naturally in Tomans
-        if (asset.id === 'USDIRR' || asset.unit === 'Toman') {
-            return `${Math.round(val).toLocaleString('en-US')} TMN`;
-        }
-
         // Converted to Toman base currency
         if (isIRT) {
-            const tomanVal = val * usdToTmn;
+            let tomanVal;
+            if (asset.id === 'USDIRR' || asset.unit === 'Toman') {
+                tomanVal = val;
+            } else {
+                tomanVal = val * usdToTmn;
+            }
+
             if (tomanVal >= 1e9) {
                 return `${(tomanVal / 1e9).toFixed(2)}B TMN`;
             } else if (tomanVal >= 1e6) {
@@ -276,7 +344,11 @@ export default class FinanceWidget extends BaseWidget {
             return `${Math.round(tomanVal)} TMN`;
         }
 
-        // Standard USD pricing
+        // Standard USD pricing (baseCurrency === 'USD')
+        if (asset.id === 'USDIRR') {
+            return `${Math.round(val).toLocaleString('en-US')} T`;
+        }
+
         if (val >= 1000) {
             return `$${val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
         }
@@ -301,12 +373,13 @@ export default class FinanceWidget extends BaseWidget {
         const showChart = this.config.showChart !== false;
         const count = trackedAssets.length;
         const isIRT = this.config.baseCurrency === 'IRT';
+        const isCompact = (this.config.h === 1) || (!this.config.h && this.config.defaultH === 1);
 
         const injectStyles = !document.getElementById('finance-widget-css') ? `
             <style id="finance-widget-css">
                 .fin-w-box {
                     width: 100%; height: 100%; box-sizing: border-box;
-                    padding: 8px 10px; display: flex; flex-direction: column;
+                    padding: 7px 9px; display: flex; flex-direction: column;
                     justify-content: space-between; overflow: hidden; position: relative;
                     user-select: none;
                 }
@@ -315,8 +388,8 @@ export default class FinanceWidget extends BaseWidget {
                     min-height: 22px; width: 100%; flex-shrink: 0;
                 }
                 .fin-asset-badge {
-                    display: inline-flex; align-items: center; gap: 6px;
-                    padding: 3px 8px; border-radius: 8px;
+                    display: inline-flex; align-items: center; gap: 5px;
+                    padding: 2.5px 7px; border-radius: 7px;
                     background: rgba(255, 255, 255, 0.05);
                     border: 1px solid rgba(255, 255, 255, 0.08);
                 }
@@ -329,11 +402,11 @@ export default class FinanceWidget extends BaseWidget {
                     font-size: 11px; font-weight: 700; color: var(--text-primary);
                 }
                 .fin-asset-fullname {
-                    font-size: 9.5px; color: var(--text-secondary); max-width: 90px;
+                    font-size: 9.5px; color: var(--text-secondary); max-width: 85px;
                     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
                 }
                 .fin-currency-indicator {
-                    font-size: 9px; font-weight: 700; padding: 1.5px 5px; border-radius: 5px;
+                    font-size: 9px; font-weight: 700; padding: 1px 4.5px; border-radius: 4px;
                     background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.25);
                 }
                 .fin-controls-right {
@@ -348,6 +421,39 @@ export default class FinanceWidget extends BaseWidget {
                 .fin-icon-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.14); }
                 .fin-icon-btn.spinning svg { animation: finSpin 0.75s linear infinite; }
                 @keyframes finSpin { 100% { transform: rotate(360deg); } }
+
+                /* Compact Horizontal 1-Row Layout */
+                .fin-compact-row {
+                    display: flex; align-items: stretch; gap: 5px; width: 100%;
+                    flex: 1; min-height: 0; margin-top: 3px;
+                }
+                .fin-compact-card {
+                    flex: 1; min-width: 0; background: rgba(0, 0, 0, 0.18);
+                    border: 1px solid var(--panel-border); border-radius: 8px;
+                    padding: 3px 6px; display: flex; flex-direction: column;
+                    justify-content: center; gap: 2px; overflow: hidden;
+                }
+                .fin-compact-head {
+                    display: flex; align-items: center; justify-content: space-between;
+                    gap: 3px; min-width: 0;
+                }
+                .fin-compact-sym {
+                    font-size: 10px; font-weight: 700; color: var(--text-primary);
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                }
+                .fin-mini-chip {
+                    font-size: 8px !important; padding: 0.5px 3px !important; line-height: 1.2;
+                }
+                .fin-compact-price {
+                    font-size: 11px; font-weight: 800; color: var(--text-primary);
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                    font-variant-numeric: tabular-nums; margin-top: 1px;
+                }
+                .fin-compact-single {
+                    flex: 1; display: flex; align-items: center; justify-content: space-between;
+                    padding: 4px 10px; background: rgba(0, 0, 0, 0.18);
+                    border: 1px solid var(--panel-border); border-radius: 9px; margin-top: 3px;
+                }
 
                 /* Hero Single Mode */
                 .fin-hero-section {
@@ -392,9 +498,6 @@ export default class FinanceWidget extends BaseWidget {
                     flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
                     align-items: stretch; margin-top: 4px;
                 }
-                @media (max-width: 220px) {
-                    .fin-dual-grid { grid-template-columns: 1fr; }
-                }
                 .fin-dual-card {
                     background: rgba(0, 0, 0, 0.18); border: 1px solid var(--panel-border);
                     border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column;
@@ -411,7 +514,7 @@ export default class FinanceWidget extends BaseWidget {
                     width: 100%; height: 24px;
                 }
 
-                /* Responsive Dynamic Tri-Asset Mode (3 assets) */
+                /* Tri-Asset Mode (3 assets, Expanded) */
                 .fin-tri-container {
                     flex: 1; display: grid; grid-template-columns: 1fr 1fr;
                     grid-template-rows: auto 1fr; gap: 6px; margin-top: 4px; overflow: hidden;
@@ -442,13 +545,10 @@ export default class FinanceWidget extends BaseWidget {
                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
                 }
 
-                /* 2x2 Grid Mode (4 assets) */
+                /* Quad Grid Mode (4 assets, Expanded) */
                 .fin-quad-grid {
                     flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
                     gap: 5px; margin-top: 4px;
-                }
-                @media (max-width: 200px) {
-                    .fin-quad-grid { grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); }
                 }
                 .fin-quad-card {
                     background: rgba(0, 0, 0, 0.18); border: 1px solid var(--panel-border);
@@ -469,221 +569,201 @@ export default class FinanceWidget extends BaseWidget {
             </style>
         ` : '';
 
-        let topBarHtml = '';
+        // Universal Top Bar
+        const topBarHtml = `
+            <div class="fin-top-bar">
+                <div class="fin-asset-badge">
+                    <span class="fin-asset-icon">
+                        ${count === 1 ? trackedAssets[0].icon : `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>`}
+                    </span>
+                    <span class="fin-asset-sym">${count === 1 ? trackedAssets[0].symbol : `Markets (${count})`}</span>
+                    ${count === 1 ? `<span class="fin-asset-fullname">${trackedAssets[0].name}</span>` : ''}
+                    <span class="fin-currency-indicator">${isIRT ? 'TMN' : 'USD'}</span>
+                </div>
+                <div class="fin-controls-right">
+                    <button type="button" class="fin-icon-btn" id="fin-refresh-${id}" title="Refresh Live Rates" aria-label="Refresh">
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+
         let bodyHtml = '';
 
-        if (count === 1) {
-            const asset = trackedAssets[0];
-            const isUp = asset.change >= 0;
-            const points = this.historyCache[asset.id] || this.generateSynthetic24h(asset);
-            const { lineD, areaD } = this.buildSmoothSvgPath(points, 240, 50);
-
-            topBarHtml = `
-                <div class="fin-top-bar">
-                    <div class="fin-asset-badge">
-                        <span class="fin-asset-icon">${asset.icon}</span>
-                        <span class="fin-asset-sym">${asset.symbol}</span>
-                        <span class="fin-asset-fullname">${asset.name}</span>
-                        <span class="fin-currency-indicator">${isIRT ? 'TMN' : 'USD'}</span>
-                    </div>
-                    <div class="fin-controls-right">
-                        <button type="button" class="fin-icon-btn" id="fin-refresh-${id}" title="Refresh Live Rates" aria-label="Refresh">
-                            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="23 4 23 10 17 10"></polyline>
-                                <polyline points="1 20 1 14 7 14"></polyline>
-                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            bodyHtml = `
-                <div class="fin-hero-section">
-                    <div class="fin-price-large" id="fin-hero-price-${id}">
-                        ${this.formatPrice(asset.price, asset)}
-                    </div>
-                    <div class="fin-hero-meta">
-                        <span class="fin-change-chip ${isUp ? 'up' : 'down'}">
-                            ${isUp ? '▲' : '▼'} ${isUp ? '+' : ''}${asset.change.toFixed(2)}%
-                        </span>
-                        <span class="fin-hl-text">H: ${this.formatPrice(asset.high || asset.price * 1.01, asset)}</span>
-                        <span class="fin-hl-text">L: ${this.formatPrice(asset.low || asset.price * 0.99, asset)}</span>
-                    </div>
-                </div>
-                ${showChart ? `
-                    <div class="fin-chart-wrap" id="fin-chart-wrap-${id}">
-                        <div class="fin-tooltip-tag" id="fin-tooltip-${id}">24h Hourly Trend</div>
-                        <svg class="fin-chart-svg" viewBox="0 0 240 50" preserveAspectRatio="none">
-                            <defs>
-                                <linearGradient id="fin-grad-${id}" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stop-color="${isUp ? '#10b981' : '#ef4444'}" stop-opacity="0.32" />
-                                    <stop offset="100%" stop-color="${isUp ? '#10b981' : '#ef4444'}" stop-opacity="0.0" />
-                                </linearGradient>
-                            </defs>
-                            <path d="${areaD}" fill="url(#fin-grad-${id})" />
-                            <path d="${lineD}" fill="none" stroke="${isUp ? '#10b981' : '#ef4444'}" stroke-width="2" stroke-linecap="round" />
-                        </svg>
-                    </div>
-                ` : ''}
-            `;
-        } else if (count === 2) {
-            topBarHtml = `
-                <div class="fin-top-bar">
-                    <div class="fin-asset-badge">
-                        <span class="fin-asset-icon">
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
-                        </span>
-                        <span class="fin-asset-sym">Markets (2)</span>
-                        <span class="fin-currency-indicator">${isIRT ? 'TMN' : 'USD'}</span>
-                    </div>
-                    <div class="fin-controls-right">
-                        <button type="button" class="fin-icon-btn" id="fin-refresh-${id}" title="Refresh Live Rates" aria-label="Refresh">
-                            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="23 4 23 10 17 10"></polyline>
-                                <polyline points="1 20 1 14 7 14"></polyline>
-                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            let cardsHtml = '';
-            trackedAssets.forEach(asset => {
+        // ----------------------------------------------------
+        // COMPACT MODE: (Height = 1, e.g. 2x1, 3x1, 4x1)
+        // Render 100% horizontally side-by-side without vertical clipping
+        // ----------------------------------------------------
+        if (isCompact) {
+            if (count === 1) {
+                const asset = trackedAssets[0];
                 const isUp = asset.change >= 0;
-                const pts = this.historyCache[asset.id] || this.generateSynthetic24h(asset);
-                const chart = this.buildSmoothSvgPath(pts, 100, 24);
-                cardsHtml += `
-                    <div class="fin-dual-card">
-                        <div class="fin-dual-top">
-                            <div style="display:flex; align-items:center; gap:5px;">
+                bodyHtml = `
+                    <div class="fin-compact-single">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span class="fin-asset-icon">${asset.icon}</span>
+                            <span style="font-size:12px; font-weight:700; color:var(--text-primary);">${asset.symbol}</span>
+                            <span class="fin-change-chip ${isUp ? 'up' : 'down'}" style="font-size:9px; padding:1px 4.5px;">${isUp ? '+' : ''}${asset.change.toFixed(1)}%</span>
+                        </div>
+                        <div style="font-size:14px; font-weight:800; color:var(--text-primary); font-variant-numeric:tabular-nums;">
+                            ${this.formatPrice(asset.price, asset)}
+                        </div>
+                    </div>
+                `;
+            } else {
+                let cardsHtml = '';
+                trackedAssets.forEach(asset => {
+                    const isUp = asset.change >= 0;
+                    cardsHtml += `
+                        <div class="fin-compact-card">
+                            <div class="fin-compact-head">
                                 <span class="fin-asset-icon">${asset.icon}</span>
-                                <span class="fin-asset-sym">${asset.symbol}</span>
+                                <span class="fin-compact-sym">${asset.symbol}</span>
+                                <span class="fin-change-chip ${isUp ? 'up' : 'down'} fin-mini-chip">${isUp ? '+' : ''}${asset.change.toFixed(1)}%</span>
                             </div>
-                            <span class="fin-change-chip ${isUp ? 'up' : 'down'}">${isUp ? '+' : ''}${asset.change.toFixed(1)}%</span>
+                            <div class="fin-compact-price">${this.formatPrice(asset.price, asset)}</div>
                         </div>
-                        <div class="fin-dual-price">${this.formatPrice(asset.price, asset)}</div>
-                        <svg class="fin-mini-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none">
-                            <path d="${chart.lineD}" fill="none" stroke="${isUp ? '#10b981' : '#ef4444'}" stroke-width="1.8" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                `;
-            });
-            bodyHtml = `<div class="fin-dual-grid">${cardsHtml}</div>`;
-        } else if (count === 3) {
-            // Enhanced 3-asset dynamic responsive layout: 1 hero top + 2 balanced cards bottom
-            const heroAsset = trackedAssets[0];
-            const heroIsUp = heroAsset.change >= 0;
-            const subAssets = trackedAssets.slice(1);
-
-            topBarHtml = `
-                <div class="fin-top-bar">
-                    <div class="fin-asset-badge">
-                        <span class="fin-asset-icon">
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
-                        </span>
-                        <span class="fin-asset-sym">Markets (3)</span>
-                        <span class="fin-currency-indicator">${isIRT ? 'TMN' : 'USD'}</span>
-                    </div>
-                    <div class="fin-controls-right">
-                        <button type="button" class="fin-icon-btn" id="fin-refresh-${id}" title="Refresh Live Rates" aria-label="Refresh">
-                            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="23 4 23 10 17 10"></polyline>
-                                <polyline points="1 20 1 14 7 14"></polyline>
-                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            let subCardsHtml = '';
-            subAssets.forEach(sub => {
-                const isUp = sub.change >= 0;
-                const pts = this.historyCache[sub.id] || this.generateSynthetic24h(sub);
-                const chart = this.buildSmoothSvgPath(pts, 70, 16);
-                subCardsHtml += `
-                    <div class="fin-tri-subcard">
-                        <div class="fin-tri-subcard-top">
-                            <div style="display:flex; align-items:center; gap:4px;">
-                                <span class="fin-asset-icon">${sub.icon}</span>
-                                <span style="font-size:10.5px; font-weight:700; color:var(--text-primary);">${sub.symbol}</span>
-                            </div>
-                            <span class="fin-change-chip ${isUp ? 'up' : 'down'}" style="font-size:8.5px; padding:1px 3.5px;">${isUp ? '+' : ''}${sub.change.toFixed(1)}%</span>
-                        </div>
-                        <div class="fin-tri-subcard-price">${this.formatPrice(sub.price, sub)}</div>
-                        <svg style="width:100%; height:14px;" viewBox="0 0 70 14" preserveAspectRatio="none">
-                            <path d="${chart.lineD}" fill="none" stroke="${isUp ? '#10b981' : '#ef4444'}" stroke-width="1.6" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                `;
-            });
-
-            bodyHtml = `
-                <div class="fin-tri-container">
-                    <div class="fin-tri-featured">
-                        <div class="fin-tri-featured-left">
-                            <div style="display:flex; align-items:center; gap:5px;">
-                                <span class="fin-asset-icon">${heroAsset.icon}</span>
-                                <span style="font-size:11px; font-weight:700; color:var(--text-primary);">${heroAsset.symbol}</span>
-                                <span style="font-size:9px; color:var(--text-secondary);">${heroAsset.name}</span>
-                            </div>
-                            <div style="font-size:13px; font-weight:800; color:var(--text-primary); margin-top:1px;">${this.formatPrice(heroAsset.price, heroAsset)}</div>
-                        </div>
-                        <div class="fin-tri-featured-right">
-                            <span class="fin-change-chip ${heroIsUp ? 'up' : 'down'}">${heroIsUp ? '▲' : '▼'} ${heroIsUp ? '+' : ''}${heroAsset.change.toFixed(1)}%</span>
-                            <span style="font-size:8.5px; color:var(--text-secondary);">H: ${this.formatPrice(heroAsset.high || heroAsset.price * 1.01, heroAsset)}</span>
-                        </div>
-                    </div>
-                    ${subCardsHtml}
-                </div>
-            `;
-        } else {
-            // 4 assets 2x2 grid
-            topBarHtml = `
-                <div class="fin-top-bar">
-                    <div class="fin-asset-badge">
-                        <span class="fin-asset-icon">
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
-                        </span>
-                        <span class="fin-asset-sym">Markets (4)</span>
-                        <span class="fin-currency-indicator">${isIRT ? 'TMN' : 'USD'}</span>
-                    </div>
-                    <div class="fin-controls-right">
-                        <button type="button" class="fin-icon-btn" id="fin-refresh-${id}" title="Refresh Live Rates" aria-label="Refresh">
-                            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="23 4 23 10 17 10"></polyline>
-                                <polyline points="1 20 1 14 7 14"></polyline>
-                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            let quadHtml = '';
-            trackedAssets.forEach(asset => {
+                    `;
+                });
+                bodyHtml = `<div class="fin-compact-row">${cardsHtml}</div>`;
+            }
+        } 
+        // ----------------------------------------------------
+        // EXPANDED MODE: (Height >= 2)
+        // ----------------------------------------------------
+        else {
+            if (count === 1) {
+                const asset = trackedAssets[0];
                 const isUp = asset.change >= 0;
-                const pts = this.historyCache[asset.id] || this.generateSynthetic24h(asset);
-                const chart = this.buildSmoothSvgPath(pts, 70, 16);
-                quadHtml += `
-                    <div class="fin-quad-card">
-                        <div class="fin-quad-top">
-                            <div style="display:flex; align-items:center; gap:4px;">
-                                <span class="fin-asset-icon">${asset.icon}</span>
-                                <span style="font-size:10px; font-weight:700; color:var(--text-primary);">${asset.symbol}</span>
-                            </div>
-                            <span class="fin-change-chip ${isUp ? 'up' : 'down'}" style="font-size:8.5px; padding:1px 3px;">${isUp ? '+' : ''}${asset.change.toFixed(1)}%</span>
+                const points = this.historyCache[asset.id] || this.generateSynthetic24h(asset);
+                const { lineD, areaD } = this.buildSmoothSvgPath(points, 240, 50);
+
+                bodyHtml = `
+                    <div class="fin-hero-section">
+                        <div class="fin-price-large" id="fin-hero-price-${id}">
+                            ${this.formatPrice(asset.price, asset)}
                         </div>
-                        <div class="fin-quad-price">${this.formatPrice(asset.price, asset)}</div>
-                        <svg class="fin-quad-sparkline" viewBox="0 0 70 16" preserveAspectRatio="none">
-                            <path d="${chart.lineD}" fill="none" stroke="${isUp ? '#10b981' : '#ef4444'}" stroke-width="1.6" stroke-linecap="round"/>
-                        </svg>
+                        <div class="fin-hero-meta">
+                            <span class="fin-change-chip ${isUp ? 'up' : 'down'}">
+                                ${isUp ? '▲' : '▼'} ${isUp ? '+' : ''}${asset.change.toFixed(2)}%
+                            </span>
+                            <span class="fin-hl-text">H: ${this.formatPrice(asset.high || asset.price * 1.01, asset)}</span>
+                            <span class="fin-hl-text">L: ${this.formatPrice(asset.low || asset.price * 0.99, asset)}</span>
+                        </div>
+                    </div>
+                    ${showChart ? `
+                        <div class="fin-chart-wrap" id="fin-chart-wrap-${id}">
+                            <div class="fin-tooltip-tag" id="fin-tooltip-${id}">24h Hourly Trend</div>
+                            <svg class="fin-chart-svg" viewBox="0 0 240 50" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="fin-grad-${id}" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="${isUp ? '#10b981' : '#ef4444'}" stop-opacity="0.32" />
+                                        <stop offset="100%" stop-color="${isUp ? '#10b981' : '#ef4444'}" stop-opacity="0.0" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="${areaD}" fill="url(#fin-grad-${id})" />
+                                <path d="${lineD}" fill="none" stroke="${isUp ? '#10b981' : '#ef4444'}" stroke-width="2" stroke-linecap="round" />
+                            </svg>
+                        </div>
+                    ` : ''}
+                `;
+            } else if (count === 2) {
+                let cardsHtml = '';
+                trackedAssets.forEach(asset => {
+                    const isUp = asset.change >= 0;
+                    const pts = this.historyCache[asset.id] || this.generateSynthetic24h(asset);
+                    const chart = this.buildSmoothSvgPath(pts, 100, 24);
+                    cardsHtml += `
+                        <div class="fin-dual-card">
+                            <div class="fin-dual-top">
+                                <div style="display:flex; align-items:center; gap:5px;">
+                                    <span class="fin-asset-icon">${asset.icon}</span>
+                                    <span class="fin-asset-sym">${asset.symbol}</span>
+                                </div>
+                                <span class="fin-change-chip ${isUp ? 'up' : 'down'}">${isUp ? '+' : ''}${asset.change.toFixed(1)}%</span>
+                            </div>
+                            <div class="fin-dual-price">${this.formatPrice(asset.price, asset)}</div>
+                            <svg class="fin-mini-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none">
+                                <path d="${chart.lineD}" fill="none" stroke="${isUp ? '#10b981' : '#ef4444'}" stroke-width="1.8" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    `;
+                });
+                bodyHtml = `<div class="fin-dual-grid">${cardsHtml}</div>`;
+            } else if (count === 3) {
+                const heroAsset = trackedAssets[0];
+                const heroIsUp = heroAsset.change >= 0;
+                const subAssets = trackedAssets.slice(1);
+
+                let subCardsHtml = '';
+                subAssets.forEach(sub => {
+                    const isUp = sub.change >= 0;
+                    const pts = this.historyCache[sub.id] || this.generateSynthetic24h(sub);
+                    const chart = this.buildSmoothSvgPath(pts, 70, 16);
+                    subCardsHtml += `
+                        <div class="fin-tri-subcard">
+                            <div class="fin-tri-subcard-top">
+                                <div style="display:flex; align-items:center; gap:4px;">
+                                    <span class="fin-asset-icon">${sub.icon}</span>
+                                    <span style="font-size:10.5px; font-weight:700; color:var(--text-primary);">${sub.symbol}</span>
+                                </div>
+                                <span class="fin-change-chip ${isUp ? 'up' : 'down'}" style="font-size:8.5px; padding:1px 3.5px;">${isUp ? '+' : ''}${sub.change.toFixed(1)}%</span>
+                            </div>
+                            <div class="fin-tri-subcard-price">${this.formatPrice(sub.price, sub)}</div>
+                            <svg style="width:100%; height:14px;" viewBox="0 0 70 14" preserveAspectRatio="none">
+                                <path d="${chart.lineD}" fill="none" stroke="${isUp ? '#10b981' : '#ef4444'}" stroke-width="1.6" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    `;
+                });
+
+                bodyHtml = `
+                    <div class="fin-tri-container">
+                        <div class="fin-tri-featured">
+                            <div class="fin-tri-featured-left">
+                                <div style="display:flex; align-items:center; gap:5px;">
+                                    <span class="fin-asset-icon">${heroAsset.icon}</span>
+                                    <span style="font-size:11px; font-weight:700; color:var(--text-primary);">${heroAsset.symbol}</span>
+                                    <span style="font-size:9px; color:var(--text-secondary);">${heroAsset.name}</span>
+                                </div>
+                                <div style="font-size:13px; font-weight:800; color:var(--text-primary); margin-top:1px;">${this.formatPrice(heroAsset.price, heroAsset)}</div>
+                            </div>
+                            <div class="fin-tri-featured-right">
+                                <span class="fin-change-chip ${heroIsUp ? 'up' : 'down'}">${heroIsUp ? '▲' : '▼'} ${heroIsUp ? '+' : ''}${heroAsset.change.toFixed(1)}%</span>
+                                <span style="font-size:8.5px; color:var(--text-secondary);">H: ${this.formatPrice(heroAsset.high || heroAsset.price * 1.01, heroAsset)}</span>
+                            </div>
+                        </div>
+                        ${subCardsHtml}
                     </div>
                 `;
-            });
-            bodyHtml = `<div class="fin-quad-grid">${quadHtml}</div>`;
+            } else {
+                let quadHtml = '';
+                trackedAssets.forEach(asset => {
+                    const isUp = asset.change >= 0;
+                    const pts = this.historyCache[asset.id] || this.generateSynthetic24h(asset);
+                    const chart = this.buildSmoothSvgPath(pts, 70, 16);
+                    quadHtml += `
+                        <div class="fin-quad-card">
+                            <div class="fin-quad-top">
+                                <div style="display:flex; align-items:center; gap:4px;">
+                                    <span class="fin-asset-icon">${asset.icon}</span>
+                                    <span style="font-size:10px; font-weight:700; color:var(--text-primary);">${asset.symbol}</span>
+                                </div>
+                                <span class="fin-change-chip ${isUp ? 'up' : 'down'}" style="font-size:8.5px; padding:1px 3px;">${isUp ? '+' : ''}${asset.change.toFixed(1)}%</span>
+                            </div>
+                            <div class="fin-quad-price">${this.formatPrice(asset.price, asset)}</div>
+                            <svg class="fin-quad-sparkline" viewBox="0 0 70 16" preserveAspectRatio="none">
+                                <path d="${chart.lineD}" fill="none" stroke="${isUp ? '#10b981' : '#ef4444'}" stroke-width="1.6" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    `;
+                });
+                bodyHtml = `<div class="fin-quad-grid">${quadHtml}</div>`;
+            }
         }
 
         return `
