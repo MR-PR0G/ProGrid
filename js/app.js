@@ -389,6 +389,7 @@ function attachInteractionEngine(el, w, instance) {
     let widgetLongPressTimer = null;
     let cachedScale = 1;
     let cachedContainerBounds = null;
+    let lastComputedDragLayout = null;
 
     const meta = window.WidgetGlobals.getMetadata(w.type) || { minW: 1, minH: 1, maxW: 4, maxH: 4 };
     if (w.type === 'search') {
@@ -448,9 +449,24 @@ function attachInteractionEngine(el, w, instance) {
                 el.style.left = `${targetLeft}px`;
                 el.style.top = `${targetTop}px`;
 
-                if (checkCollisionWithDeleteZone(e.clientX, e.clientY)) {
+                const isOverDelete = checkCollisionWithDeleteZone(e.clientX, e.clientY);
+                if (isOverDelete) {
                     if (deleteZone) deleteZone.classList.add('hovered');
                     if (ghost) ghost.classList.remove('active');
+                    if (initialWidgetsState) {
+                        initialWidgetsState.forEach(tw => {
+                            if (tw.id !== w.id && !tw.isHidden) {
+                                const otherDOM = document.getElementById(tw.id);
+                                if (otherDOM && !otherDOM.classList.contains('dragging') && !otherDOM.classList.contains('resizing')) {
+                                    otherDOM.style.transition = 'left 0.2s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)';
+                                    otherDOM.style.left = `${tw.x * step}px`;
+                                    otherDOM.style.top = `${tw.y * step}px`;
+                                }
+                            }
+                        });
+                    }
+                    lastComputedDragLayout = null;
+                    return;
                 } else {
                     if (deleteZone) deleteZone.classList.remove('hovered');
                     if (ghost) ghost.classList.add('active');
@@ -461,10 +477,10 @@ function attachInteractionEngine(el, w, instance) {
                 let targetRow = Math.round(targetTop / step);
 
                 const effW = Math.max(minW, Math.min(w.w, grid.columns));
-                const effH = Math.max(minH, Math.min(w.h, grid.rowsCount));
+                const effH = Math.max(minH, w.h);
 
                 targetCol = Math.max(0, Math.min(targetCol, grid.columns - effW));
-                targetRow = Math.max(0, Math.min(targetRow, grid.rowsCount - effH));
+                targetRow = Math.max(0, targetRow);
 
                 // Shortcut merge into folder
                 potentialMergeTargetId = null;
@@ -482,33 +498,26 @@ function attachInteractionEngine(el, w, instance) {
                 });
 
                 if (!potentialMergeTargetId && initialWidgetsState) {
-                    let tempWidgets = JSON.parse(JSON.stringify(initialWidgetsState));
-                    let activeInState = tempWidgets.find(item => item.id === w.id);
-                    if (activeInState) {
-                        activeInState.x = targetCol;
-                        activeInState.y = targetRow;
-                        activeInState.w = effW;
-                        activeInState.h = effH;
+                    const layoutRes = grid.computeLiveDragLayout(w.id, targetCol, targetRow, effW, effH, initialWidgetsState);
+                    updateGhost({ id: w.id, x: targetCol, y: targetRow, w: effW, h: effH });
 
-                        const pushed = grid.omniMagnetPush(activeInState, tempWidgets);
-                        if (pushed) {
-                            updateGhost({ id: w.id, x: targetCol, y: targetRow, w: effW, h: effH });
-                            tempWidgets.forEach(tw => {
-                                if (tw.id !== w.id && !tw.isHidden) {
-                                    const otherDOM = document.getElementById(tw.id);
-                                    if (otherDOM && !otherDOM.classList.contains('dragging') && !otherDOM.classList.contains('resizing')) {
-                                        otherDOM.style.transition = 'left 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.18s cubic-bezier(0.2, 0.9, 0.3, 1)';
-                                        otherDOM.style.left = `${tw.x * step}px`;
-                                        otherDOM.style.top = `${tw.y * step}px`;
-                                    }
-                                }
-                            });
-                        } else if (ghost) {
-                            const lastGhostX = Math.max(0, Math.min(Math.round(parseInt(ghost.style.left) / step), grid.columns - effW));
-                            const lastGhostY = Math.max(0, Math.min(Math.round(parseInt(ghost.style.top) / step), grid.rowsCount - effH));
-                            updateGhost({ id: w.id, x: lastGhostX, y: lastGhostY, w: effW, h: effH });
-                        }
+                    // Dynamically adapt grid container height if displacement expanded rows
+                    if (layoutRes.totalRows > grid.rowsCount) {
+                        container.style.height = `${layoutRes.totalRows * grid.cellSize + (layoutRes.totalRows - 1) * grid.gap}px`;
                     }
+
+                    // Smoothly animate sibling widgets out of the way in real-time
+                    layoutRes.widgets.forEach(lw => {
+                        if (lw.id !== w.id && !lw.isHidden) {
+                            const otherDOM = document.getElementById(lw.id);
+                            if (otherDOM && !otherDOM.classList.contains('dragging') && !otherDOM.classList.contains('resizing')) {
+                                otherDOM.style.transition = 'left 0.2s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)';
+                                otherDOM.style.left = `${lw.x * step}px`;
+                                otherDOM.style.top = `${lw.y * step}px`;
+                            }
+                        }
+                    });
+                    lastComputedDragLayout = layoutRes;
                 } else {
                     updateGhost({ id: w.id, x: targetCol, y: targetRow, w: effW, h: effH });
                 }
@@ -523,15 +532,30 @@ function attachInteractionEngine(el, w, instance) {
                 el.style.height = `${Math.max(50, rawH)}px`;
 
                 let maxAllowedW = w.type === 'search' ? grid.columns : Math.min(meta.maxW || 4, grid.columns);
-                let maxAllowedH = Math.min(meta.maxH || 4, grid.rowsCount);
-
                 let gridW = Math.max(minW, Math.min(maxAllowedW, Math.round((rawW - grid.gap) / step)));
-                let gridH = Math.max(minH, Math.min(maxAllowedH, Math.round((rawH - grid.gap) / step)));
+                let gridH = Math.max(minH, Math.round((rawH - grid.gap) / step));
 
                 if (w.x + gridW > grid.columns) gridW = grid.columns - w.x;
-                if (w.y + gridH > grid.rowsCount) gridH = grid.rowsCount - w.y;
 
                 updateGhost({ id: w.id, x: w.x, y: w.y, w: gridW, h: gridH });
+
+                if (initialWidgetsState) {
+                    const layoutRes = grid.computeLiveDragLayout(w.id, w.x, w.y, gridW, gridH, initialWidgetsState);
+                    if (layoutRes.totalRows > grid.rowsCount) {
+                        container.style.height = `${layoutRes.totalRows * grid.cellSize + (layoutRes.totalRows - 1) * grid.gap}px`;
+                    }
+                    layoutRes.widgets.forEach(lw => {
+                        if (lw.id !== w.id && !lw.isHidden) {
+                            const otherDOM = document.getElementById(lw.id);
+                            if (otherDOM && !otherDOM.classList.contains('dragging') && !otherDOM.classList.contains('resizing')) {
+                                otherDOM.style.transition = 'left 0.2s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)';
+                                otherDOM.style.left = `${lw.x * step}px`;
+                                otherDOM.style.top = `${lw.y * step}px`;
+                            }
+                        }
+                    });
+                    lastComputedDragLayout = layoutRes;
+                }
             }
         });
     };
@@ -602,27 +626,50 @@ function attachInteractionEngine(el, w, instance) {
         const step = grid.cellSize + grid.gap;
         if (isDragging) {
             isDragging = false;
-            if (ghost) {
+            if (lastComputedDragLayout && lastComputedDragLayout.widgets) {
+                lastComputedDragLayout.widgets.forEach(lw => {
+                    const target = state.widgets.find(item => item.id === lw.id);
+                    if (target) {
+                        target.x = lw.x;
+                        target.y = lw.y;
+                        target.w = lw.w;
+                        target.h = lw.h;
+                    }
+                });
+                grid.rows = Math.max(grid.minRows || 4, lastComputedDragLayout.totalRows);
+            } else if (ghost) {
                 const finalCol = Math.round(parseInt(ghost.style.left) / step);
                 const finalRow = Math.round(parseInt(ghost.style.top) / step);
                 w.x = Math.max(0, Math.min(finalCol, grid.columns - w.w));
-                w.y = Math.max(0, Math.min(finalRow, grid.rowsCount - w.h));
+                w.y = Math.max(0, finalRow);
+                grid.omniMagnetPush(w, state.widgets);
             }
-            grid.omniMagnetPush(w, state.widgets);
+            lastComputedDragLayout = null;
         } else if (isResizing) {
             isResizing = false;
-            if (ghost) {
+            if (lastComputedDragLayout && lastComputedDragLayout.widgets) {
+                lastComputedDragLayout.widgets.forEach(lw => {
+                    const target = state.widgets.find(item => item.id === lw.id);
+                    if (target) {
+                        target.x = lw.x;
+                        target.y = lw.y;
+                        target.w = lw.w;
+                        target.h = lw.h;
+                    }
+                });
+                grid.rows = Math.max(grid.minRows || 4, lastComputedDragLayout.totalRows);
+            } else if (ghost) {
                 const finalW = Math.round((parseInt(ghost.style.width) + grid.gap) / step);
                 const finalH = Math.round((parseInt(ghost.style.height) + grid.gap) / step);
                 let maxAllowedW = w.type === 'search' ? grid.columns : Math.min(meta.maxW || 4, grid.columns);
-                let maxAllowedH = Math.min(meta.maxH || 4, grid.rowsCount);
                 w.w = Math.max(minW, Math.min(maxAllowedW, finalW));
-                w.h = Math.max(minH, Math.min(maxAllowedH, finalH));
+                w.h = Math.max(minH, finalH);
+                grid.omniMagnetPush(w, state.widgets);
             }
             if (instance && instance.onResize) {
                 try { instance.onResize(w.w, w.h, el); } catch (err) { console.error(err); }
             }
-            grid.omniMagnetPush(w, state.widgets);
+            lastComputedDragLayout = null;
         }
 
         w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: grid.columns };
@@ -684,6 +731,7 @@ function attachInteractionEngine(el, w, instance) {
         cachedScale = getWrapperScale() || 1;
         cachedContainerBounds = container.getBoundingClientRect();
         initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
+        lastComputedDragLayout = null;
 
         if (e.target.classList.contains('resize-handle')) {
             startW = el.offsetWidth;

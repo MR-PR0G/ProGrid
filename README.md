@@ -5,7 +5,7 @@
 
   <img src="https://img.shields.io/badge/Version-0.3.1-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Extension%20%7C%20PWA-success.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Engine-Fluid%20Matrix%201.5%20LTS-blueviolet.svg" alt="Engine">
+  <img src="https://img.shields.io/badge/Engine-Fluid%20Matrix%201.6%20LTS-blueviolet.svg" alt="Engine">
   <img src="https://img.shields.io/badge/Offline-100%25%20First-purple.svg" alt="Offline First">
   <img src="https://img.shields.io/badge/Mobile-Optimized-brightgreen.svg" alt="Mobile Optimized">
 </div>
@@ -29,8 +29,9 @@
 - **Offline Data Preservation:** Market prices, task lists, and notes are cached locally; network outages never wipe out or reset active widget displays.
 - **Preload & Asset Caching:** Core scripts, styles, and vector assets load directly from local cache with zero latency.
 
-### 🧩 ProGrid Fluid Matrix Engine (LTS 1.5)
-- **Viewport-Aware Geometry:** Grid dynamically balances cell size and gap to maximize screen space across smartphones, tablets, and ultrawide monitors.
+### 🧩 ProGrid Fluid Matrix Engine (v1.6 LTS)
+- **Real-Time Collision Cascade:** Continuous live collision resolution with physics-inspired downward displacement and mutual swapping, guaranteeing widgets never overlap or slide underneath each other during dragging.
+- **Dynamic Virtual Row Scaling:** Viewport and matrix automatically expand capacity on the fly during drag operations, preventing deadlocks or artificial bounds.
 - **Zero-Freeze SpringBoard Physics:** Continuous magnetic repulsion, mutual position swapping, and drag-and-drop collision resolution without frame drops.
 - **Global Pointer Capture:** Smooth touch and mouse gesture tracking across boundaries, preventing accidental widget freezing or sticky drag states.
 
