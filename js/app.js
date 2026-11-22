@@ -415,6 +415,7 @@ function attachInteractionEngine(el, w, instance) {
                 } else {
                     isDragging = true;
                     el.classList.add('dragging');
+                    container.appendChild(el);
                 }
                 if (ghost) ghost.classList.add('active');
                 updateGhost(w);
@@ -632,7 +633,38 @@ function attachInteractionEngine(el, w, instance) {
         isResizing = false;
         pointerDownTime = Date.now();
 
+        if (widgetLongPressTimer) {
+            clearTimeout(widgetLongPressTimer);
+            widgetLongPressTimer = null;
+        }
+
         if (!state.editMode) {
+            const onNormalPointerMove = (moveEv) => {
+                const dx = moveEv.clientX - initialPointerX;
+                const dy = moveEv.clientY - initialPointerY;
+                if (Math.hypot(dx, dy) > 8) {
+                    hasMovedPastThreshold = true;
+                    if (widgetLongPressTimer) {
+                        clearTimeout(widgetLongPressTimer);
+                        widgetLongPressTimer = null;
+                    }
+                }
+            };
+
+            const onNormalPointerUp = () => {
+                window.removeEventListener('pointermove', onNormalPointerMove);
+                window.removeEventListener('pointerup', onNormalPointerUp);
+                window.removeEventListener('pointercancel', onNormalPointerUp);
+                if (widgetLongPressTimer) {
+                    clearTimeout(widgetLongPressTimer);
+                    widgetLongPressTimer = null;
+                }
+            };
+
+            window.addEventListener('pointermove', onNormalPointerMove, { passive: true });
+            window.addEventListener('pointerup', onNormalPointerUp);
+            window.addEventListener('pointercancel', onNormalPointerUp);
+
             widgetLongPressTimer = setTimeout(() => {
                 if (!hasMovedPastThreshold) {
                     if (navigator.vibrate) navigator.vibrate(50);
@@ -2220,6 +2252,7 @@ function openModal(w, isPreAdd = false) {
     document.querySelectorAll('.id-folder-only').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.id-clock-only').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.id-finance-only').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.id-quote-only').forEach(el => el.style.display = 'none');
 
     if (w.type === 'shortcut') {
         document.querySelectorAll('.id-shortcut-only').forEach(el => el.style.display = 'flex');
@@ -2287,6 +2320,19 @@ function openModal(w, isPreAdd = false) {
 
         const chartToggle = document.getElementById('edit-finance-chart');
         if (chartToggle) chartToggle.checked = w.showChart !== false;
+
+        const curSelect = document.getElementById('edit-finance-currency');
+        if (curSelect) curSelect.value = w.baseCurrency || 'USD';
+    } else if (w.type === 'quote') {
+        document.querySelectorAll('.id-quote-only').forEach(el => {
+            el.style.display = el.classList.contains('modal-field') ? 'flex' : 'block';
+        });
+        const catSelect = document.getElementById('edit-quote-category');
+        if (catSelect) catSelect.value = w.category || 'all';
+        const langSelect = document.getElementById('edit-quote-lang');
+        if (langSelect) langSelect.value = w.language || 'all';
+        const themeSelect = document.getElementById('edit-quote-theme');
+        if (themeSelect) themeSelect.value = w.quoteTheme || 'default';
     }
     
     currentWidgetBgSelection = w.bg || '#ffffff';
@@ -2363,6 +2409,15 @@ function saveWidgetSettings() {
             newWidget.secondaryAsset = newWidget.assets[1] || 'USDIRR';
             newWidget.viewMode = newWidget.assets.length === 1 ? 'single' : (newWidget.assets.length === 2 ? 'dual' : 'grid');
             newWidget.showChart = document.getElementById('edit-finance-chart').checked;
+            const curSelect = document.getElementById('edit-finance-currency');
+            newWidget.baseCurrency = curSelect ? curSelect.value : 'USD';
+        } else if (type === 'quote') {
+            const cat = document.getElementById('edit-quote-category');
+            if (cat) newWidget.category = cat.value;
+            const lang = document.getElementById('edit-quote-lang');
+            if (lang) newWidget.language = lang.value;
+            const theme = document.getElementById('edit-quote-theme');
+            if (theme) newWidget.quoteTheme = theme.value;
         }
 
         newWidget.idealLayout = { x: newWidget.x, y: newWidget.y, w: newWidget.w, h: newWidget.h, baseCols: grid.columns };
@@ -2409,6 +2464,15 @@ function saveWidgetSettings() {
             w.secondaryAsset = w.assets[1] || 'USDIRR';
             w.viewMode = w.assets.length === 1 ? 'single' : (w.assets.length === 2 ? 'dual' : 'grid');
             w.showChart = document.getElementById('edit-finance-chart').checked;
+            const curSelect = document.getElementById('edit-finance-currency');
+            w.baseCurrency = curSelect ? curSelect.value : 'USD';
+        } else if (w.type === 'quote') {
+            const cat = document.getElementById('edit-quote-category');
+            if (cat) w.category = cat.value;
+            const lang = document.getElementById('edit-quote-lang');
+            if (lang) w.language = lang.value;
+            const theme = document.getElementById('edit-quote-theme');
+            if (theme) w.quoteTheme = theme.value;
         }
         
         w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: grid.columns };

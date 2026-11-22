@@ -18,7 +18,7 @@ const ASSET_SVGS = {
 
 const ASSET_REGISTRY = [
     { id: 'BTC', name: 'Bitcoin', symbol: 'BTC', price: 91450, change: 2.34, high: 92800, low: 89400, icon: ASSET_SVGS.BTC, type: 'crypto', unit: '$' },
-    { id: 'USDIRR', name: 'US Dollar (Toman)', symbol: 'USD/TMN', price: 68900, change: 0.45, high: 69200, low: 68400, icon: ASSET_SVGS.USDIRR, type: 'forex', unit: 'Toman' },
+    { id: 'USDIRR', name: 'US Dollar (Toman)', symbol: 'USD/TMN', price: 71500, change: 0.65, high: 71900, low: 70800, icon: ASSET_SVGS.USDIRR, type: 'forex', unit: 'Toman' },
     { id: 'ETH', name: 'Ethereum', symbol: 'ETH', price: 3120, change: -0.85, high: 3190, low: 3080, icon: ASSET_SVGS.ETH, type: 'crypto', unit: '$' },
     { id: 'SOL', name: 'Solana', symbol: 'SOL', price: 198.4, change: 4.12, high: 202.5, low: 189.0, icon: ASSET_SVGS.SOL, type: 'crypto', unit: '$' },
     { id: 'TON', name: 'Toncoin', symbol: 'TON', price: 5.45, change: 1.15, high: 5.62, low: 5.38, icon: ASSET_SVGS.TON, type: 'crypto', unit: '$' },
@@ -39,13 +39,14 @@ export default class FinanceWidget extends BaseWidget {
             minW: 2, minH: 1, maxW: 4, maxH: 3,
             category: 'finance',
             author: 'MR Prog',
-            version: '1.4.0',
-            downloads: '9.8k',
-            description: 'Professional financial tracker with vector SVG icons, customizable multi-asset focus (up to 4), and live rates.',
+            version: '1.5.0',
+            downloads: '10.2k',
+            description: 'Professional financial tracker with live market rates, customizable base currency (USD/Toman), and dynamic responsive layouts.',
             defaultConfig: {
                 assets: ['BTC', 'USDIRR'],
                 primaryAsset: 'BTC',
                 secondaryAsset: 'USDIRR',
+                baseCurrency: 'USD',
                 showChart: true,
                 lastUpdate: Date.now(),
                 bg: '#ffffff'
@@ -106,6 +107,11 @@ export default class FinanceWidget extends BaseWidget {
         return this.assets[0];
     }
 
+    getUsdToTomanRate() {
+        const usdirr = this.assets.find(a => a.id === 'USDIRR');
+        return (usdirr && usdirr.price > 1000) ? usdirr.price : 71500;
+    }
+
     generateSynthetic24h(asset) {
         const points = [];
         const base = asset.price;
@@ -164,12 +170,14 @@ export default class FinanceWidget extends BaseWidget {
 
     async fetchLiveRates() {
         if (this.isLoading) return;
+        // Never fetch or mutate rates when offline
+        if (!navigator.onLine) return;
         this.isLoading = true;
 
-        // 1. Fetch Crypto Live Rates
+        // 1. Fetch Crypto Live Rates via Binance Public API
         try {
             const symbolsParam = '["BTCUSDT","ETHUSDT","SOLUSDT","TONUSDT"]';
-            const cryptoRes = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${encodeURIComponent(symbolsParam)}`, { signal: AbortSignal.timeout(3500) });
+            const cryptoRes = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${encodeURIComponent(symbolsParam)}`, { signal: AbortSignal.timeout(4000) });
             if (cryptoRes.ok) {
                 const arr = await cryptoRes.json();
                 if (Array.isArray(arr)) {
@@ -186,15 +194,38 @@ export default class FinanceWidget extends BaseWidget {
                 }
             }
         } catch {
-            this.assets.filter(a => a.type === 'crypto').forEach(c => {
-                const delta = (Math.random() - 0.49) * (c.price * 0.001);
-                c.price = +(c.price + delta).toFixed(c.price > 100 ? 1 : 2);
-            });
+            // Secondary Fallback: CoinGecko Free Public API (no key required)
+            try {
+                const cgRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,the-open-network&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=false', { signal: AbortSignal.timeout(3500) });
+                if (cgRes.ok) {
+                    const cg = await cgRes.json();
+                    if (cg.bitcoin && this.getAsset('BTC')) {
+                        const btc = this.getAsset('BTC');
+                        btc.price = cg.bitcoin.usd;
+                        btc.change = cg.bitcoin.usd_24h_change || btc.change;
+                    }
+                    if (cg.ethereum && this.getAsset('ETH')) {
+                        const eth = this.getAsset('ETH');
+                        eth.price = cg.ethereum.usd;
+                        eth.change = cg.ethereum.usd_24h_change || eth.change;
+                    }
+                    if (cg.solana && this.getAsset('SOL')) {
+                        const sol = this.getAsset('SOL');
+                        sol.price = cg.solana.usd;
+                        sol.change = cg.solana.usd_24h_change || sol.change;
+                    }
+                    if (cg['the-open-network'] && this.getAsset('TON')) {
+                        const ton = this.getAsset('TON');
+                        ton.price = cg['the-open-network'].usd;
+                        ton.change = cg['the-open-network'].usd_24h_change || ton.change;
+                    }
+                }
+            } catch {}
         }
 
-        // 2. Fetch USDIRR Live Rates (Nobitex / Cache)
+        // 2. Fetch Live USDIRR / Gold Live Rates
         try {
-            const nobitexRes = await fetch('https://api.nobitex.ir/market/stats', { signal: AbortSignal.timeout(3000) });
+            const nobitexRes = await fetch('https://api.nobitex.ir/market/stats', { signal: AbortSignal.timeout(3500) });
             if (nobitexRes.ok) {
                 const nobitexData = await nobitexRes.json();
                 if (nobitexData && nobitexData.global && nobitexData.global.usdt) {
@@ -212,13 +243,7 @@ export default class FinanceWidget extends BaseWidget {
             }
         } catch {}
 
-        // 3. Fluctuations for forex/commodities
-        this.assets.filter(a => a.type === 'commodities' || (a.type === 'forex' && a.id !== 'USDIRR')).forEach(item => {
-            const factor = (Math.random() - 0.49) * 0.0015;
-            item.price = +(item.price * (1 + factor)).toFixed(item.price > 50 ? 2 : 4);
-        });
-
-        // 4. Update synthetic 24h history points
+        // 3. Update synthetic 24h history points from real prices
         this.assets.forEach(a => {
             this.historyCache[a.id] = this.generateSynthetic24h(a);
         });
@@ -230,9 +255,28 @@ export default class FinanceWidget extends BaseWidget {
 
     formatPrice(val, asset) {
         if (val === undefined || val === null || isNaN(val)) return '---';
+        const isIRT = (this.config.baseCurrency === 'IRT');
+        const usdToTmn = this.getUsdToTomanRate();
+
+        // USDIRR asset itself is naturally in Tomans
         if (asset.id === 'USDIRR' || asset.unit === 'Toman') {
-            return `${Math.round(val).toLocaleString('en-US')} Toman`;
+            return `${Math.round(val).toLocaleString('en-US')} TMN`;
         }
+
+        // Converted to Toman base currency
+        if (isIRT) {
+            const tomanVal = val * usdToTmn;
+            if (tomanVal >= 1e9) {
+                return `${(tomanVal / 1e9).toFixed(2)}B TMN`;
+            } else if (tomanVal >= 1e6) {
+                return `${(tomanVal / 1e6).toFixed(1)}M TMN`;
+            } else if (tomanVal >= 1e3) {
+                return `${Math.round(tomanVal).toLocaleString('en-US')} TMN`;
+            }
+            return `${Math.round(tomanVal)} TMN`;
+        }
+
+        // Standard USD pricing
         if (val >= 1000) {
             return `$${val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
         }
@@ -256,6 +300,7 @@ export default class FinanceWidget extends BaseWidget {
         const trackedAssets = trackedIds.map(assetId => this.getAsset(assetId));
         const showChart = this.config.showChart !== false;
         const count = trackedAssets.length;
+        const isIRT = this.config.baseCurrency === 'IRT';
 
         const injectStyles = !document.getElementById('finance-widget-css') ? `
             <style id="finance-widget-css">
@@ -277,7 +322,7 @@ export default class FinanceWidget extends BaseWidget {
                 }
                 .fin-asset-icon {
                     display: inline-flex; align-items: center; justify-content: center;
-                    width: 16px; height: 16px;
+                    width: 16px; height: 16px; flex-shrink: 0;
                 }
                 .fin-asset-icon svg { width: 16px; height: 16px; display: block; }
                 .fin-asset-sym {
@@ -286,6 +331,10 @@ export default class FinanceWidget extends BaseWidget {
                 .fin-asset-fullname {
                     font-size: 9.5px; color: var(--text-secondary); max-width: 90px;
                     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                }
+                .fin-currency-indicator {
+                    font-size: 9px; font-weight: 700; padding: 1.5px 5px; border-radius: 5px;
+                    background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.25);
                 }
                 .fin-controls-right {
                     display: flex; align-items: center; gap: 5px;
@@ -313,7 +362,7 @@ export default class FinanceWidget extends BaseWidget {
                     display: flex; align-items: center; gap: 6px; font-size: 10px;
                 }
                 .fin-change-chip {
-                    font-size: 10px; font-weight: 700; padding: 1.5px 6px; border-radius: 5px;
+                    font-size: 9.5px; font-weight: 700; padding: 1.5px 5.5px; border-radius: 5px;
                     display: inline-flex; align-items: center; gap: 2px; font-variant-numeric: tabular-nums;
                 }
                 .fin-change-chip.up { background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.28); }
@@ -355,32 +404,42 @@ export default class FinanceWidget extends BaseWidget {
                     display: flex; align-items: center; justify-content: space-between; gap: 4px;
                 }
                 .fin-dual-price {
-                    font-size: 13px; font-weight: 700; color: var(--text-primary);
+                    font-size: 12.5px; font-weight: 700; color: var(--text-primary);
                     margin: 2px 0 3px 0; font-variant-numeric: tabular-nums;
                 }
                 .fin-mini-sparkline {
                     width: 100%; height: 24px;
                 }
 
-                /* Compact Rows (3 assets) */
-                .fin-tri-list {
-                    flex: 1; display: flex; flex-direction: column; gap: 4px;
-                    justify-content: space-around; margin-top: 4px; overflow: hidden;
+                /* Responsive Dynamic Tri-Asset Mode (3 assets) */
+                .fin-tri-container {
+                    flex: 1; display: grid; grid-template-columns: 1fr 1fr;
+                    grid-template-rows: auto 1fr; gap: 6px; margin-top: 4px; overflow: hidden;
                 }
-                .fin-tri-row {
-                    display: flex; align-items: center; justify-content: space-between;
-                    padding: 3px 6px; border-radius: 7px;
+                .fin-tri-featured {
+                    grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between;
+                    padding: 6px 9px; border-radius: 9px;
+                    background: rgba(0, 0, 0, 0.22); border: 1px solid var(--panel-border);
+                    gap: 8px;
+                }
+                .fin-tri-featured-left {
+                    display: flex; flex-direction: column; gap: 1px;
+                }
+                .fin-tri-featured-right {
+                    display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+                }
+                .fin-tri-subcard {
                     background: rgba(0, 0, 0, 0.16); border: 1px solid var(--panel-border);
-                    gap: 6px;
+                    border-radius: 9px; padding: 5px 7px; display: flex; flex-direction: column;
+                    justify-content: space-between; overflow: hidden; min-width: 0;
                 }
-                .fin-tri-left {
-                    display: flex; align-items: center; gap: 5px; min-width: 60px;
+                .fin-tri-subcard-top {
+                    display: flex; align-items: center; justify-content: space-between; gap: 4px;
                 }
-                .fin-tri-center {
-                    flex: 1; max-width: 65px; height: 16px;
-                }
-                .fin-tri-right {
-                    display: flex; align-items: center; gap: 5px; text-align: right;
+                .fin-tri-subcard-price {
+                    font-size: 11.5px; font-weight: 700; color: var(--text-primary);
+                    margin: 2px 0 1px 0; font-variant-numeric: tabular-nums;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
                 }
 
                 /* 2x2 Grid Mode (4 assets) */
@@ -400,7 +459,7 @@ export default class FinanceWidget extends BaseWidget {
                     display: flex; align-items: center; justify-content: space-between; gap: 2px;
                 }
                 .fin-quad-price {
-                    font-size: 11.5px; font-weight: 700; color: var(--text-primary);
+                    font-size: 11px; font-weight: 700; color: var(--text-primary);
                     margin: 1px 0; font-variant-numeric: tabular-nums; white-space: nowrap;
                     overflow: hidden; text-overflow: ellipsis;
                 }
@@ -425,9 +484,10 @@ export default class FinanceWidget extends BaseWidget {
                         <span class="fin-asset-icon">${asset.icon}</span>
                         <span class="fin-asset-sym">${asset.symbol}</span>
                         <span class="fin-asset-fullname">${asset.name}</span>
+                        <span class="fin-currency-indicator">${isIRT ? 'TMN' : 'USD'}</span>
                     </div>
                     <div class="fin-controls-right">
-                        <button type="button" class="fin-icon-btn" id="fin-refresh-${id}" title="Refresh Rates" aria-label="Refresh">
+                        <button type="button" class="fin-icon-btn" id="fin-refresh-${id}" title="Refresh Live Rates" aria-label="Refresh">
                             <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="23 4 23 10 17 10"></polyline>
                                 <polyline points="1 20 1 14 7 14"></polyline>
@@ -475,9 +535,10 @@ export default class FinanceWidget extends BaseWidget {
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
                         </span>
                         <span class="fin-asset-sym">Markets (2)</span>
+                        <span class="fin-currency-indicator">${isIRT ? 'TMN' : 'USD'}</span>
                     </div>
                     <div class="fin-controls-right">
-                        <button type="button" class="fin-icon-btn" id="fin-refresh-${id}" title="Refresh Rates" aria-label="Refresh">
+                        <button type="button" class="fin-icon-btn" id="fin-refresh-${id}" title="Refresh Live Rates" aria-label="Refresh">
                             <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="23 4 23 10 17 10"></polyline>
                                 <polyline points="1 20 1 14 7 14"></polyline>
@@ -511,6 +572,11 @@ export default class FinanceWidget extends BaseWidget {
             });
             bodyHtml = `<div class="fin-dual-grid">${cardsHtml}</div>`;
         } else if (count === 3) {
+            // Enhanced 3-asset dynamic responsive layout: 1 hero top + 2 balanced cards bottom
+            const heroAsset = trackedAssets[0];
+            const heroIsUp = heroAsset.change >= 0;
+            const subAssets = trackedAssets.slice(1);
+
             topBarHtml = `
                 <div class="fin-top-bar">
                     <div class="fin-asset-badge">
@@ -518,9 +584,10 @@ export default class FinanceWidget extends BaseWidget {
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
                         </span>
                         <span class="fin-asset-sym">Markets (3)</span>
+                        <span class="fin-currency-indicator">${isIRT ? 'TMN' : 'USD'}</span>
                     </div>
                     <div class="fin-controls-right">
-                        <button type="button" class="fin-icon-btn" id="fin-refresh-${id}" title="Refresh Rates" aria-label="Refresh">
+                        <button type="button" class="fin-icon-btn" id="fin-refresh-${id}" title="Refresh Live Rates" aria-label="Refresh">
                             <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="23 4 23 10 17 10"></polyline>
                                 <polyline points="1 20 1 14 7 14"></polyline>
@@ -531,30 +598,49 @@ export default class FinanceWidget extends BaseWidget {
                 </div>
             `;
 
-            let rowsHtml = '';
-            trackedAssets.forEach(asset => {
-                const isUp = asset.change >= 0;
-                const pts = this.historyCache[asset.id] || this.generateSynthetic24h(asset);
-                const chart = this.buildSmoothSvgPath(pts, 65, 16);
-                rowsHtml += `
-                    <div class="fin-tri-row">
-                        <div class="fin-tri-left">
-                            <span class="fin-asset-icon">${asset.icon}</span>
-                            <span style="font-size:11px; font-weight:700; color:var(--text-primary);">${asset.symbol}</span>
+            let subCardsHtml = '';
+            subAssets.forEach(sub => {
+                const isUp = sub.change >= 0;
+                const pts = this.historyCache[sub.id] || this.generateSynthetic24h(sub);
+                const chart = this.buildSmoothSvgPath(pts, 70, 16);
+                subCardsHtml += `
+                    <div class="fin-tri-subcard">
+                        <div class="fin-tri-subcard-top">
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <span class="fin-asset-icon">${sub.icon}</span>
+                                <span style="font-size:10.5px; font-weight:700; color:var(--text-primary);">${sub.symbol}</span>
+                            </div>
+                            <span class="fin-change-chip ${isUp ? 'up' : 'down'}" style="font-size:8.5px; padding:1px 3.5px;">${isUp ? '+' : ''}${sub.change.toFixed(1)}%</span>
                         </div>
-                        <svg class="fin-tri-center" viewBox="0 0 65 16" preserveAspectRatio="none">
+                        <div class="fin-tri-subcard-price">${this.formatPrice(sub.price, sub)}</div>
+                        <svg style="width:100%; height:14px;" viewBox="0 0 70 14" preserveAspectRatio="none">
                             <path d="${chart.lineD}" fill="none" stroke="${isUp ? '#10b981' : '#ef4444'}" stroke-width="1.6" stroke-linecap="round"/>
                         </svg>
-                        <div class="fin-tri-right">
-                            <span style="font-size:11px; font-weight:700; color:var(--text-primary);">${this.formatPrice(asset.price, asset)}</span>
-                            <span class="fin-change-chip ${isUp ? 'up' : 'down'}" style="font-size:9px; padding:1px 4px;">${isUp ? '+' : ''}${asset.change.toFixed(1)}%</span>
-                        </div>
                     </div>
                 `;
             });
-            bodyHtml = `<div class="fin-tri-list">${rowsHtml}</div>`;
+
+            bodyHtml = `
+                <div class="fin-tri-container">
+                    <div class="fin-tri-featured">
+                        <div class="fin-tri-featured-left">
+                            <div style="display:flex; align-items:center; gap:5px;">
+                                <span class="fin-asset-icon">${heroAsset.icon}</span>
+                                <span style="font-size:11px; font-weight:700; color:var(--text-primary);">${heroAsset.symbol}</span>
+                                <span style="font-size:9px; color:var(--text-secondary);">${heroAsset.name}</span>
+                            </div>
+                            <div style="font-size:13px; font-weight:800; color:var(--text-primary); margin-top:1px;">${this.formatPrice(heroAsset.price, heroAsset)}</div>
+                        </div>
+                        <div class="fin-tri-featured-right">
+                            <span class="fin-change-chip ${heroIsUp ? 'up' : 'down'}">${heroIsUp ? '▲' : '▼'} ${heroIsUp ? '+' : ''}${heroAsset.change.toFixed(1)}%</span>
+                            <span style="font-size:8.5px; color:var(--text-secondary);">H: ${this.formatPrice(heroAsset.high || heroAsset.price * 1.01, heroAsset)}</span>
+                        </div>
+                    </div>
+                    ${subCardsHtml}
+                </div>
+            `;
         } else {
-            // 4 assets
+            // 4 assets 2x2 grid
             topBarHtml = `
                 <div class="fin-top-bar">
                     <div class="fin-asset-badge">
@@ -562,9 +648,10 @@ export default class FinanceWidget extends BaseWidget {
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
                         </span>
                         <span class="fin-asset-sym">Markets (4)</span>
+                        <span class="fin-currency-indicator">${isIRT ? 'TMN' : 'USD'}</span>
                     </div>
                     <div class="fin-controls-right">
-                        <button type="button" class="fin-icon-btn" id="fin-refresh-${id}" title="Refresh Rates" aria-label="Refresh">
+                        <button type="button" class="fin-icon-btn" id="fin-refresh-${id}" title="Refresh Live Rates" aria-label="Refresh">
                             <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="23 4 23 10 17 10"></polyline>
                                 <polyline points="1 20 1 14 7 14"></polyline>
@@ -613,10 +700,10 @@ export default class FinanceWidget extends BaseWidget {
         const box = el.querySelector(`#fin-w-${id}`);
         if (!box) return;
 
-        // Auto-fetch if data is older than 5 minutes
+        // Auto-fetch if data is older than 5 minutes and online
         const now = Date.now();
         const last = this.config.lastUpdate || 0;
-        if (now - last > 300000) {
+        if (navigator.onLine && (now - last > 300000)) {
             this.fetchLiveRates().then(() => {
                 this.config.lastUpdate = Date.now();
                 this.updateConfig({ lastUpdate: this.config.lastUpdate }, true);
@@ -629,6 +716,10 @@ export default class FinanceWidget extends BaseWidget {
             refreshBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
             refreshBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
+                if (!navigator.onLine) {
+                    if (window.showToast) window.showToast('You are currently offline');
+                    return;
+                }
                 refreshBtn.classList.add('spinning');
                 await this.fetchLiveRates();
                 this.config.lastUpdate = Date.now();

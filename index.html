@@ -472,6 +472,41 @@
                     <span class="toggle-slider"></span>
                 </label>
             </div>
+            <div class="modal-field id-finance-only" style="display: none; align-items: center; justify-content: space-between; padding: 4px 0;">
+                <label style="color: var(--text-secondary); font-size: 12px; font-weight: 500;">Base Currency</label>
+                <select class="modal-input" id="edit-finance-currency" style="width: 140px; height: 34px;">
+                    <option value="USD">USD ($)</option>
+                    <option value="IRT">Toman (IRT)</option>
+                </select>
+            </div>
+
+            <!-- Daily Wisdom (Quote) Widget Configuration Options -->
+            <div class="modal-field id-quote-only" style="display: none; flex-direction: column; gap: 8px;">
+                <label style="color: var(--text-secondary); font-size: 12px; font-weight: 600;">Wisdom Category</label>
+                <select class="modal-input" id="edit-quote-category" style="width: 100%; height: 36px;">
+                    <option value="all">All Topics (همه‌ موضوعات)</option>
+                    <option value="science">Science & Knowledge (علم و دانش)</option>
+                    <option value="history">History & Wisdom (تاریخ و عبرت)</option>
+                    <option value="philosophy">Philosophy & Life (فلسفه و زندگی)</option>
+                </select>
+            </div>
+            <div class="modal-field id-quote-only" style="display: none; flex-direction: column; gap: 8px;">
+                <label style="color: var(--text-secondary); font-size: 12px; font-weight: 600;">Language Preference</label>
+                <select class="modal-input" id="edit-quote-lang" style="width: 100%; height: 36px;">
+                    <option value="all">Bilingual (هر دو زبان)</option>
+                    <option value="fa">Persian Only (فقط فارسی)</option>
+                    <option value="en">English Only (Only English)</option>
+                </select>
+            </div>
+            <div class="modal-field id-quote-only" style="display: none; align-items: center; justify-content: space-between; padding: 4px 0;">
+                <label style="color: var(--text-secondary); font-size: 12px; font-weight: 500;">Card Accent Color</label>
+                <select class="modal-input" id="edit-quote-theme" style="width: 140px; height: 34px;">
+                    <option value="default">Default Cyan</option>
+                    <option value="amber">Warm Amber</option>
+                    <option value="emerald">Emerald</option>
+                    <option value="violet">Violet</option>
+                </select>
+            </div>
 
             <div style="width: 100%; height: 1px; background: var(--panel-border); margin: 4px 0;"></div>
 
@@ -606,7 +641,7 @@
                 </div>
                 <div class="about-spec-item">
                     <span class="spec-label">Engine</span>
-                    <span class="spec-val">ProGrid Fluid Matrix 3.2</span>
+                    <span class="spec-val">ProGrid Fluid Matrix 1.5 LTS</span>
                 </div>
                 <div class="about-spec-item">
                     <span class="spec-label">License</span>

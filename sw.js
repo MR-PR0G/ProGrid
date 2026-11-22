@@ -1,7 +1,8 @@
-const CACHE_NAME = 'progrid-cache-v0.4.0';
+const CACHE_NAME = 'progrid-cache-v0.4.2';
 const urlsToCache = [
   './',
   './index.html',
+  'index.html',
   './css/style.css',
   './js/app.js',
   './js/grid.js',
@@ -31,7 +32,7 @@ const urlsToCache = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async cache => {
-      // Safely cache core assets
+      // Safely cache core assets, handling potential single failures
       await Promise.allSettled(urlsToCache.map(url => cache.add(url)));
     }).then(() => self.skipWaiting())
   );
@@ -55,39 +56,60 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
-  // Allow cross-origin requests (e.g. Unsplash, search engines) to run natively
-  if (url.origin !== self.location.origin) return;
+  // Allow cross-origin live API requests (CoinGecko, Binance, Unsplash) to pass directly
+  if (url.origin !== self.location.origin) {
+    return;
+  }
 
-  // 1. Navigation Requests: Network-First for instant freshness when online, cache when offline
+  // 1. Navigation Requests: Cache-Resilient Offline-First Document Delivery
   if (event.request.mode === 'navigate' || event.request.destination === 'document') {
     event.respondWith(
-      fetch(event.request)
-        .then(networkResponse => {
+      (async () => {
+        // Try network first if online
+        try {
+          const networkResponse = await fetch(event.request);
           if (networkResponse && networkResponse.ok) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put('./index.html', clone));
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(event.request, networkResponse.clone());
+            cache.put('./index.html', networkResponse.clone());
+            return networkResponse;
           }
-          return networkResponse;
-        })
-        .catch(() => caches.match('./index.html'))
+        } catch (err) {
+          // Network failed (offline)
+        }
+
+        // Offline fallback: match exact request, or relative aliases
+        const cached = await caches.match(event.request, { ignoreSearch: true })
+          || await caches.match('./index.html', { ignoreSearch: true })
+          || await caches.match('index.html', { ignoreSearch: true })
+          || await caches.match('./', { ignoreSearch: true });
+
+        if (cached) return cached;
+
+        return new Response('<!DOCTYPE html><html><body><h1>ProGrid Offline</h1></body></html>', {
+          headers: { 'Content-Type': 'text/html; charset=utf-8' }
+        });
+      })()
     );
     return;
   }
 
-  // 2. Local Assets (JS, CSS, JSON, Images): Stale-While-Revalidate
+  // 2. Local Assets (JS, CSS, JSON, Images): Stale-While-Revalidate with search query tolerance
   event.respondWith(
-    caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
-      const fetchPromise = fetch(event.request).then(networkResponse => {
-        if (networkResponse && networkResponse.ok) {
-          const clone = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return networkResponse;
-      }).catch(() => {
-        return cachedResponse || new Response('', { status: 404, statusText: 'Not Found' });
-      });
+    (async () => {
+      const cachedResponse = await caches.match(event.request, { ignoreSearch: true });
+
+      const fetchPromise = fetch(event.request)
+        .then(async networkResponse => {
+          if (networkResponse && networkResponse.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        })
+        .catch(() => cachedResponse || new Response('', { status: 404, statusText: 'Not Found' }));
 
       return cachedResponse || fetchPromise;
-    })
+    })()
   );
 });

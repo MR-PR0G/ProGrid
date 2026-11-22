@@ -51,7 +51,7 @@ export class GridEngine {
 
         if (window.state && Array.isArray(window.state.widgets) && window.state.widgets.length > 0) {
             const maxY = window.state.widgets.reduce((max, w) => Math.max(max, (w.y || 0) + (w.h || 1)), 0);
-            this.rows = Math.max(this.rows, maxY + (isMobile ? 2 : 1));
+            this.rows = Math.max(this.rows, maxY);
         }
 
         const finalGridW = this.cols * this.CELL_SIZE + (this.cols - 1) * this.GAP;
