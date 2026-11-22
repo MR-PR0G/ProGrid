@@ -37,7 +37,7 @@
 ### 🎨 Dual Design System
 - **Frosted Glass (Default):** Multi-layered translucent surfaces with backdrop blur (`28px`), subtle specular borders, and chromatic depth.
 - **Material 3 (Material You):** Clean, solid tonal surfaces with zero-blur elevation, including an integrated **Dark Tone / Light Tone** switcher embedded directly inside the theme configuration.
-- **Liquid Glass (Roadmap / Coming Soon):** Physics-based chromatic aberration and dynamic fluid refractions are scheduled for future milestones.
+- **Future Roadmap:** Dynamic Liquid Glass refraction physics is planned for upcoming milestones.
 
 ### 📱 Mobile-First Ergonomics
 - **Retractable Shelf:** Floating bottom dock for intuitive one-thumb navigation between widget library and appearance controls.

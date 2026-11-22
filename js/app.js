@@ -2985,7 +2985,7 @@ function isNewerVersion(remote, current) {
     return false;
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.3.0') {
+function launchUpdateSplashScreen(targetVer = 'v0.3.1') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -3080,6 +3080,12 @@ function setupAboutModal() {
 
     if (aboutBtn) {
         aboutBtn.addEventListener('click', () => {
+            const verBadge = document.getElementById('about-app-version');
+            if (verBadge) verBadge.textContent = 'v0.3.1';
+            const subTitle = document.getElementById('update-status-sub');
+            if (subTitle && !subTitle.textContent.includes('v0.3.1')) {
+                subTitle.textContent = 'Running official v0.3.1 release';
+            }
             aboutModal.style.display = 'flex';
         });
     }
@@ -3180,7 +3186,7 @@ function setupAboutModal() {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Running standalone v0.3.0 release.';
+                if (updateSub) updateSub.textContent = 'Running standalone v0.3.1 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
                 checkUpdateBtn.setAttribute('data-action', 'check');
                 checkUpdateBtn.removeAttribute('data-target-ver');
