@@ -487,8 +487,8 @@ body.edit-mode #edit-panel {
     padding: 10px 11px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    gap: 5px;
+    justify-content: flex-start;
+    gap: 0;
     cursor: grab;
     touch-action: pan-x;
     box-sizing: border-box;
@@ -507,7 +507,7 @@ body.edit-mode #edit-panel {
     cursor: grabbing;
 }
 .store-card-header {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
 }
 .store-card-icon {
     width: 32px; height: 32px; border-radius: 10px;

@@ -100,7 +100,7 @@ export default class ShortcutWidget extends BaseWidget {
             type: 'shortcut',
             label: 'Web Shortcut',
             author: 'ProGrid',
-            version: '0.3.1',
+            version: '1.5.0',
             description: 'One-tap fluid bookmark with intelligent vector logo detection, multi-source favicon engine, and shape controls.',
             icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
             defaultW: 1, defaultH: 1,

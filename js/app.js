@@ -1287,7 +1287,7 @@ function renderInstalledDrawerList() {
     filtered.forEach(m => {
         const isCore = CORE_WIDGET_TYPES.includes(m.type);
         const author = isCore ? 'ProGrid' : (m.author || 'MR Prog');
-        const rawVer = m.version || (isCore ? '0.2.4' : '1.0.0');
+        const rawVer = m.version || '1.5.0';
         const verStr = rawVer.startsWith('v') ? rawVer : `v${rawVer}`;
         const iconSvg = getWidgetIconSvg(m.type);
         html += `
@@ -2900,7 +2900,7 @@ function openWidgetInfo(wOrMeta) {
     h = wOrMeta.h || (meta && (meta.defaultH || meta.h)) || 1;
     const isCore = CORE_WIDGET_TYPES.includes(type);
     author = (meta && meta.author) || wOrMeta.author || (isCore ? 'ProGrid' : 'MR Prog');
-    version = (meta && meta.version) || wOrMeta.version || (isCore ? '0.2.4' : '1.0.0');
+    version = (meta && meta.version) || wOrMeta.version || '1.5.0';
     if (!version.startsWith('v')) version = `v${version}`;
     desc = (meta && meta.description) || widgetDescriptions[type] || 'Modular ProGrid fluid widget component.';
 
