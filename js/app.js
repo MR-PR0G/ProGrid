@@ -50,15 +50,27 @@ async function init() {
         state.designTheme = (loaded.designTheme === 'liquid-glass') ? 'frosted-glass' : (loaded.designTheme || 'frosted-glass');
         state.customBg = loaded.customBg || null;
         state.widgets = (loaded.widgets || []).filter(w => w.type !== 'calculator');
+        // Ensure finance widgets on grid reflect the unified English Toman USD & Gold setup
+        state.widgets.forEach(w => {
+            if (w.type === 'finance') {
+                if (!w.assets || (w.assets.length === 2 && w.assets.includes('BTC')) || (w.assets.length === 3 && w.assets.includes('BTC'))) {
+                    w.assets = ['USDIRR', 'GOLD'];
+                    w.primaryAsset = 'USDIRR';
+                    w.secondaryAsset = 'GOLD';
+                    w.baseCurrency = 'IRT';
+                }
+            }
+        });
     } else {
         state.blurValue = 27;
         state.presetBg = "1";
         state.theme = "dark";
         state.designTheme = "frosted-glass";
         state.widgets = [
-            { id: "w-clock-default", type: "clock", x: 0, y: 0, w: 2, h: 1, format24: true, showDate: true, isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 0, w: 2, h: 1, baseCols: 8 }, isHidden: false, centerDist: 0.5 },
-            { id: "w-search-default", type: "search", x: 2, y: 0, w: 6, h: 1, engine: "google", placeholder: "Search...", isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 0, w: 6, h: 1, baseCols: 8 }, isHidden: false, centerDist: 1 },
-            { id: "w-shortcut-default", type: "shortcut", x: 0, y: 1, w: 1, h: 1, title: "GitHub", url: "https://github.com/MR-PR0G/ProGrid", icon: "", iconBg: "#3b82f6", shape: "50%", isGlass: true, bg: "#3b82f6", idealLayout: { x: 0, y: 1, w: 1, h: 1, baseCols: 8 }, isHidden: false, centerDist: 2 }
+            { id: "w-clock-default", type: "clock", x: 0, y: 0, w: 4, h: 1, format24: true, showDate: true, calendarType: "gregorian", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 0, w: 4, h: 1, baseCols: 4 }, isHidden: false },
+            { id: "w-search-default", type: "search", x: 0, y: 1, w: 4, h: 1, engine: "google", placeholder: "Search web, apps & bookmarks...", searchShape: "pill", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 1, w: 4, h: 1, baseCols: 4 }, isHidden: false },
+            { id: "w-tasks-default", type: "checklist", x: 0, y: 2, w: 2, h: 2, isGlass: true, bg: "#ffffff", tasks: [{ id: 1, text: "Focus block", done: false }, { id: 2, text: "Daily review", done: false }], idealLayout: { x: 0, y: 2, w: 2, h: 2, baseCols: 4 }, isHidden: false },
+            { id: "w-finance-default", type: "finance", x: 2, y: 2, w: 2, h: 2, assets: ["USDIRR", "GOLD"], primaryAsset: "USDIRR", secondaryAsset: "GOLD", baseCurrency: "IRT", showChart: true, isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 2, w: 2, h: 2, baseCols: 4 }, isHidden: false }
         ];
     }
 
@@ -1803,70 +1815,32 @@ function setupWallpaperGallery() {
 const WORKSPACE_PRESETS = {
     default: {
         id: 'default',
-        name: 'Minimalist Daily',
+        name: 'Default Workspace',
         widgets: [
-            { id: "w-search-default", type: "search", x: 0, y: 0, w: 4, h: 1, engine: "google", placeholder: "Search web, apps & bookmarks...", searchShape: "pill", isGlass: true, bg: "#ffffff" },
-            { id: "w-clock-default", type: "clock", x: 0, y: 1, w: 2, h: 1, format24: true, showDate: true, calendarType: "gregorian", isGlass: true, bg: "#ffffff" },
-            { id: "w-quote-default", type: "quote", x: 2, y: 1, w: 2, h: 1, category: "all", language: "all", quoteTheme: "default", isGlass: true, bg: "#ffffff" },
+            { id: "w-clock-default", type: "clock", x: 0, y: 0, w: 4, h: 1, format24: true, showDate: true, calendarType: "gregorian", isGlass: true, bg: "#ffffff" },
+            { id: "w-search-default", type: "search", x: 0, y: 1, w: 4, h: 1, engine: "google", placeholder: "Search web, apps & bookmarks...", searchShape: "pill", isGlass: true, bg: "#ffffff" },
             {
-                id: "w-folder-google",
-                type: "folder",
-                title: "Google Apps",
+                id: "w-tasks-default",
+                type: "checklist",
                 x: 0, y: 2, w: 2, h: 2,
                 isGlass: true,
                 bg: "#ffffff",
-                children: [
-                    { id: "g-search", type: "shortcut", title: "Google", url: "https://google.com", icon: "", shape: "20px", iconBg: "#4285F4" },
-                    { id: "g-mail", type: "shortcut", title: "Gmail", url: "https://mail.google.com", icon: "", shape: "20px", iconBg: "#EA4335" },
-                    { id: "g-drive", type: "shortcut", title: "Drive", url: "https://drive.google.com", icon: "", shape: "20px", iconBg: "#34A853" },
-                    { id: "g-yt", type: "shortcut", title: "YouTube", url: "https://youtube.com", icon: "", shape: "20px", iconBg: "#FF0000" },
-                    { id: "g-maps", type: "shortcut", title: "Maps", url: "https://maps.google.com", icon: "", shape: "20px", iconBg: "#FBBC05" },
-                    { id: "g-trans", type: "shortcut", title: "Translate", url: "https://translate.google.com", icon: "", shape: "20px", iconBg: "#4285F4" }
-                ]
-            }
-        ]
-    },
-    trading: {
-        id: 'trading',
-        name: 'Trading & Market Hub',
-        widgets: [
-            { id: "w-search-trading", type: "search", x: 0, y: 0, w: 4, h: 1, engine: "google", placeholder: "Search ticker, crypto, markets...", searchShape: "pill", isGlass: true, bg: "#ffffff" },
-            { id: "w-finance-trading", type: "finance", x: 0, y: 1, w: 2, h: 2, assets: ["BTC", "USDIRR", "ETH"], primaryAsset: "BTC", secondaryAsset: "USDIRR", baseCurrency: "USD", showChart: true, isGlass: true, bg: "#ffffff" },
-            { id: "w-quote-trading", type: "quote", x: 2, y: 1, w: 2, h: 1, category: "philosophy", language: "all", quoteTheme: "amber", isGlass: true, bg: "#ffffff" },
-            {
-                id: "w-folder-trading",
-                type: "folder",
-                title: "Financial Hub",
-                x: 2, y: 2, w: 2, h: 2,
-                isGlass: true,
-                bg: "#ffffff",
-                children: [
-                    { id: "f-tv", type: "shortcut", title: "TradingView", url: "https://tradingview.com", icon: "", shape: "20px", iconBg: "#2962FF" },
-                    { id: "f-nobitex", type: "shortcut", title: "Nobitex", url: "https://nobitex.ir", icon: "", shape: "20px", iconBg: "#10B981" },
-                    { id: "f-binance", type: "shortcut", title: "Binance", url: "https://binance.com", icon: "", shape: "20px", iconBg: "#F3BA2F" },
-                    { id: "f-cmc", type: "shortcut", title: "CoinMarketCap", url: "https://coinmarketcap.com", icon: "", shape: "20px", iconBg: "#172554" }
-                ]
-            }
-        ]
-    },
-    productivity: {
-        id: 'productivity',
-        name: 'Focus & Tasks Desk',
-        widgets: [
-            { id: "w-clock-prod", type: "clock", x: 0, y: 0, w: 2, h: 1, format24: true, showDate: true, calendarType: "gregorian", isGlass: true, bg: "#ffffff" },
-            { id: "w-quote-prod", type: "quote", x: 2, y: 0, w: 2, h: 1, category: "science", language: "all", quoteTheme: "emerald", isGlass: true, bg: "#ffffff" },
-            { id: "w-pomo-prod", type: "pomodoro", x: 0, y: 1, w: 2, h: 2, targetMinutes: 25, timeLeft: 1500, isRunning: false, isGlass: true, bg: "#ffffff" },
-            {
-                id: "w-check-prod",
-                type: "checklist",
-                x: 2, y: 1, w: 2, h: 2,
-                isGlass: true,
-                bg: "#ffffff",
                 tasks: [
-                    { id: 1, text: "Sprint goals & review", done: true },
-                    { id: 2, text: "Focus block (25m)", done: false },
-                    { id: 3, text: "Check inbox & updates", done: false }
+                    { id: 1, text: "Focus block", done: false },
+                    { id: 2, text: "Daily review", done: false }
                 ]
+            },
+            {
+                id: "w-finance-default",
+                type: "finance",
+                x: 2, y: 2, w: 2, h: 2,
+                assets: ["USDIRR", "GOLD"],
+                primaryAsset: "USDIRR",
+                secondaryAsset: "GOLD",
+                baseCurrency: "IRT",
+                showChart: true,
+                isGlass: true,
+                bg: "#ffffff"
             }
         ]
     }
@@ -2547,19 +2521,19 @@ const FINANCE_ASSET_ICONS = {
 };
 
 const FINANCE_ASSET_INFO = {
+    'USDIRR': { name: 'US Dollar', symbol: 'USD', icon: FINANCE_ASSET_ICONS.USDIRR },
+    'GOLD': { name: 'Gold (Ounce)', symbol: 'GOLD', icon: FINANCE_ASSET_ICONS.GOLD },
     'BTC': { name: 'Bitcoin', symbol: 'BTC', icon: FINANCE_ASSET_ICONS.BTC },
-    'USDIRR': { name: 'US Dollar (Toman)', symbol: 'USD/TMN', icon: FINANCE_ASSET_ICONS.USDIRR },
     'ETH': { name: 'Ethereum', symbol: 'ETH', icon: FINANCE_ASSET_ICONS.ETH },
     'SOL': { name: 'Solana', symbol: 'SOL', icon: FINANCE_ASSET_ICONS.SOL },
     'TON': { name: 'Toncoin', symbol: 'TON', icon: FINANCE_ASSET_ICONS.TON },
-    'GOLD': { name: 'Gold (Ounce)', symbol: 'XAU', icon: FINANCE_ASSET_ICONS.GOLD },
     'OIL': { name: 'Brent Crude', symbol: 'OIL', icon: FINANCE_ASSET_ICONS.OIL },
-    'SILVER': { name: 'Silver (Ounce)', symbol: 'XAG', icon: FINANCE_ASSET_ICONS.SILVER },
+    'SILVER': { name: 'Silver (Ounce)', symbol: 'SILVER', icon: FINANCE_ASSET_ICONS.SILVER },
     'EURUSD': { name: 'Euro / Dollar', symbol: 'EUR', icon: FINANCE_ASSET_ICONS.EURUSD },
     'GBPUSD': { name: 'British Pound', symbol: 'GBP', icon: FINANCE_ASSET_ICONS.GBPUSD }
 };
 
-let currentFinanceAssets = ['BTC', 'USDIRR'];
+let currentFinanceAssets = ['USDIRR', 'GOLD'];
 
 function renderFinanceAssetChips() {
     const chipsContainer = document.getElementById('finance-asset-chips');
@@ -2705,9 +2679,9 @@ function openModal(w, isPreAdd = false) {
         if (Array.isArray(w.assets) && w.assets.length > 0) {
             currentFinanceAssets = [...w.assets.slice(0, 4)];
         } else {
-            currentFinanceAssets = [w.primaryAsset || 'BTC', w.secondaryAsset || 'USDIRR'].filter(Boolean);
+            currentFinanceAssets = [w.primaryAsset || 'USDIRR', w.secondaryAsset || 'GOLD'].filter(Boolean);
         }
-        if (currentFinanceAssets.length === 0) currentFinanceAssets = ['BTC', 'USDIRR'];
+        if (currentFinanceAssets.length === 0) currentFinanceAssets = ['USDIRR', 'GOLD'];
 
         renderFinanceAssetChips();
 
@@ -2728,7 +2702,7 @@ function openModal(w, isPreAdd = false) {
         if (chartToggle) chartToggle.checked = w.showChart !== false;
 
         const curSelect = document.getElementById('edit-finance-currency');
-        if (curSelect) curSelect.value = w.baseCurrency || 'USD';
+        if (curSelect) curSelect.value = w.baseCurrency || 'IRT';
     } else if (w.type === 'quote') {
         document.querySelectorAll('.id-quote-only').forEach(el => {
             el.style.display = el.classList.contains('modal-field') ? 'flex' : 'block';
@@ -2809,14 +2783,14 @@ function saveWidgetSettings() {
             newWidget.format24 = document.getElementById('edit-clock-24h').checked;
             newWidget.showSeconds = document.getElementById('edit-clock-seconds').checked;
         } else if (type === 'finance') {
-            const rawAssets = JSON.parse(document.getElementById('edit-finance-assets').value || '["BTC"]');
-            newWidget.assets = Array.isArray(rawAssets) && rawAssets.length > 0 ? rawAssets.slice(0, 4) : ['BTC'];
+            const rawAssets = JSON.parse(document.getElementById('edit-finance-assets').value || '["USDIRR","GOLD"]');
+            newWidget.assets = Array.isArray(rawAssets) && rawAssets.length > 0 ? rawAssets.slice(0, 4) : ['USDIRR', 'GOLD'];
             newWidget.primaryAsset = newWidget.assets[0];
-            newWidget.secondaryAsset = newWidget.assets[1] || 'USDIRR';
+            newWidget.secondaryAsset = newWidget.assets[1] || 'GOLD';
             newWidget.viewMode = newWidget.assets.length === 1 ? 'single' : (newWidget.assets.length === 2 ? 'dual' : 'grid');
             newWidget.showChart = document.getElementById('edit-finance-chart').checked;
             const curSelect = document.getElementById('edit-finance-currency');
-            newWidget.baseCurrency = curSelect ? curSelect.value : 'USD';
+            newWidget.baseCurrency = curSelect ? curSelect.value : 'IRT';
         } else if (type === 'quote') {
             const cat = document.getElementById('edit-quote-category');
             if (cat) newWidget.category = cat.value;
@@ -2864,14 +2838,14 @@ function saveWidgetSettings() {
             w.format24 = document.getElementById('edit-clock-24h').checked;
             w.showSeconds = document.getElementById('edit-clock-seconds').checked;
         } else if (w.type === 'finance') {
-            const rawAssets = JSON.parse(document.getElementById('edit-finance-assets').value || '["BTC"]');
-            w.assets = Array.isArray(rawAssets) && rawAssets.length > 0 ? rawAssets.slice(0, 4) : ['BTC'];
+            const rawAssets = JSON.parse(document.getElementById('edit-finance-assets').value || '["USDIRR","GOLD"]');
+            w.assets = Array.isArray(rawAssets) && rawAssets.length > 0 ? rawAssets.slice(0, 4) : ['USDIRR', 'GOLD'];
             w.primaryAsset = w.assets[0];
-            w.secondaryAsset = w.assets[1] || 'USDIRR';
+            w.secondaryAsset = w.assets[1] || 'GOLD';
             w.viewMode = w.assets.length === 1 ? 'single' : (w.assets.length === 2 ? 'dual' : 'grid');
             w.showChart = document.getElementById('edit-finance-chart').checked;
             const curSelect = document.getElementById('edit-finance-currency');
-            w.baseCurrency = curSelect ? curSelect.value : 'USD';
+            w.baseCurrency = curSelect ? curSelect.value : 'IRT';
         } else if (w.type === 'quote') {
             const cat = document.getElementById('edit-quote-category');
             if (cat) w.category = cat.value;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'progrid-cache-v0.5.1';
+const CACHE_NAME = 'progrid-cache-v0.5.2';
 const urlsToCache = [
   './',
   './index.html',

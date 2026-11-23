@@ -17,16 +17,16 @@ const ASSET_SVGS = {
 };
 
 const ASSET_REGISTRY = [
+    { id: 'USDIRR', name: 'US Dollar', symbol: 'USD', price: 69500, change: 0.45, high: 69900, low: 69100, icon: ASSET_SVGS.USDIRR, type: 'forex', unit: 'Toman' },
+    { id: 'GOLD', name: 'Gold (Ounce)', symbol: 'GOLD', price: 2684.5, change: 0.62, high: 2695.0, low: 2670.0, icon: ASSET_SVGS.GOLD, type: 'commodities', unit: '$' },
     { id: 'BTC', name: 'Bitcoin', symbol: 'BTC', price: 91450, change: 2.34, high: 92800, low: 89400, icon: ASSET_SVGS.BTC, type: 'crypto', unit: '$' },
-    { id: 'USDIRR', name: 'US Dollar (Toman)', symbol: 'USD/TMN', price: 215000, change: 0.65, high: 218000, low: 212000, icon: ASSET_SVGS.USDIRR, type: 'forex', unit: 'Toman' },
     { id: 'ETH', name: 'Ethereum', symbol: 'ETH', price: 3120, change: -0.85, high: 3190, low: 3080, icon: ASSET_SVGS.ETH, type: 'crypto', unit: '$' },
     { id: 'SOL', name: 'Solana', symbol: 'SOL', price: 198.4, change: 4.12, high: 202.5, low: 189.0, icon: ASSET_SVGS.SOL, type: 'crypto', unit: '$' },
     { id: 'TON', name: 'Toncoin', symbol: 'TON', price: 5.45, change: 1.15, high: 5.62, low: 5.38, icon: ASSET_SVGS.TON, type: 'crypto', unit: '$' },
-    { id: 'GOLD', name: 'Gold (Ounce)', symbol: 'XAU', price: 2684.5, change: 0.62, high: 2695.0, low: 2670.0, icon: ASSET_SVGS.GOLD, type: 'commodities', unit: '$' },
     { id: 'OIL', name: 'Brent Crude', symbol: 'OIL', price: 74.2, change: -1.45, high: 75.8, low: 73.6, icon: ASSET_SVGS.OIL, type: 'commodities', unit: '$' },
-    { id: 'SILVER', name: 'Silver (Ounce)', symbol: 'XAG', price: 31.85, change: 0.94, high: 32.2, low: 31.4, icon: ASSET_SVGS.SILVER, type: 'commodities', unit: '$' },
-    { id: 'EURUSD', name: 'Euro / Dollar', symbol: 'EUR/USD', price: 1.054, change: -0.22, high: 1.058, low: 1.051, icon: ASSET_SVGS.EURUSD, type: 'forex', unit: '$' },
-    { id: 'GBPUSD', name: 'British Pound', symbol: 'GBP/USD', price: 1.268, change: 0.15, high: 1.272, low: 1.264, icon: ASSET_SVGS.GBPUSD, type: 'forex', unit: '$' }
+    { id: 'SILVER', name: 'Silver (Ounce)', symbol: 'SILVER', price: 31.85, change: 0.94, high: 32.2, low: 31.4, icon: ASSET_SVGS.SILVER, type: 'commodities', unit: '$' },
+    { id: 'EURUSD', name: 'Euro / Dollar', symbol: 'EUR', price: 1.054, change: -0.22, high: 1.058, low: 1.051, icon: ASSET_SVGS.EURUSD, type: 'forex', unit: '$' },
+    { id: 'GBPUSD', name: 'British Pound', symbol: 'GBP', price: 1.268, change: 0.15, high: 1.272, low: 1.264, icon: ASSET_SVGS.GBPUSD, type: 'forex', unit: '$' }
 ];
 
 export default class FinanceWidget extends BaseWidget {
@@ -39,14 +39,14 @@ export default class FinanceWidget extends BaseWidget {
             minW: 2, minH: 1, maxW: 4, maxH: 3,
             category: 'finance',
             author: 'MR Prog',
-            version: '1.5.0',
-            downloads: '10.4k',
-            description: 'Professional financial tracker with live market rates, customizable base currency (USD/Toman), and dynamic responsive layouts.',
+            version: '1.6.0',
+            downloads: '10.5k',
+            description: 'Professional financial tracker with live market rates, customizable base currency (USD/TMN), and dynamic responsive layouts.',
             defaultConfig: {
-                assets: ['BTC', 'USDIRR'],
-                primaryAsset: 'BTC',
-                secondaryAsset: 'USDIRR',
-                baseCurrency: 'USD',
+                assets: ['USDIRR', 'GOLD'],
+                primaryAsset: 'USDIRR',
+                secondaryAsset: 'GOLD',
+                baseCurrency: 'IRT',
                 showChart: true,
                 lastUpdate: Date.now(),
                 bg: '#ffffff'
@@ -69,10 +69,18 @@ export default class FinanceWidget extends BaseWidget {
                 if (Array.isArray(parsed) && parsed.length > 0) {
                     parsed.forEach(a => {
                         if (ASSET_SVGS[a.id]) a.icon = ASSET_SVGS[a.id];
-                        if (a.id === 'USDIRR' && a.price < 100000) {
-                            a.price = 215000;
-                            a.high = 218000;
-                            a.low = 212000;
+                        if (a.id === 'USDIRR') {
+                            a.name = 'US Dollar';
+                            a.symbol = 'USD';
+                            if (a.price > 120000 || a.price < 30000) {
+                                a.price = 69500;
+                                a.high = 69900;
+                                a.low = 69100;
+                            }
+                        }
+                        if (a.id === 'GOLD') {
+                            a.name = 'Gold (Ounce)';
+                            a.symbol = 'GOLD';
                         }
                     });
                     return parsed;
@@ -114,7 +122,7 @@ export default class FinanceWidget extends BaseWidget {
 
     getUsdToTomanRate() {
         const usdirr = this.assets.find(a => a.id === 'USDIRR');
-        return (usdirr && usdirr.price > 10000) ? usdirr.price : 215000;
+        return (usdirr && usdirr.price >= 30000 && usdirr.price <= 120000) ? usdirr.price : 69500;
     }
 
     generateSynthetic24h(asset) {
@@ -178,21 +186,31 @@ export default class FinanceWidget extends BaseWidget {
         if (!navigator.onLine) return;
         this.isLoading = true;
 
-        // 1. Fetch Crypto Live Rates via Binance Public API
+        // 1. Fetch Crypto & Spot Gold Live Rates via Binance Public API
         try {
-            const symbolsParam = '["BTCUSDT","ETHUSDT","SOLUSDT","TONUSDT"]';
+            const symbolsParam = '["BTCUSDT","ETHUSDT","SOLUSDT","TONUSDT","PAXGUSDT"]';
             const cryptoRes = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${encodeURIComponent(symbolsParam)}`, { signal: AbortSignal.timeout(4000) });
             if (cryptoRes.ok) {
                 const arr = await cryptoRes.json();
                 if (Array.isArray(arr)) {
                     arr.forEach(item => {
-                        const sym = item.symbol.replace('USDT', '');
-                        const target = this.assets.find(c => c.id === sym);
-                        if (target) {
-                            target.price = parseFloat(item.lastPrice);
-                            target.change = parseFloat(item.priceChangePercent);
-                            target.high = parseFloat(item.highPrice);
-                            target.low = parseFloat(item.lowPrice);
+                        if (item.symbol === 'PAXGUSDT') {
+                            const target = this.assets.find(c => c.id === 'GOLD');
+                            if (target) {
+                                target.price = parseFloat(item.lastPrice);
+                                target.change = parseFloat(item.priceChangePercent);
+                                target.high = parseFloat(item.highPrice);
+                                target.low = parseFloat(item.lowPrice);
+                            }
+                        } else {
+                            const sym = item.symbol.replace('USDT', '');
+                            const target = this.assets.find(c => c.id === sym);
+                            if (target) {
+                                target.price = parseFloat(item.lastPrice);
+                                target.change = parseFloat(item.priceChangePercent);
+                                target.high = parseFloat(item.highPrice);
+                                target.low = parseFloat(item.lowPrice);
+                            }
                         }
                     });
                 }
@@ -339,23 +357,12 @@ export default class FinanceWidget extends BaseWidget {
                 tomanVal = val * usdToTmn;
             }
 
-            if (isCompact) {
-                if (tomanVal >= 1e9) {
-                    return `${(tomanVal / 1e9).toFixed(2)}B`;
-                } else if (tomanVal >= 1e6) {
-                    return `${(tomanVal / 1e6).toFixed(1)}M`;
-                } else if (tomanVal >= 1e3) {
-                    return `${(tomanVal / 1e3).toFixed(1)}k`;
-                }
-                return `${Math.round(tomanVal)}`;
-            }
-
             if (tomanVal >= 1e9) {
                 return `${(tomanVal / 1e9).toFixed(2)}B TMN`;
             } else if (tomanVal >= 1e6) {
                 return `${(tomanVal / 1e6).toFixed(1)}M TMN`;
             } else if (tomanVal >= 1e3) {
-                return `${Math.round(tomanVal).toLocaleString('en-US')} TMN`;
+                return `${(tomanVal / 1e3).toFixed(1)}k TMN`;
             }
             return `${Math.round(tomanVal)} TMN`;
         }
@@ -609,7 +616,7 @@ export default class FinanceWidget extends BaseWidget {
                     <span class="fin-asset-icon">
                         ${count === 1 ? trackedAssets[0].icon : `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>`}
                     </span>
-                    <span class="fin-asset-sym">${count === 1 ? trackedAssets[0].symbol : `Markets (${count})`}</span>
+                    <span class="fin-asset-sym">${count === 1 ? trackedAssets[0].symbol : (count === 2 ? `${trackedAssets[0].symbol} & ${trackedAssets[1].symbol}` : `Markets (${count})`)}</span>
                     ${count === 1 ? `<span class="fin-asset-fullname">${trackedAssets[0].name}</span>` : ''}
                     <span class="fin-currency-indicator">${isIRT ? 'TMN' : 'USD'}</span>
                 </div>
@@ -710,8 +717,11 @@ export default class FinanceWidget extends BaseWidget {
                     const isUp = asset.change >= 0;
                     const pts = this.historyCache[asset.id] || this.generateSynthetic24h(asset);
                     const chart = this.buildSmoothSvgPath(pts, 100, 24);
+                    const fullPriceStr = isIRT 
+                        ? `${Math.round(asset.id === 'USDIRR' ? asset.price : asset.price * usdToTmn).toLocaleString('en-US')} TMN`
+                        : (asset.id === 'USDIRR' ? '$1.00' : `$${asset.price.toLocaleString('en-US')}`);
                     cardsHtml += `
-                        <div class="fin-dual-card">
+                        <div class="fin-dual-card" title="${asset.name || asset.symbol}: ${fullPriceStr}">
                             <div class="fin-dual-top">
                                 <div style="display:flex; align-items:center; gap:5px;">
                                     <span class="fin-asset-icon">${asset.icon}</span>

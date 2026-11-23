@@ -254,46 +254,18 @@
             <!-- View 1: Curated Workspaces List -->
             <div class="workspaces-view-container active" id="ws-view-curated">
                 <div class="workspaces-cards-scroll">
-                    <!-- Preset 1: Default Minimalist -->
+                    <!-- Preset 1: Default Workspace -->
                     <div class="workspace-card" data-preset="default">
                         <div class="workspace-card-header">
                             <span class="workspace-badge default">Default</span>
                             <span class="workspace-widgets-count">4 Widgets</span>
                         </div>
-                        <div class="workspace-card-title">Minimalist Daily</div>
-                        <div class="workspace-card-desc">Google Search pill, Dual Calendar clock, Google Suite folder &amp; Daily Wisdom.</div>
+                        <div class="workspace-card-title">Default Workspace</div>
+                        <div class="workspace-card-desc">Digital Clock, Web Search, Tasks checklist, and Gold &amp; USD Toman rate tracker.</div>
                         <div class="workspace-card-preview-icons">
-                            <span>🔍</span><span>⏰</span><span>📁</span><span>💬</span>
+                            <span>⏰</span><span>🔍</span><span>✅</span><span>📈</span>
                         </div>
                         <button type="button" class="workspace-apply-btn" data-preset="default">Apply Layout</button>
-                    </div>
-
-                    <!-- Preset 2: Market & Trading Hub -->
-                    <div class="workspace-card" data-preset="trading">
-                        <div class="workspace-card-header">
-                            <span class="workspace-badge trading">Markets</span>
-                            <span class="workspace-widgets-count">4 Widgets</span>
-                        </div>
-                        <div class="workspace-card-title">Trading Hub</div>
-                        <div class="workspace-card-desc">Live Markets &amp; Crypto (BTC/ETH/USDIRR), Web search, Trading folder &amp; Wisdom.</div>
-                        <div class="workspace-card-preview-icons">
-                            <span>📈</span><span>🔍</span><span>📁</span><span>💬</span>
-                        </div>
-                        <button type="button" class="workspace-apply-btn" data-preset="trading">Apply Layout</button>
-                    </div>
-
-                    <!-- Preset 3: Focus & Productivity Desk -->
-                    <div class="workspace-card" data-preset="productivity">
-                        <div class="workspace-card-header">
-                            <span class="workspace-badge focus">Productivity</span>
-                            <span class="workspace-widgets-count">4 Widgets</span>
-                        </div>
-                        <div class="workspace-card-title">Focus &amp; Tasks</div>
-                        <div class="workspace-card-desc">Material 3 Pomodoro timer, Interactive Checklist tasks, Smart Notes &amp; Clock.</div>
-                        <div class="workspace-card-preview-icons">
-                            <span>⏳</span><span>✅</span><span>📝</span><span>⏰</span>
-                        </div>
-                        <button type="button" class="workspace-apply-btn" data-preset="productivity">Apply Layout</button>
                     </div>
                 </div>
             </div>
@@ -529,18 +501,18 @@
                 </div>
                 
                 <div id="finance-asset-chips" class="finance-asset-chips-container"></div>
-                <input type="hidden" id="edit-finance-assets" value='["BTC","USDIRR"]'>
+                <input type="hidden" id="edit-finance-assets" value='["USDIRR","GOLD"]'>
 
                 <div id="finance-add-row" style="display: flex; gap: 8px; align-items: center; width: 100%; margin-top: 2px;">
                     <select class="modal-input" id="edit-finance-add-select" style="flex: 1; height: 36px;">
+                        <option value="USDIRR">US Dollar (USD) - 💵</option>
+                        <option value="GOLD">Gold Ounce (GOLD) - 🟡</option>
                         <option value="BTC">Bitcoin (BTC) - ₿</option>
-                        <option value="USDIRR">US Dollar (Toman) - 💵</option>
                         <option value="ETH">Ethereum (ETH) - Ξ</option>
                         <option value="SOL">Solana (SOL) - ◎</option>
                         <option value="TON">Toncoin (TON) - 💎</option>
-                        <option value="GOLD">Gold Ounce (XAU) - 🟡</option>
                         <option value="OIL">Brent Crude (OIL) - 🛢️</option>
-                        <option value="SILVER">Silver (XAG) - ⚪</option>
+                        <option value="SILVER">Silver (SILVER) - ⚪</option>
                         <option value="EURUSD">Euro / Dollar (EUR) - 💶</option>
                         <option value="GBPUSD">British Pound (GBP) - 💷</option>
                     </select>
@@ -563,8 +535,8 @@
             <div class="modal-field id-finance-only" style="display: none; align-items: center; justify-content: space-between; padding: 4px 0;">
                 <label style="color: var(--text-secondary); font-size: 12px; font-weight: 500;">Base Currency</label>
                 <select class="modal-input" id="edit-finance-currency" style="width: 140px; height: 34px;">
+                    <option value="IRT">Toman (TMN)</option>
                     <option value="USD">USD ($)</option>
-                    <option value="IRT">Toman (IRT)</option>
                 </select>
             </div>
 

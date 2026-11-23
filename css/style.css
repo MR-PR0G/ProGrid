@@ -2394,8 +2394,9 @@ body.edit-mode .web-install-banner {
     align-items: stretch;
 }
 .workspace-card {
-    flex: 0 0 170px;
-    width: 170px;
+    flex: 0 0 200px;
+    width: 200px;
+    max-width: 100%;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--panel-border);
     border-radius: 16px;
