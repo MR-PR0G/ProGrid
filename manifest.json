@@ -2,7 +2,7 @@
   "name": "ProGrid Workspace",
   "short_name": "ProGrid",
   "id": "progrid-workspace-app",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Customizable Frosted Glass & Material 3 Workspace & New Tab Dashboard by MR Prog",
   "start_url": "index.html",
   "scope": "./",

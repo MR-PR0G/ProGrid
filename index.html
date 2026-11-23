@@ -315,7 +315,7 @@
                             <button type="button" class="bg-thumb" data-preset="1" title="Preset Gradient 1" style="background: var(--bg-preset-1);"></button>
                             <button type="button" class="bg-thumb bg-dynamic" data-preset="2" title="Preset Gradient 2" style="background: var(--bg-preset-2);"></button>
                             <button type="button" class="bg-thumb bg-dynamic" data-preset="3" title="Preset Gradient 3" style="background: var(--bg-preset-3);"></button>
-                            <button type="button" id="custom-bg-btn" class="custom-bg-picker-btn" title="Upload custom photo" aria-label="Upload custom photo">
+                            <button type="button" id="custom-bg-btn" class="custom-bg-picker-btn" title="Create custom dual-color gradient" aria-label="Create custom dual-color gradient">
                                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </button>
                             <input type="file" id="custom-bg-input" accept="image/*" style="display: none;">
@@ -731,7 +731,7 @@
                 <div class="about-title-block">
                     <h3 class="about-name">ProGrid Workspace</h3>
                     <div class="about-badge-row">
-                        <span class="about-version-badge" id="about-app-version">v0.3.4</span>
+                        <span class="about-version-badge" id="about-app-version">v0.3.5</span>
                         <span class="about-license-badge">GNU GPLv3</span>
                     </div>
                 </div>
@@ -765,7 +765,7 @@
                     <div class="update-indicator-dot" id="update-indicator-dot"></div>
                     <div class="update-info-text">
                         <span class="update-title" id="update-status-title">System Up to Date</span>
-                        <span class="update-sub" id="update-status-sub">Running official v0.3.4 release</span>
+                        <span class="update-sub" id="update-status-sub">Running official v0.3.5 release</span>
                     </div>
                 </div>
                 <button id="about-check-update-btn" class="about-update-action-btn">
@@ -839,6 +839,98 @@
         </div>
     </div>
 
+    <!-- Dual-Color Gradient Studio Modal -->
+    <div id="custom-gradient-modal" style="display: none; position: fixed; inset: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.68); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); z-index: 10080; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
+        <div style="background: var(--modal-bg); border: 1px solid var(--panel-border); border-radius: 20px; width: 360px; max-width: 95%; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 24px 48px rgba(0,0,0,0.5);">
+            <!-- Modal Header -->
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #ec4899); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="13.5" cy="6.5" r=".5" fill="#fff"></circle>
+                            <circle cx="17.5" cy="10.5" r=".5" fill="#fff"></circle>
+                            <circle cx="8.5" cy="7.5" r=".5" fill="#fff"></circle>
+                            <circle cx="6.5" cy="12.5" r=".5" fill="#fff"></circle>
+                            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--text-primary);">Dual-Color Gradient Studio</h3>
+                        <div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 1px;">Craft custom smooth gradient wallpaper</div>
+                    </div>
+                </div>
+                <button type="button" id="gradient-modal-close-btn" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <!-- Live Interactive Preview Canvas -->
+            <div id="gradient-preview-box" style="width: 100%; height: 96px; border-radius: 14px; border: 1px solid var(--panel-border); box-shadow: inset 0 2px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.25); display: flex; align-items: flex-end; justify-content: space-between; padding: 10px 12px; box-sizing: border-box; background: linear-gradient(135deg, #1e3a8a, #0f172a); transition: background 0.25s ease;">
+                <span id="gradient-preview-label" style="font-size: 10px; font-family: monospace; color: rgba(255,255,255,0.85); background: rgba(0,0,0,0.45); padding: 2px 6px; border-radius: 6px; backdrop-filter: blur(8px);">135° Linear</span>
+                <span style="font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.5px;">Live Preview</span>
+            </div>
+
+            <!-- Two Color Pickers -->
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                <!-- Color 1 -->
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                    <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Start Color</label>
+                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--panel-border); border-radius: 10px; padding: 5px 8px;">
+                        <input type="color" id="gradient-picker-1" value="#1e3a8a" style="border: none; width: 28px; height: 28px; border-radius: 8px; cursor: pointer; background: transparent; padding: 0;">
+                        <span id="gradient-hex-1" style="font-size: 11px; font-family: monospace; color: var(--text-primary); font-weight: 600;">#1E3A8A</span>
+                    </div>
+                </div>
+
+                <!-- Swap Button -->
+                <button type="button" id="gradient-swap-btn" title="Swap Colors" style="background: rgba(255,255,255,0.06); border: 1px solid var(--panel-border); color: var(--text-secondary); width: 32px; height: 32px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-top: 18px; transition: transform 0.2s, background 0.2s;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/></svg>
+                </button>
+
+                <!-- Color 2 -->
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                    <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">End Color</label>
+                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--panel-border); border-radius: 10px; padding: 5px 8px;">
+                        <input type="color" id="gradient-picker-2" value="#0f172a" style="border: none; width: 28px; height: 28px; border-radius: 8px; cursor: pointer; background: transparent; padding: 0;">
+                        <span id="gradient-hex-2" style="font-size: 11px; font-family: monospace; color: var(--text-primary); font-weight: 600;">#0F172A</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Direction / Angle Mode -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Gradient Direction</label>
+                <div style="display: flex; gap: 6px;" id="gradient-directions-group">
+                    <button type="button" class="gradient-dir-btn active" data-dir="135deg">↘ 135°</button>
+                    <button type="button" class="gradient-dir-btn" data-dir="90deg">→ 90°</button>
+                    <button type="button" class="gradient-dir-btn" data-dir="180deg">↓ 180°</button>
+                    <button type="button" class="gradient-dir-btn" data-dir="radial">◎ Radial</button>
+                </div>
+            </div>
+
+            <!-- Curated Palette Presets -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Inspiring Duos</label>
+                <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;">
+                    <button type="button" class="gradient-duo-btn" data-c1="#1e3a8a" data-c2="#0f172a" title="Midnight Navy" style="background: linear-gradient(135deg, #1e3a8a, #0f172a);"></button>
+                    <button type="button" class="gradient-duo-btn" data-c1="#4c1d95" data-c2="#090a16" title="Deep Violet" style="background: linear-gradient(135deg, #4c1d95, #090a16);"></button>
+                    <button type="button" class="gradient-duo-btn" data-c1="#0f766e" data-c2="#042f2e" title="Nordic Teal" style="background: linear-gradient(135deg, #0f766e, #042f2e);"></button>
+                    <button type="button" class="gradient-duo-btn" data-c1="#b91c1c" data-c2="#1e1b4b" title="Crimson Eclipse" style="background: linear-gradient(135deg, #b91c1c, #1e1b4b);"></button>
+                    <button type="button" class="gradient-duo-btn" data-c1="#d97706" data-c2="#451a03" title="Amber Dusk" style="background: linear-gradient(135deg, #d97706, #451a03);"></button>
+                    <button type="button" class="gradient-duo-btn" data-c1="#374151" data-c2="#111827" title="Obsidian Minimal" style="background: linear-gradient(135deg, #374151, #111827);"></button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 10px; margin-top: 4px;">
+                <button type="button" id="gradient-cancel-btn" style="flex: 1; height: 38px; border-radius: 10px; border: 1px solid var(--panel-border); background: rgba(255,255,255,0.06); color: var(--text-secondary); font-size: 12px; font-weight: 600; cursor: pointer;">Cancel</button>
+                <button type="button" id="gradient-apply-btn" style="flex: 2; height: 38px; border-radius: 10px; border: none; background: #3b82f6; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>Apply Gradient</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- PWA Installation Guide Modal -->
     <div id="pwa-install-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); z-index: 10060; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
         <div style="background: var(--modal-bg); border: 1px solid var(--panel-border); border-radius: 24px; padding: 22px 20px; width: 340px; max-width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px; text-align: center; box-sizing: border-box;">
@@ -876,7 +968,7 @@
             <div class="update-splash-bar-track">
                 <div id="update-splash-bar-progress" class="update-splash-bar-fill"></div>
             </div>
-            <span id="update-splash-ver" class="update-splash-version">Upgrading to v0.3.4</span>
+            <span id="update-splash-ver" class="update-splash-version">Upgrading to v0.3.5</span>
         </div>
     </div>
 
@@ -885,7 +977,7 @@
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
-        <span id="update-toast-text">ProGrid updated to v0.3.4 successfully</span>
+        <span id="update-toast-text">ProGrid updated to v0.3.5 successfully</span>
     </div>
 
     <script type="text/javascript">

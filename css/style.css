@@ -1471,8 +1471,8 @@ body.theme-material3.light-mode .widget-content {
 .wallpaper-gallery-scroll::-webkit-scrollbar { height: 4px; }
 .wallpaper-gallery-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
 .wallpaper-thumb-card {
-    flex: 0 0 106px;
-    height: 76px;
+    flex: 0 0 120px;
+    height: 90px;
     border-radius: 14px;
     overflow: hidden;
     position: relative;
@@ -2752,4 +2752,39 @@ body.edit-mode .web-install-banner {
     background: rgba(16, 185, 129, 0.18);
     color: #34d399;
     border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Dual Gradient Generator Styles */
+.gradient-dir-btn {
+    flex: 1;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--panel-border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.gradient-dir-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+}
+.gradient-dir-btn.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    color: #60a5fa;
+}
+.gradient-duo-btn {
+    flex: 0 0 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: 1.5px solid var(--panel-border);
+    cursor: pointer;
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s;
+}
+.gradient-duo-btn:hover {
+    transform: scale(1.12);
+    border-color: #3b82f6;
 }

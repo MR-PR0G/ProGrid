@@ -98,6 +98,7 @@ async function init() {
     setupWidgetDrawer();
     setupWallpaperGallery();
     setupAppearanceSubtabs();
+    setupGradientStudio();
     setupWorkspacesUI();
     setupQuickMenuListeners();
     setupAboutModal();
@@ -185,17 +186,21 @@ function applyGlobalStyles() {
     if (activeThumb) activeThumb.style.borderColor = 'var(--text-primary)';
 
     if (state.presetBg === 'custom') {
-        const cachedWp = localStorage.getItem('progrid_offline_wallpaper');
-        const bgUrl = cachedWp || state.customBg;
-        if (dynamicBgLayer && bgUrl) {
+        const bg = state.customBg || localStorage.getItem('progrid_offline_wallpaper');
+        if (dynamicBgLayer && bg) {
             dynamicBgLayer.className = 'bg-layer';
-            const matchedWp = typeof WALLPAPER_COLLECTION !== 'undefined' ? WALLPAPER_COLLECTION.find(w => w.full === bgUrl || w.thumb === bgUrl) : null;
-            const fallbackGrad = matchedWp && matchedWp.gradient ? matchedWp.gradient : 'radial-gradient(ellipse at 50% 20%, #1a2238 0%, #080a10 100%)';
-            dynamicBgLayer.style.background = fallbackGrad;
-            dynamicBgLayer.style.backgroundImage = `url("${bgUrl}"), ${fallbackGrad}`;
-            dynamicBgLayer.style.backgroundSize = 'cover';
-            dynamicBgLayer.style.backgroundPosition = 'center center';
-            dynamicBgLayer.style.backgroundRepeat = 'no-repeat';
+            if (bg.startsWith('linear-gradient') || bg.startsWith('radial-gradient')) {
+                dynamicBgLayer.style.backgroundImage = 'none';
+                dynamicBgLayer.style.background = bg;
+            } else {
+                const matchedWp = typeof WALLPAPER_COLLECTION !== 'undefined' ? WALLPAPER_COLLECTION.find(w => w.full === bg || w.thumb === bg) : null;
+                const fallbackGrad = matchedWp && matchedWp.gradient ? matchedWp.gradient : 'radial-gradient(ellipse at 50% 20%, #1a2238 0%, #080a10 100%)';
+                dynamicBgLayer.style.background = fallbackGrad;
+                dynamicBgLayer.style.backgroundImage = `url("${bg}"), ${fallbackGrad}`;
+                dynamicBgLayer.style.backgroundSize = 'cover';
+                dynamicBgLayer.style.backgroundPosition = 'center center';
+                dynamicBgLayer.style.backgroundRepeat = 'no-repeat';
+            }
         }
     } else {
         if (dynamicBgLayer) {
@@ -917,15 +922,19 @@ function setupGlobalEvents() {
     document.querySelectorAll('.bg-thumb').forEach(thumb => {
         thumb.addEventListener('click', () => {
             state.presetBg = thumb.getAttribute('data-preset');
+            state.customBg = null;
+            localStorage.removeItem('progrid_offline_wallpaper');
+            const galleryContainer = document.getElementById('wallpaper-gallery-container');
+            if (galleryContainer) {
+                galleryContainer.querySelectorAll('.wallpaper-thumb-card').forEach(c => c.classList.remove('active'));
+            }
             applyGlobalStyles();
             StorageEngine.save(state);
         });
     });
 
     const customBgInput = document.getElementById('custom-bg-input');
-    const customBgBtn = document.getElementById('custom-bg-btn');
-    if (customBgBtn && customBgInput) {
-        customBgBtn.addEventListener('click', () => customBgInput.click());
+    if (customBgInput) {
         customBgInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -933,8 +942,16 @@ function setupGlobalEvents() {
                 reader.onload = (ev) => {
                     state.customBg = ev.target.result;
                     state.presetBg = 'custom';
+                    try { localStorage.setItem('progrid_offline_wallpaper', ev.target.result); } catch (_) {}
+                    const galleryContainer = document.getElementById('wallpaper-gallery-container');
+                    if (galleryContainer) {
+                        galleryContainer.querySelectorAll('.wallpaper-thumb-card').forEach(c => c.classList.remove('active'));
+                        const uploadCard = document.getElementById('gallery-upload-card');
+                        if (uploadCard) uploadCard.classList.add('active');
+                    }
                     applyGlobalStyles();
                     StorageEngine.save(state);
+                    if (window.showToast) window.showToast('Custom photo applied to background');
                 };
                 reader.readAsDataURL(file);
             }
@@ -1760,7 +1777,7 @@ function setupWallpaperGallery() {
         </div>
     `;
     WALLPAPER_COLLECTION.forEach(wp => {
-        const isCurrent = state.presetBg === 'custom' && (state.customBg === wp.full || localStorage.getItem('progrid_offline_wallpaper'));
+        const isCurrent = state.presetBg === 'custom' && (state.customBg === wp.full || (state.customBg && state.customBg.includes(wp.id)));
         const fallbackGrad = wp.gradient || 'linear-gradient(135deg, #1e293b, #0f172a)';
         html += `
             <div class="wallpaper-thumb-card ${isCurrent ? 'active' : ''}" data-url="${wp.full}" data-id="${wp.id}" title="${wp.name}" style="background: ${fallbackGrad};">
@@ -1787,13 +1804,15 @@ function setupWallpaperGallery() {
             const url = card.getAttribute('data-url');
             state.presetBg = 'custom';
             state.customBg = url;
+            localStorage.removeItem('progrid_offline_wallpaper');
             applyGlobalStyles();
             StorageEngine.save(state);
             if (navigator.vibrate) navigator.vibrate(25);
 
             downloadAndCacheWallpaper(url).then(cached => {
-                if (cached && cached.startsWith('data:')) {
+                if (state.customBg === url && cached && cached.startsWith('data:')) {
                     state.customBg = cached;
+                    try { localStorage.setItem('progrid_offline_wallpaper', cached); } catch (_) {}
                     StorageEngine.save(state);
                 }
             });
@@ -1809,6 +1828,108 @@ function setupWallpaperGallery() {
             applyGlobalStyles();
             StorageEngine.save(state);
             if (navigator.vibrate) navigator.vibrate(25);
+            if (window.showToast) window.showToast('Background reset to default');
+        });
+    }
+}
+
+function setupGradientStudio() {
+    const modal = document.getElementById('custom-gradient-modal');
+    const openBtn = document.getElementById('custom-bg-btn');
+    const closeBtn = document.getElementById('gradient-modal-close-btn');
+    const cancelBtn = document.getElementById('gradient-cancel-btn');
+    const applyBtn = document.getElementById('gradient-apply-btn');
+    const p1 = document.getElementById('gradient-picker-1');
+    const p2 = document.getElementById('gradient-picker-2');
+    const hex1 = document.getElementById('gradient-hex-1');
+    const hex2 = document.getElementById('gradient-hex-2');
+    const swapBtn = document.getElementById('gradient-swap-btn');
+    const previewBox = document.getElementById('gradient-preview-box');
+    const previewLabel = document.getElementById('gradient-preview-label');
+    const dirButtons = document.querySelectorAll('.gradient-dir-btn');
+    const duoButtons = document.querySelectorAll('.gradient-duo-btn');
+
+    if (!modal || !openBtn) return;
+
+    let currentDir = '135deg';
+
+    function getGradientString() {
+        const c1 = p1 ? p1.value : '#1e3a8a';
+        const c2 = p2 ? p2.value : '#0f172a';
+        if (currentDir === 'radial') {
+            return `radial-gradient(circle at 50% 40%, ${c1} 0%, ${c2} 100%)`;
+        }
+        return `linear-gradient(${currentDir}, ${c1} 0%, ${c2} 100%)`;
+    }
+
+    function updatePreview() {
+        const grad = getGradientString();
+        if (previewBox) previewBox.style.background = grad;
+        if (hex1 && p1) hex1.textContent = p1.value.toUpperCase();
+        if (hex2 && p2) hex2.textContent = p2.value.toUpperCase();
+        if (previewLabel) previewLabel.textContent = currentDir === 'radial' ? 'Radial Center' : `${currentDir} Linear`;
+    }
+
+    openBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        modal.style.display = 'flex';
+        updatePreview();
+    });
+
+    const closeModal = () => { modal.style.display = 'none'; };
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    if (p1) p1.addEventListener('input', updatePreview);
+    if (p2) p2.addEventListener('input', updatePreview);
+
+    if (swapBtn && p1 && p2) {
+        swapBtn.addEventListener('click', () => {
+            const temp = p1.value;
+            p1.value = p2.value;
+            p2.value = temp;
+            updatePreview();
+        });
+    }
+
+    dirButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            dirButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentDir = btn.getAttribute('data-dir');
+            updatePreview();
+        });
+    });
+
+    duoButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (p1) p1.value = btn.getAttribute('data-c1');
+            if (p2) p2.value = btn.getAttribute('data-c2');
+            updatePreview();
+        });
+    });
+
+    if (applyBtn) {
+        applyBtn.addEventListener('click', () => {
+            const grad = getGradientString();
+            state.presetBg = 'custom';
+            state.customBg = grad;
+            localStorage.removeItem('progrid_offline_wallpaper');
+
+            const galleryContainer = document.getElementById('wallpaper-gallery-container');
+            if (galleryContainer) {
+                galleryContainer.querySelectorAll('.wallpaper-thumb-card').forEach(c => c.classList.remove('active'));
+            }
+
+            applyGlobalStyles();
+            StorageEngine.save(state);
+            closeModal();
+            if (window.showToast) window.showToast('Custom dual gradient applied to workspace');
+            if (navigator.vibrate) navigator.vibrate(30);
         });
     }
 }
@@ -2157,7 +2278,7 @@ function setupSkinBackupModal() {
 
             const payload = {
                 version: "1.0",
-                progridVersion: "0.3.4",
+                progridVersion: "0.3.5",
                 exportedAt: new Date().toISOString(),
                 skinName: slotData.name || "Custom Skin",
                 widgets: slotData.widgets
@@ -3362,7 +3483,7 @@ function isNewerVersion(remote, current) {
     return false;
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.3.4') {
+function launchUpdateSplashScreen(targetVer = 'v0.3.5') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -3458,10 +3579,10 @@ function setupAboutModal() {
     if (aboutBtn) {
         aboutBtn.addEventListener('click', () => {
             const verBadge = document.getElementById('about-app-version');
-            if (verBadge) verBadge.textContent = 'v0.3.4';
+            if (verBadge) verBadge.textContent = 'v0.3.5';
             const subTitle = document.getElementById('update-status-sub');
-            if (subTitle && !subTitle.textContent.includes('v0.3.4')) {
-                subTitle.textContent = 'Running official v0.3.4 release';
+            if (subTitle && !subTitle.textContent.includes('v0.3.5')) {
+                subTitle.textContent = 'Running official v0.3.5 release';
             }
             aboutModal.style.display = 'flex';
         });
@@ -3484,7 +3605,7 @@ function setupAboutModal() {
 
             // Only launch splash screen if an actual new update was found and verified
             if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.3.4';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.3.5';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -3504,7 +3625,7 @@ function setupAboutModal() {
                 }
 
                 let remoteVersion = null;
-                const currentVersion = '0.3.4';
+                const currentVersion = '0.3.5';
 
                 // 1. Direct GitHub Releases API check
                 try {
@@ -3563,7 +3684,7 @@ function setupAboutModal() {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Running standalone v0.3.4 release.';
+                if (updateSub) updateSub.textContent = 'Running standalone v0.3.5 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
                 checkUpdateBtn.setAttribute('data-action', 'check');
                 checkUpdateBtn.removeAttribute('data-target-ver');

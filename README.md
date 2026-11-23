@@ -1,9 +1,9 @@
 <div align="center">
   <h1>🌟 ProGrid Workspace</h1>
-  <p><b>Version 0.3.4 | Developed by MR Prog</b></p>
+  <p><b>Version 0.3.5 | Developed by MR Prog</b></p>
   <p>A high-performance, modular, and fully customizable dashboard & workspace for web, mobile, and browser extensions.</p>
 
-  <img src="https://img.shields.io/badge/Version-0.3.4-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.3.5-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Extension%20%7C%20PWA-success.svg" alt="Platform">
   <img src="https://img.shields.io/badge/Engine-Fluid%20Matrix%201.6%20LTS-blueviolet.svg" alt="Engine">
   <img src="https://img.shields.io/badge/Offline-100%25%20First-purple.svg" alt="Offline First">
