@@ -325,7 +325,7 @@ export default class FinanceWidget extends BaseWidget {
         this.saveCachedAssets();
     }
 
-    formatPrice(val, asset) {
+    formatPrice(val, asset, isCompact = false) {
         if (val === undefined || val === null || isNaN(val)) return '---';
         const isIRT = (this.config.baseCurrency === 'IRT');
         const usdToTmn = this.getUsdToTomanRate();
@@ -337,6 +337,17 @@ export default class FinanceWidget extends BaseWidget {
                 tomanVal = val;
             } else {
                 tomanVal = val * usdToTmn;
+            }
+
+            if (isCompact) {
+                if (tomanVal >= 1e9) {
+                    return `${(tomanVal / 1e9).toFixed(2)}B`;
+                } else if (tomanVal >= 1e6) {
+                    return `${(tomanVal / 1e6).toFixed(1)}M`;
+                } else if (tomanVal >= 1e3) {
+                    return `${(tomanVal / 1e3).toFixed(1)}k`;
+                }
+                return `${Math.round(tomanVal)}`;
             }
 
             if (tomanVal >= 1e9) {
@@ -352,6 +363,19 @@ export default class FinanceWidget extends BaseWidget {
         // Standard USD pricing (baseCurrency === 'USD')
         if (asset.id === 'USDIRR') {
             return '$1.00';
+        }
+
+        if (isCompact) {
+            if (val >= 1e6) {
+                return `$${(val / 1e6).toFixed(2)}M`;
+            }
+            if (val >= 1000) {
+                return `$${(val / 1000).toFixed(1)}k`;
+            }
+            if (val >= 1) {
+                return `$${val.toFixed(2)}`;
+            }
+            return `$${val.toFixed(3)}`;
         }
 
         if (val >= 1000) {
@@ -430,30 +454,33 @@ export default class FinanceWidget extends BaseWidget {
 
                 /* Compact Horizontal 1-Row Layout */
                 .fin-compact-row {
-                    display: flex; align-items: stretch; gap: 5px; width: 100%;
-                    flex: 1; min-height: 0; margin-top: 3px;
+                    display: flex; align-items: stretch; gap: 4px; width: 100%;
+                    flex: 1; min-height: 0; margin-top: 2px;
                 }
                 .fin-compact-card {
                     flex: 1; min-width: 0; background: rgba(0, 0, 0, 0.18);
                     border: 1px solid var(--panel-border); border-radius: 8px;
-                    padding: 3px 6px; display: flex; flex-direction: column;
-                    justify-content: center; gap: 2px; overflow: hidden;
+                    padding: 2.5px 4.5px; display: flex; flex-direction: column;
+                    justify-content: center; gap: 1px; overflow: hidden;
+                    box-sizing: border-box;
                 }
                 .fin-compact-head {
                     display: flex; align-items: center; justify-content: space-between;
-                    gap: 3px; min-width: 0;
+                    gap: 2px; min-width: 0; width: 100%;
                 }
                 .fin-compact-sym {
-                    font-size: 10px; font-weight: 700; color: var(--text-primary);
+                    font-size: 9px; font-weight: 700; color: var(--text-primary);
                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
                 }
                 .fin-mini-chip {
-                    font-size: 8px !important; padding: 0.5px 3px !important; line-height: 1.2;
+                    font-size: 7.5px !important; padding: 0.5px 2px !important; line-height: 1.1;
+                    letter-spacing: -0.2px; border-radius: 4px;
                 }
                 .fin-compact-price {
-                    font-size: 11px; font-weight: 800; color: var(--text-primary);
-                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                    font-size: 10.5px; font-weight: 800; color: var(--text-primary);
+                    white-space: nowrap; overflow: hidden; text-overflow: clip;
                     font-variant-numeric: tabular-nums; margin-top: 1px;
+                    letter-spacing: -0.3px;
                 }
                 .fin-compact-single {
                     flex: 1; display: flex; align-items: center; justify-content: space-between;
@@ -625,13 +652,13 @@ export default class FinanceWidget extends BaseWidget {
                 trackedAssets.forEach(asset => {
                     const isUp = asset.change >= 0;
                     cardsHtml += `
-                        <div class="fin-compact-card">
+                        <div class="fin-compact-card" title="${asset.name || asset.symbol}: ${this.formatPrice(asset.price, asset, false)}">
                             <div class="fin-compact-head">
                                 <span class="fin-asset-icon">${asset.icon}</span>
                                 <span class="fin-compact-sym">${asset.symbol}</span>
                                 <span class="fin-change-chip ${isUp ? 'up' : 'down'} fin-mini-chip">${isUp ? '+' : ''}${asset.change.toFixed(1)}%</span>
                             </div>
-                            <div class="fin-compact-price">${this.formatPrice(asset.price, asset)}</div>
+                            <div class="fin-compact-price">${this.formatPrice(asset.price, asset, true)}</div>
                         </div>
                     `;
                 });
