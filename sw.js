@@ -1,10 +1,12 @@
-const CACHE_NAME = 'prospace-cache-v0.6.0';
+const CACHE_NAME = 'prospace-cache-v0.6.2';
 const urlsToCache = [
   './',
   './index.html',
   'index.html',
   './css/style.css',
+  './css/style.css?v=0.4.1',
   './js/app.js',
+  './js/app.js?v=0.4.1',
   './js/grid.js',
   './js/storage.js',
   './js/hub.js',
@@ -95,22 +97,25 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2. Local Assets (JS, CSS, JSON, Images): Stale-While-Revalidate with search query tolerance
+  // 2. Local Assets (JS, CSS, JSON, Images): Network-First when online, Cache fallback offline
   event.respondWith(
     (async () => {
-      const cachedResponse = await caches.match(event.request, { ignoreSearch: true });
-
-      const fetchPromise = fetch(event.request)
-        .then(async networkResponse => {
-          if (networkResponse && networkResponse.ok) {
-            const cache = await caches.open(CACHE_NAME);
-            cache.put(event.request, networkResponse.clone());
-          }
+      try {
+        const networkResponse = await fetch(event.request);
+        if (networkResponse && networkResponse.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(event.request, networkResponse.clone());
           return networkResponse;
-        })
-        .catch(() => cachedResponse || new Response('', { status: 404, statusText: 'Not Found' }));
+        }
+      } catch (err) {
+        // Offline or network error: use cache
+      }
 
-      return cachedResponse || fetchPromise;
+      const cachedResponse = await caches.match(event.request)
+        || await caches.match(event.request, { ignoreSearch: true });
+
+      if (cachedResponse) return cachedResponse;
+      return new Response('', { status: 404, statusText: 'Not Found' });
     })()
   );
 });

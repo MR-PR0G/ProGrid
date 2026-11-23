@@ -94,7 +94,7 @@ async function init() {
     grid.resolveAllFinalOverlaps(state.widgets);
     renderGrid();
     setupGlobalEvents();
-    setupBackgroundActivationSensors();
+    setupGlobalLongPressSensor();
     setupWidgetDrawer();
     setupWallpaperGallery();
     setupAppearanceSubtabs();
@@ -425,10 +425,6 @@ function attachInteractionEngine(el, w, instance) {
         e.preventDefault();
         if (state.editMode) {
             openModal(w);
-        } else {
-            if (navigator.vibrate) navigator.vibrate(50);
-            window.toggleEditMode(true);
-            showWidgetQuickMenu(w, el, { x: e.clientX, y: e.clientY });
         }
     });
 
@@ -726,45 +722,8 @@ function attachInteractionEngine(el, w, instance) {
         isResizing = false;
         pointerDownTime = Date.now();
 
-        if (widgetLongPressTimer) {
-            clearTimeout(widgetLongPressTimer);
-            widgetLongPressTimer = null;
-        }
-
         if (!state.editMode) {
-            const onNormalPointerMove = (moveEv) => {
-                const dx = moveEv.clientX - initialPointerX;
-                const dy = moveEv.clientY - initialPointerY;
-                if (Math.hypot(dx, dy) > 22) {
-                    hasMovedPastThreshold = true;
-                    if (widgetLongPressTimer) {
-                        clearTimeout(widgetLongPressTimer);
-                        widgetLongPressTimer = null;
-                    }
-                }
-            };
-
-            const onNormalPointerUp = () => {
-                window.removeEventListener('pointermove', onNormalPointerMove);
-                window.removeEventListener('pointerup', onNormalPointerUp);
-                window.removeEventListener('pointercancel', onNormalPointerUp);
-                if (widgetLongPressTimer) {
-                    clearTimeout(widgetLongPressTimer);
-                    widgetLongPressTimer = null;
-                }
-            };
-
-            window.addEventListener('pointermove', onNormalPointerMove, { passive: true });
-            window.addEventListener('pointerup', onNormalPointerUp);
-            window.addEventListener('pointercancel', onNormalPointerUp);
-
-            widgetLongPressTimer = setTimeout(() => {
-                if (!hasMovedPastThreshold && !state.editMode) {
-                    if (navigator.vibrate) navigator.vibrate(60);
-                    window.toggleEditMode(true);
-                    showWidgetQuickMenu(w, el, { x: initialPointerX, y: initialPointerY });
-                }
-            }, 440);
+            // In normal mode, global sensor handles long-press hold anywhere
             return;
         }
 
@@ -796,124 +755,97 @@ function attachInteractionEngine(el, w, instance) {
     });
 }
 
-function setupBackgroundActivationSensors() {
-    let startX = 0;
-    let startY = 0;
-    let isTrackingBg = false;
-    let lastTapTime = 0;
+let suppressNextClick = false;
+let globalLongPressTimer = null;
+let longPressStartX = 0;
+let longPressStartY = 0;
+let isTrackingLongPress = false;
 
-    const clearBgTimer = () => {
-        if (bgLongPressTimeout) {
-            clearTimeout(bgLongPressTimeout);
-            bgLongPressTimeout = null;
+function isInteractiveModalOrInput(target) {
+    if (!target || !target.closest) return false;
+    return !!(
+        target.closest('#edit-panel') ||
+        target.closest('#modal-overlay') ||
+        target.closest('#about-modal') ||
+        target.closest('#widget-info-modal') ||
+        target.closest('#custom-gradient-modal') ||
+        target.closest('#skin-backup-modal') ||
+        target.closest('#folder-overlay-view') ||
+        target.closest('#pwa-install-modal') ||
+        target.closest('#done-btn') ||
+        target.closest('input, textarea, select')
+    );
+}
+
+function cancelGlobalLongPress() {
+    if (globalLongPressTimer) {
+        clearTimeout(globalLongPressTimer);
+        globalLongPressTimer = null;
+    }
+    isTrackingLongPress = false;
+}
+
+function triggerEditModeFromHold() {
+    cancelGlobalLongPress();
+    if (state.editMode) return;
+
+    suppressNextClick = true;
+    setTimeout(() => {
+        suppressNextClick = false;
+    }, 450);
+
+    if (navigator.vibrate) {
+        try { navigator.vibrate([40, 30, 40]); } catch (e) {}
+    }
+    window.toggleEditMode(true);
+}
+
+function setupGlobalLongPressSensor() {
+    // 1. Suppress trailing click after long-press hold release
+    window.addEventListener('click', (e) => {
+        if (suppressNextClick) {
+            e.preventDefault();
+            e.stopPropagation();
+            suppressNextClick = false;
         }
-        isTrackingBg = false;
-    };
+    }, true);
 
-    const isInteractiveElement = (target) => {
-        if (!target || !target.closest) return false;
-        return !!(
-            target.closest('.widget-wrapper') ||
-            target.closest('#edit-panel') ||
-            target.closest('#modal-overlay') ||
-            target.closest('#about-modal') ||
-            target.closest('#widget-info-modal') ||
-            target.closest('#custom-gradient-modal') ||
-            target.closest('#skin-backup-modal') ||
-            target.closest('#folder-overlay-view') ||
-            target.closest('#widget-quick-menu') ||
-            target.closest('#pwa-install-modal') ||
-            target.closest('#first-visit-tip') ||
-            target.closest('#done-btn') ||
-            target.closest('#enter-edit-btn') ||
-            target.closest('button, input, textarea, select, a')
-        );
-    };
-
-    const onBgPressStart = (clientX, clientY, target) => {
-        if (state.editMode) return;
-        if (isInteractiveElement(target)) return;
-
-        // Double-tap on background detection (under 320ms)
-        const now = Date.now();
-        if (now - lastTapTime < 320) {
-            clearBgTimer();
-            if (navigator.vibrate) navigator.vibrate(50);
-            window.toggleEditMode(true);
-            lastTapTime = 0;
-            return;
-        }
-        lastTapTime = now;
-
-        startX = clientX;
-        startY = clientY;
-        isTrackingBg = true;
-
-        clearBgTimer();
-        bgLongPressTimeout = setTimeout(() => {
-            if (isTrackingBg && !state.editMode) {
-                if (navigator.vibrate) navigator.vibrate(60);
-                window.toggleEditMode(true);
-                clearBgTimer();
-            }
-        }, 440);
-    };
-
-    const onBgPressMove = (clientX, clientY) => {
-        if (!isTrackingBg || state.editMode) return;
-        const dist = Math.hypot(clientX - startX, clientY - startY);
-        if (dist > 22) {
-            clearBgTimer();
-        }
-    };
-
-    // Universal Pointer Events (Desktop mouse + mobile touch)
+    // 2. Universal long-press detection on background and widgets
     window.addEventListener('pointerdown', (e) => {
+        if (state.editMode) return;
         if (e.pointerType === 'mouse' && e.button !== 0) return;
-        onBgPressStart(e.clientX, e.clientY, e.target);
+        if (isInteractiveModalOrInput(e.target)) return;
+
+        longPressStartX = e.clientX;
+        longPressStartY = e.clientY;
+
+        cancelGlobalLongPress();
+        isTrackingLongPress = true;
+        globalLongPressTimer = setTimeout(() => {
+            if (isTrackingLongPress && !state.editMode) {
+                triggerEditModeFromHold();
+            }
+        }, 400);
     }, { passive: true });
 
     window.addEventListener('pointermove', (e) => {
-        onBgPressMove(e.clientX, e.clientY);
-    }, { passive: true });
-
-    window.addEventListener('pointerup', clearBgTimer, { passive: true });
-    window.addEventListener('pointercancel', clearBgTimer, { passive: true });
-
-    // Touch events fallback for mobile webviews
-    window.addEventListener('touchstart', (e) => {
-        if (e.touches && e.touches[0]) {
-            onBgPressStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
+        if (!isTrackingLongPress || state.editMode) return;
+        const dist = Math.hypot(e.clientX - longPressStartX, e.clientY - longPressStartY);
+        if (dist > 22) {
+            cancelGlobalLongPress();
         }
     }, { passive: true });
 
-    window.addEventListener('touchmove', (e) => {
-        if (e.touches && e.touches[0]) {
-            onBgPressMove(e.touches[0].clientX, e.touches[0].clientY);
-        }
-    }, { passive: true });
+    window.addEventListener('pointerup', cancelGlobalLongPress, { passive: true });
+    window.addEventListener('pointercancel', cancelGlobalLongPress, { passive: true });
 
-    window.addEventListener('touchend', clearBgTimer, { passive: true });
-    window.addEventListener('touchcancel', clearBgTimer, { passive: true });
-
-    // Context menu fallback on background (Android / iOS / desktop right click)
+    // 3. Fallback contextmenu event (Android long-press / desktop right-click)
     window.addEventListener('contextmenu', (e) => {
-        if (!state.editMode && !isInteractiveElement(e.target)) {
-            e.preventDefault();
-            if (navigator.vibrate) navigator.vibrate(60);
-            window.toggleEditMode(true);
-        }
-    });
-
-    // Enter Edit Mode button listener
-    const enterEditBtn = document.getElementById('enter-edit-btn');
-    if (enterEditBtn) {
-        enterEditBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (navigator.vibrate) navigator.vibrate(40);
-            window.toggleEditMode(true);
-        });
-    }
+        if (isInteractiveModalOrInput(e.target)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        triggerEditModeFromHold();
+    }, true);
 }
 
 function updateColorUI(target, color) {
@@ -2352,8 +2284,8 @@ function setupSkinBackupModal() {
 
             const payload = {
                 version: "1.0",
-                prospaceVersion: "0.4.0",
-                progridVersion: "0.4.0",
+                prospaceVersion: "0.4.1",
+                progridVersion: "0.4.1",
                 exportedAt: new Date().toISOString(),
                 skinName: slotData.name || "Custom Skin",
                 widgets: slotData.widgets
@@ -3558,7 +3490,7 @@ function isNewerVersion(remote, current) {
     return false;
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.4.0') {
+function launchUpdateSplashScreen(targetVer = 'v0.4.1') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -3654,10 +3586,10 @@ function setupAboutModal() {
     if (aboutBtn) {
         aboutBtn.addEventListener('click', () => {
             const verBadge = document.getElementById('about-app-version');
-            if (verBadge) verBadge.textContent = 'v0.4.0';
+            if (verBadge) verBadge.textContent = 'v0.4.1';
             const subTitle = document.getElementById('update-status-sub');
-            if (subTitle && !subTitle.textContent.includes('v0.4.0')) {
-                subTitle.textContent = 'Running official v0.4.0 release';
+            if (subTitle && !subTitle.textContent.includes('v0.4.1')) {
+                subTitle.textContent = 'Running official v0.4.1 release';
             }
             aboutModal.style.display = 'flex';
         });
@@ -3680,7 +3612,7 @@ function setupAboutModal() {
 
             // Only launch splash screen if an actual new update was found and verified
             if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.0';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.1';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -3700,7 +3632,7 @@ function setupAboutModal() {
                 }
 
                 let remoteVersion = null;
-                const currentVersion = '0.4.0';
+                const currentVersion = '0.4.1';
 
                 // 1. Direct GitHub Releases API check (checks ProSpace with fallback to ProGrid)
                 try {
@@ -3775,7 +3707,7 @@ function setupAboutModal() {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Running standalone v0.4.0 release.';
+                if (updateSub) updateSub.textContent = 'Running standalone v0.4.1 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
                 checkUpdateBtn.setAttribute('data-action', 'check');
                 checkUpdateBtn.removeAttribute('data-target-ver');
