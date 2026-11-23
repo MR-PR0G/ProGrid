@@ -1,7 +1,7 @@
 /**
  * ProGrid Matrix Engine v1.6 LTS
  * Viewport-adaptive dynamic grid system with fluid magnet physics,
- * continuous real-time collision cascade, zero-overlap guarantee, and non-blocking drag dynamics.
+ * locality-first collision resolution, zero-overlap guarantee, and lightweight drag dynamics.
  */
 
 export class GridEngine {
@@ -30,7 +30,6 @@ export class GridEngine {
             const calculatedCell = Math.floor((availableW - (3 * this.GAP)) / 4);
             this.CELL_SIZE = Math.max(72, Math.min(84, calculatedCell));
             const availableH = Math.max(300, height - (height < 700 ? 70 : 90));
-            // Minimum 6 rows or expanded based on viewport to prevent drag deadlocks
             this.minRows = Math.max(6, Math.floor((availableH + this.GAP) / (this.CELL_SIZE + this.GAP)));
             this.rows = this.minRows;
         } else {
@@ -113,10 +112,58 @@ export class GridEngine {
         return w <= this.cols;
     }
 
+    /**
+     * Locality-First Spatial Search:
+     * Finds the nearest collision-free slot ordered strictly by proximity to (preferredX, preferredY),
+     * heavily prioritizing staying in the same column and nearby rows.
+     * Prevents widgets from jumping to far-away corners or arbitrary top rows.
+     */
+    findNearestAvailableSlot(w, h, preferredX, preferredY, placedWidgets, excludeId = null) {
+        const safeW = Math.max(1, Math.min(w, this.cols));
+        const safeH = Math.max(1, h);
+        const prefX = Math.max(0, Math.min(preferredX, this.cols - safeW));
+        const prefY = Math.max(0, preferredY);
+
+        const candidates = [];
+        const maxScanRows = Math.max(this.rows + 6, prefY + safeH + 8);
+
+        for (let r = 0; r <= maxScanRows; r++) {
+            for (let c = 0; c <= this.cols - safeW; c++) {
+                const rect = { x: c, y: r, w: safeW, h: safeH };
+                const collides = placedWidgets.some(p => 
+                    p.id !== excludeId && !p.isHidden && this.checkOverlap(rect, p)
+                );
+                if (!collides) {
+                    const colDist = Math.abs(c - prefX);
+                    const rowDist = Math.abs(r - prefY);
+                    
+                    // Column jumping penalty (heavily keep in same column)
+                    // Space directly above (r = prefY - safeH, c = prefX) gets a small bonus
+                    const isDirectlyAbove = (c === prefX && r === prefY - safeH);
+                    const isDirectlyBelow = (c === prefX && r === prefY + safeH);
+                    
+                    let cost = (colDist * 4) + (rowDist * 1.5);
+                    if (isDirectlyAbove) cost -= 0.6;
+                    if (isDirectlyBelow) cost -= 0.3;
+
+                    candidates.push({ x: c, y: r, cost });
+                }
+            }
+        }
+
+        if (candidates.length === 0) {
+            const maxY = this.calculateMaxY(placedWidgets);
+            return { x: prefX, y: maxY };
+        }
+
+        candidates.sort((a, b) => a.cost - b.cost);
+        return { x: candidates[0].x, y: candidates[0].y };
+    }
+
     findFirstAvailablePos(w, h, widgets, excludeId = null) {
         if (w > this.cols) return null;
         
-        // Search existing row capacity first
+        // Search existing row capacity
         for (let r = 0; r <= this.rows - h; r++) {
             for (let c = 0; c <= this.cols - w; c++) {
                 const overlap = widgets.some(widget => 
@@ -127,15 +174,14 @@ export class GridEngine {
             }
         }
 
-        // Seamless dynamic expansion: place on next free row below without artificial errors
+        // Seamless dynamic expansion: place on next free row below
         const maxY = this.calculateMaxY(widgets.filter(widget => widget.id !== excludeId));
         return { x: 0, y: maxY };
     }
 
     /**
      * Continuous Real-Time Collision Cascade Solver (v1.6)
-     * Real-time calculation during drag/resize with physics-inspired downward displacement,
-     * mutual swapping, and deterministic zero-overlap guarantee.
+     * High-speed, locality-preserving collision resolver.
      */
     computeLiveDragLayout(activeId, targetX, targetY, targetW, targetH, snapshotWidgets) {
         if (!Array.isArray(snapshotWidgets) || snapshotWidgets.length === 0) {
@@ -163,8 +209,6 @@ export class GridEngine {
 
         const origX = activeWidget.x;
         const origY = activeWidget.y;
-        const origW = activeWidget.w;
-        const origH = activeWidget.h;
 
         // Position active widget at the desired drop target
         activeWidget.x = safeX;
@@ -181,18 +225,21 @@ export class GridEngine {
             return { widgets: layout, totalRows: maxRows };
         }
 
-        // Fast mutual swap if exactly one item overlaps and fits cleanly into activeWidget's vacated slot
+        // Fast mutual swap if exactly 1 item overlaps and fits cleanly into activeWidget's vacated slot
+        // and is a direct immediate neighbor (prevent far-away teleportation)
         if (collisions.length === 1) {
             const victim = collisions[0];
             const swapRect = { x: origX, y: origY, w: victim.w, h: victim.h };
-            const canSwapIntoOrig = (
+            const canSwap = (
                 swapRect.x >= 0 &&
                 swapRect.x + swapRect.w <= this.cols &&
                 !others.some(other => other.id !== victim.id && this.checkOverlap(swapRect, other)) &&
                 !this.checkOverlap(swapRect, activeWidget)
             );
 
-            if (canSwapIntoOrig) {
+            const isDirectNeighbor = (Math.abs(victim.x - origX) <= 2 && Math.abs(victim.y - origY) <= 2);
+
+            if (canSwap && isDirectNeighbor) {
                 victim.x = origX;
                 victim.y = origY;
                 const maxRows = Math.max(this.minRows || 4, this.calculateMaxY(layout));
@@ -200,7 +247,8 @@ export class GridEngine {
             }
         }
 
-        // Multi-collision or swap not clean: run cascade downward displacement
+        // Multi-collision or downward push:
+        // Placed set begins with the active widget
         const placed = [activeWidget];
         const unplaced = new Set(others);
         const queue = [...collisions];
@@ -219,55 +267,10 @@ export class GridEngine {
             inQueue.delete(victim.id);
             unplaced.delete(victim);
 
-            // Candidate positions ranked by spatial naturalness:
-            const candidatePositions = [];
-
-            // 1. Directly below the activeWidget in victim's current column
-            candidatePositions.push({ x: victim.x, y: activeWidget.y + activeWidget.h });
-
-            // 2. To the right of activeWidget
-            if (activeWidget.x + activeWidget.w + victim.w <= this.cols) {
-                candidatePositions.push({ x: activeWidget.x + activeWidget.w, y: victim.y });
-            }
-
-            // 3. To the left of activeWidget
-            if (activeWidget.x - victim.w >= 0) {
-                candidatePositions.push({ x: activeWidget.x - victim.w, y: victim.y });
-            }
-
-            // 4. In activeWidget's vacated original slot
-            if (origX + victim.w <= this.cols) {
-                candidatePositions.push({ x: origX, y: origY });
-            }
-
-            // 5. General downward slots
-            const searchLimit = Math.max(this.rows, activeWidget.y + activeWidget.h + 8);
-            for (let r = 0; r <= searchLimit; r++) {
-                for (let c = 0; c <= this.cols - victim.w; c++) {
-                    candidatePositions.push({ x: c, y: r });
-                }
-            }
-
-            // Find first candidate that has NO collision with any already placed widgets
-            let bestPos = null;
-            for (const pos of candidatePositions) {
-                if (pos.x < 0 || pos.x + victim.w > this.cols || pos.y < 0) continue;
-                const rect = { x: pos.x, y: pos.y, w: victim.w, h: victim.h };
-                const collidesWithPlaced = placed.some(p => this.checkOverlap(rect, p));
-                if (!collidesWithPlaced) {
-                    bestPos = pos;
-                    break;
-                }
-            }
-
-            if (!bestPos) {
-                // Failsafe: append at the very bottom
-                const currentMaxY = placed.reduce((max, p) => Math.max(max, p.y + p.h), 0);
-                bestPos = { x: 0, y: currentMaxY };
-            }
-
-            victim.x = bestPos.x;
-            victim.y = bestPos.y;
+            // Find nearest slot using the proximity cost function
+            const bestSlot = this.findNearestAvailableSlot(victim.w, victim.h, victim.x, victim.y, placed, victim.id);
+            victim.x = bestSlot.x;
+            victim.y = bestSlot.y;
             placed.push(victim);
 
             // Check if victim's new position collides with any remaining unplaced widgets
@@ -319,31 +322,23 @@ export class GridEngine {
             w.y = Math.max(0, w.y || 0);
         });
 
+        // Stable top-to-bottom, left-to-right sort
+        visible.sort((a, b) => {
+            if (a.y !== b.y) return a.y - b.y;
+            return a.x - b.x;
+        });
+
         const placed = [];
         for (const item of visible) {
             const hasConflict = placed.some(p => this.checkOverlap(item, p));
             if (!hasConflict) {
                 placed.push(item);
             } else {
-                let found = false;
-                const maxSearchRows = Math.max(this.rows, this.calculateMaxY(placed) + item.h + 6);
-                for (let r = 0; r <= maxSearchRows && !found; r++) {
-                    for (let c = 0; c <= this.cols - item.w; c++) {
-                        const candidate = { x: c, y: r, w: item.w, h: item.h };
-                        if (!placed.some(p => this.checkOverlap(candidate, p))) {
-                            item.x = c;
-                            item.y = r;
-                            placed.push(item);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if (!found) {
-                    item.y = this.calculateMaxY(placed);
-                    item.x = 0;
-                    placed.push(item);
-                }
+                // Find nearest slot using proximity cost function - NEVER jump to top-right
+                const bestSlot = this.findNearestAvailableSlot(item.w, item.h, item.x, item.y, placed, item.id);
+                item.x = bestSlot.x;
+                item.y = bestSlot.y;
+                placed.push(item);
             }
         }
 

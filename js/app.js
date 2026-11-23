@@ -390,6 +390,10 @@ function attachInteractionEngine(el, w, instance) {
     let cachedScale = 1;
     let cachedContainerBounds = null;
     let lastComputedDragLayout = null;
+    let lastTargetCol = -1;
+    let lastTargetRow = -1;
+    let lastGridW = -1;
+    let lastGridH = -1;
 
     const meta = window.WidgetGlobals.getMetadata(w.type) || { minW: 1, minH: 1, maxW: 4, maxH: 4 };
     if (w.type === 'search') {
@@ -497,6 +501,13 @@ function attachInteractionEngine(el, w, instance) {
                     }
                 });
 
+                // Performance & Stability guard: Only recalculate layout & restyle siblings when the snap cell changes!
+                if (!potentialMergeTargetId && targetCol === lastTargetCol && targetRow === lastTargetRow) {
+                    return;
+                }
+                lastTargetCol = targetCol;
+                lastTargetRow = targetRow;
+
                 if (!potentialMergeTargetId && initialWidgetsState) {
                     const layoutRes = grid.computeLiveDragLayout(w.id, targetCol, targetRow, effW, effH, initialWidgetsState);
                     updateGhost({ id: w.id, x: targetCol, y: targetRow, w: effW, h: effH });
@@ -511,7 +522,7 @@ function attachInteractionEngine(el, w, instance) {
                         if (lw.id !== w.id && !lw.isHidden) {
                             const otherDOM = document.getElementById(lw.id);
                             if (otherDOM && !otherDOM.classList.contains('dragging') && !otherDOM.classList.contains('resizing')) {
-                                otherDOM.style.transition = 'left 0.2s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)';
+                                otherDOM.style.transition = 'left 0.25s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)';
                                 otherDOM.style.left = `${lw.x * step}px`;
                                 otherDOM.style.top = `${lw.y * step}px`;
                             }
@@ -537,6 +548,12 @@ function attachInteractionEngine(el, w, instance) {
 
                 if (w.x + gridW > grid.columns) gridW = grid.columns - w.x;
 
+                if (gridW === lastGridW && gridH === lastGridH) {
+                    return;
+                }
+                lastGridW = gridW;
+                lastGridH = gridH;
+
                 updateGhost({ id: w.id, x: w.x, y: w.y, w: gridW, h: gridH });
 
                 if (initialWidgetsState) {
@@ -548,7 +565,7 @@ function attachInteractionEngine(el, w, instance) {
                         if (lw.id !== w.id && !lw.isHidden) {
                             const otherDOM = document.getElementById(lw.id);
                             if (otherDOM && !otherDOM.classList.contains('dragging') && !otherDOM.classList.contains('resizing')) {
-                                otherDOM.style.transition = 'left 0.2s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)';
+                                otherDOM.style.transition = 'left 0.25s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)';
                                 otherDOM.style.left = `${lw.x * step}px`;
                                 otherDOM.style.top = `${lw.y * step}px`;
                             }
@@ -645,6 +662,8 @@ function attachInteractionEngine(el, w, instance) {
                 grid.omniMagnetPush(w, state.widgets);
             }
             lastComputedDragLayout = null;
+            lastTargetCol = -1;
+            lastTargetRow = -1;
         } else if (isResizing) {
             isResizing = false;
             if (lastComputedDragLayout && lastComputedDragLayout.widgets) {
@@ -670,6 +689,8 @@ function attachInteractionEngine(el, w, instance) {
                 try { instance.onResize(w.w, w.h, el); } catch (err) { console.error(err); }
             }
             lastComputedDragLayout = null;
+            lastGridW = -1;
+            lastGridH = -1;
         }
 
         w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: grid.columns };
@@ -732,6 +753,10 @@ function attachInteractionEngine(el, w, instance) {
         cachedContainerBounds = container.getBoundingClientRect();
         initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
         lastComputedDragLayout = null;
+        lastTargetCol = -1;
+        lastTargetRow = -1;
+        lastGridW = -1;
+        lastGridH = -1;
 
         if (e.target.classList.contains('resize-handle')) {
             startW = el.offsetWidth;
