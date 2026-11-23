@@ -266,6 +266,7 @@ function createWidgetDOM(w) {
     const wrapper = document.createElement('div');
     wrapper.className = 'widget-wrapper';
     wrapper.id = w.id;
+    wrapper.setAttribute('data-id', w.id);
     wrapper.setAttribute('data-h', coords.h);
     wrapper.setAttribute('data-w', coords.w);
     wrapper.classList.toggle('is-h1', coords.h === 1);
@@ -423,8 +424,12 @@ function attachInteractionEngine(el, w, instance) {
     // Context menu / long-press handler
     el.addEventListener('contextmenu', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         if (state.editMode) {
             openModal(w);
+        } else {
+            if (navigator.vibrate) try { navigator.vibrate(50); } catch(e) {}
+            showWidgetQuickMenu(w, el, { x: e.clientX, y: e.clientY });
         }
     });
 
@@ -759,7 +764,9 @@ let suppressNextClick = false;
 let globalLongPressTimer = null;
 let longPressStartX = 0;
 let longPressStartY = 0;
+let longPressTarget = null;
 let isTrackingLongPress = false;
+let lastBackgroundTapTime = 0;
 
 function isInteractiveModalOrInput(target) {
     if (!target || !target.closest) return false;
@@ -771,6 +778,7 @@ function isInteractiveModalOrInput(target) {
         target.closest('#custom-gradient-modal') ||
         target.closest('#skin-backup-modal') ||
         target.closest('#folder-overlay-view') ||
+        target.closest('#widget-quick-menu') ||
         target.closest('#pwa-install-modal') ||
         target.closest('#done-btn') ||
         target.closest('input, textarea, select')
@@ -783,17 +791,34 @@ function cancelGlobalLongPress() {
         globalLongPressTimer = null;
     }
     isTrackingLongPress = false;
+    longPressTarget = null;
 }
 
-function triggerEditModeFromHold() {
+function handleLongPressTrigger(clientX, clientY, target) {
     cancelGlobalLongPress();
     if (state.editMode) return;
+    if (isInteractiveModalOrInput(target)) return;
 
     suppressNextClick = true;
     setTimeout(() => {
         suppressNextClick = false;
     }, 450);
 
+    const widgetWrapper = target ? target.closest('.widget-wrapper') : null;
+    if (widgetWrapper) {
+        // Holding down on a widget opens the Quick Actions Menu (Move & Resize, Edit, Info, Delete)
+        const widgetId = widgetWrapper.id || widgetWrapper.getAttribute('data-id');
+        const w = state.widgets.find(item => item.id === widgetId);
+        if (w) {
+            if (navigator.vibrate) {
+                try { navigator.vibrate(50); } catch (e) {}
+            }
+            showWidgetQuickMenu(w, widgetWrapper, { x: clientX, y: clientY });
+            return;
+        }
+    }
+
+    // Holding down on background opens Edit Mode directly
     if (navigator.vibrate) {
         try { navigator.vibrate([40, 30, 40]); } catch (e) {}
     }
@@ -801,50 +826,91 @@ function triggerEditModeFromHold() {
 }
 
 function setupGlobalLongPressSensor() {
-    // 1. Suppress trailing click after long-press hold release
+    // 1. Suppress trailing click on the held widget after long-press hold release
     window.addEventListener('click', (e) => {
         if (suppressNextClick) {
+            if (e.target && e.target.closest('#widget-quick-menu, #edit-panel, .modal-card')) {
+                suppressNextClick = false;
+                return;
+            }
             e.preventDefault();
             e.stopPropagation();
             suppressNextClick = false;
         }
     }, true);
 
-    // 2. Universal long-press detection on background and widgets
-    window.addEventListener('pointerdown', (e) => {
+    // 2. Primary touch/pointer sensor
+    const onStart = (clientX, clientY, target) => {
         if (state.editMode) return;
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
-        if (isInteractiveModalOrInput(e.target)) return;
+        if (isInteractiveModalOrInput(target)) return;
 
-        longPressStartX = e.clientX;
-        longPressStartY = e.clientY;
+        // Double-tap on background shortcut (< 320ms)
+        const isBg = !target.closest('.widget-wrapper');
+        const now = Date.now();
+        if (isBg && now - lastBackgroundTapTime < 320) {
+            cancelGlobalLongPress();
+            if (navigator.vibrate) try { navigator.vibrate(50); } catch (e) {}
+            window.toggleEditMode(true);
+            lastBackgroundTapTime = 0;
+            return;
+        }
+        if (isBg) lastBackgroundTapTime = now;
 
-        cancelGlobalLongPress();
+        longPressStartX = clientX;
+        longPressStartY = clientY;
+        longPressTarget = target;
         isTrackingLongPress = true;
+
+        if (globalLongPressTimer) clearTimeout(globalLongPressTimer);
         globalLongPressTimer = setTimeout(() => {
             if (isTrackingLongPress && !state.editMode) {
-                triggerEditModeFromHold();
+                handleLongPressTrigger(longPressStartX, longPressStartY, longPressTarget);
             }
-        }, 400);
+        }, 380);
+    };
+
+    const onMove = (clientX, clientY) => {
+        if (!isTrackingLongPress || state.editMode) return;
+        const dist = Math.hypot(clientX - longPressStartX, clientY - longPressStartY);
+        if (dist > 25) {
+            cancelGlobalLongPress();
+        }
+    };
+
+    // Pointer events (Desktop mouse + touch devices)
+    window.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        onStart(e.clientX, e.clientY, e.target);
     }, { passive: true });
 
     window.addEventListener('pointermove', (e) => {
-        if (!isTrackingLongPress || state.editMode) return;
-        const dist = Math.hypot(e.clientX - longPressStartX, e.clientY - longPressStartY);
-        if (dist > 22) {
-            cancelGlobalLongPress();
-        }
+        onMove(e.clientX, e.clientY);
     }, { passive: true });
 
     window.addEventListener('pointerup', cancelGlobalLongPress, { passive: true });
     window.addEventListener('pointercancel', cancelGlobalLongPress, { passive: true });
 
-    // 3. Fallback contextmenu event (Android long-press / desktop right-click)
+    // Touch events for mobile browsers (where pointercancel might fire on touch-scroll detection)
+    window.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches[0]) {
+            onStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches[0]) {
+            onMove(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchend', cancelGlobalLongPress, { passive: true });
+
+    // Native contextmenu event (Android long-press / desktop right click)
     window.addEventListener('contextmenu', (e) => {
         if (isInteractiveModalOrInput(e.target)) return;
         e.preventDefault();
         e.stopPropagation();
-        triggerEditModeFromHold();
+        handleLongPressTrigger(e.clientX, e.clientY, e.target);
     }, true);
 }
 
@@ -2284,8 +2350,8 @@ function setupSkinBackupModal() {
 
             const payload = {
                 version: "1.0",
-                prospaceVersion: "0.4.1",
-                progridVersion: "0.4.1",
+                prospaceVersion: "0.4.2",
+                progridVersion: "0.4.2",
                 exportedAt: new Date().toISOString(),
                 skinName: slotData.name || "Custom Skin",
                 widgets: slotData.widgets
@@ -3490,7 +3556,7 @@ function isNewerVersion(remote, current) {
     return false;
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.4.1') {
+function launchUpdateSplashScreen(targetVer = 'v0.4.2') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -3586,10 +3652,10 @@ function setupAboutModal() {
     if (aboutBtn) {
         aboutBtn.addEventListener('click', () => {
             const verBadge = document.getElementById('about-app-version');
-            if (verBadge) verBadge.textContent = 'v0.4.1';
+            if (verBadge) verBadge.textContent = 'v0.4.2';
             const subTitle = document.getElementById('update-status-sub');
-            if (subTitle && !subTitle.textContent.includes('v0.4.1')) {
-                subTitle.textContent = 'Running official v0.4.1 release';
+            if (subTitle && !subTitle.textContent.includes('v0.4.2')) {
+                subTitle.textContent = 'Running official v0.4.2 release';
             }
             aboutModal.style.display = 'flex';
         });
@@ -3612,7 +3678,7 @@ function setupAboutModal() {
 
             // Only launch splash screen if an actual new update was found and verified
             if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.1';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.2';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -3632,7 +3698,7 @@ function setupAboutModal() {
                 }
 
                 let remoteVersion = null;
-                const currentVersion = '0.4.1';
+                const currentVersion = '0.4.2';
 
                 // 1. Direct GitHub Releases API check (checks ProSpace with fallback to ProGrid)
                 try {
@@ -3707,7 +3773,7 @@ function setupAboutModal() {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Running standalone v0.4.1 release.';
+                if (updateSub) updateSub.textContent = 'Running standalone v0.4.2 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
                 checkUpdateBtn.setAttribute('data-action', 'check');
                 checkUpdateBtn.removeAttribute('data-target-ver');

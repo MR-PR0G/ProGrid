@@ -16,9 +16,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
-    <link rel="preload" href="css/style.css?v=0.4.1" as="style">
-    <link rel="modulepreload" href="js/app.js?v=0.4.1">
-    <link rel="stylesheet" href="css/style.css?v=0.4.1">
+    <link rel="preload" href="css/style.css?v=0.4.2" as="style">
+    <link rel="modulepreload" href="js/app.js?v=0.4.2">
+    <link rel="stylesheet" href="css/style.css?v=0.4.2">
     <link rel="manifest" href="manifest.json">
     <style>
         html, body {
@@ -48,7 +48,7 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js?v=0.4.1').then(reg => {
+                navigator.serviceWorker.register('sw.js?v=0.4.2').then(reg => {
                     reg.update();
                     if (reg.waiting) {
                         reg.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -731,7 +731,7 @@
                 <div class="about-title-block">
                     <h3 class="about-name">ProSpace Workspace</h3>
                     <div class="about-badge-row">
-                        <span class="about-version-badge" id="about-app-version">v0.4.1</span>
+                        <span class="about-version-badge" id="about-app-version">v0.4.2</span>
                         <span class="about-license-badge">GNU GPLv3</span>
                     </div>
                 </div>
@@ -765,7 +765,7 @@
                     <div class="update-indicator-dot" id="update-indicator-dot"></div>
                     <div class="update-info-text">
                         <span class="update-title" id="update-status-title">System Up to Date</span>
-                        <span class="update-sub" id="update-status-sub">Running official v0.4.1 release</span>
+                        <span class="update-sub" id="update-status-sub">Running official v0.4.2 release</span>
                     </div>
                 </div>
                 <button id="about-check-update-btn" class="about-update-action-btn">
@@ -968,7 +968,7 @@
             <div class="update-splash-bar-track">
                 <div id="update-splash-bar-progress" class="update-splash-bar-fill"></div>
             </div>
-            <span id="update-splash-ver" class="update-splash-version">Upgrading to v0.4.1</span>
+            <span id="update-splash-ver" class="update-splash-version">Upgrading to v0.4.2</span>
         </div>
     </div>
 
@@ -977,7 +977,7 @@
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
-        <span id="update-toast-text">ProSpace updated to v0.4.1 successfully</span>
+        <span id="update-toast-text">ProSpace updated to v0.4.2 successfully</span>
     </div>
 
     <script type="text/javascript">
@@ -1001,6 +1001,6 @@
             }
         };
     </script>
-    <script type="module" src="js/app.js?v=0.4.1"></script>
+    <script type="module" src="js/app.js?v=0.4.2"></script>
 </body>
 </html>

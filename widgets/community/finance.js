@@ -409,6 +409,7 @@ export default class FinanceWidget extends BaseWidget {
         const showChart = this.config.showChart !== false;
         const count = trackedAssets.length;
         const isIRT = this.config.baseCurrency === 'IRT';
+        const usdToTmn = this.getUsdToTomanRate();
         const coordsH = (this.config.h !== undefined) ? this.config.h : (this.config.defaultH || 1);
         const isCompact = (coordsH === 1);
 
