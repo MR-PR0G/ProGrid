@@ -743,6 +743,63 @@
         </div>
     </div>
 
+    <!-- Skin Backup & Restore Modal -->
+    <div id="skin-backup-modal" style="display: none; position: fixed; inset: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.68); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); z-index: 10080; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
+        <div style="background: var(--modal-bg); border: 1px solid var(--panel-border); border-radius: 18px; width: 330px; max-width: 95%; padding: 18px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; display: flex; align-items: center; justify-content: center;">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 13.5px; font-weight: 700; color: var(--text-primary);" id="skin-modal-slot-title">Custom Skin</h3>
+                        <div style="font-size: 9.5px; color: var(--text-secondary); margin-top: 1px;" id="skin-modal-slot-sub">Backup &amp; Restore</div>
+                    </div>
+                </div>
+                <button type="button" id="skin-backup-close-btn" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Export / Download JSON Option -->
+                <button type="button" id="skin-backup-export-btn" class="skin-modal-action-btn">
+                    <div class="skin-modal-action-icon export">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; font-weight: 600; color: var(--text-primary);">Export Skin Backup</div>
+                        <div style="font-size: 9.5px; color: var(--text-secondary);">Download layout as a .json file</div>
+                    </div>
+                </button>
+
+                <!-- Import / Restore JSON Option -->
+                <button type="button" id="skin-backup-import-btn" class="skin-modal-action-btn">
+                    <div class="skin-modal-action-icon import">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; font-weight: 600; color: var(--text-primary);">Restore from File</div>
+                        <div style="font-size: 9.5px; color: var(--text-secondary);">Upload a .json backup into this slot</div>
+                    </div>
+                </button>
+                <input type="file" id="skin-backup-file-input" accept=".json" style="display: none;">
+            </div>
+        </div>
+    </div>
+
     <!-- PWA Installation Guide Modal -->
     <div id="pwa-install-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); z-index: 10060; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
         <div style="background: var(--modal-bg); border: 1px solid var(--panel-border); border-radius: 24px; padding: 22px 20px; width: 340px; max-width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px; text-align: center; box-sizing: border-box;">

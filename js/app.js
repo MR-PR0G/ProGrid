@@ -1205,10 +1205,13 @@ function setupGlobalEvents() {
     // Close Modals / Exit Edit Mode on Escape Key
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+            const skinModal = document.getElementById('skin-backup-modal');
             const modal = document.getElementById('modal-overlay');
             const infoModal = document.getElementById('widget-info-modal');
             const qmMenu = document.getElementById('widget-quick-menu');
-            if (qmMenu && qmMenu.style.display === 'flex') {
+            if (skinModal && skinModal.style.display === 'flex') {
+                closeSkinBackupModal();
+            } else if (qmMenu && qmMenu.style.display === 'flex') {
                 closeWidgetQuickMenu();
             } else if (infoModal && infoModal.classList.contains('active')) {
                 closeWidgetInfo();
@@ -1929,6 +1932,21 @@ function clearCustomWorkspaceSlot(slotKey) {
     if (window.showToast) window.showToast('Skin slot reset');
 }
 
+function renameCustomWorkspaceSlot(slotKey) {
+    const customSlots = loadCustomWorkspaces();
+    const currentName = customSlots[slotKey] ? (customSlots[slotKey].name || 'My Skin') : 'My Skin';
+    const newName = prompt('Enter new skin name:', currentName);
+    if (newName !== null && newName.trim().length > 0) {
+        if (customSlots[slotKey]) {
+            customSlots[slotKey].name = newName.trim().slice(0, 24);
+            saveCustomWorkspaces(customSlots);
+            renderCustomWorkspacesUI();
+            if (window.showToast) window.showToast(`Renamed to '${customSlots[slotKey].name}'`);
+            if (navigator.vibrate) navigator.vibrate(25);
+        }
+    }
+}
+
 function renderCustomWorkspacesUI() {
     const container = document.getElementById('custom-workspaces-slots-container');
     if (!container) return;
@@ -1955,10 +1973,25 @@ function renderCustomWorkspacesUI() {
             html += `
                 <div class="custom-workspace-slot" data-slot="${slotKey}">
                     <div class="custom-slot-active-top">
-                        <span class="custom-slot-name">${slotData.name || `Skin ${num}`}</span>
-                        <span class="custom-slot-meta">${slotData.count || 0} widgets</span>
+                        <div class="custom-slot-name-group">
+                            <span class="custom-slot-name" id="custom-slot-name-${slotKey}" title="${slotData.name || `Skin ${num}`}">${slotData.name || `Skin ${num}`}</span>
+                            <button type="button" class="custom-slot-rename-btn" data-slot="${slotKey}" title="Rename Skin">
+                                <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <button type="button" class="custom-slot-backup-btn" data-slot="${slotKey}" title="Backup &amp; Restore Skin">
+                            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>Backup</span>
+                        </button>
                     </div>
-                    <div style="font-size: 8.5px; color: var(--text-secondary); margin: 2px 0;">Saved ${slotData.date || 'Recently'}</div>
+                    <div style="font-size: 8.5px; color: var(--text-secondary); margin: 2px 0;">Saved ${slotData.date || 'Recently'} • ${slotData.count || (slotData.widgets ? slotData.widgets.length : 0)} widgets</div>
                     <div class="custom-slot-actions">
                         <button type="button" class="custom-slot-apply-btn" data-slot="${slotKey}">Apply</button>
                         <button type="button" class="custom-slot-overwrite-btn" data-slot="${slotKey}" title="Overwrite with current layout">
@@ -1984,6 +2017,22 @@ function renderCustomWorkspacesUI() {
         emptySlot.addEventListener('click', () => {
             const slotKey = emptySlot.getAttribute('data-slot');
             saveCurrentLayoutToSlot(slotKey);
+        });
+    });
+
+    container.querySelectorAll('.custom-slot-rename-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const slotKey = btn.getAttribute('data-slot');
+            renameCustomWorkspaceSlot(slotKey);
+        });
+    });
+
+    container.querySelectorAll('.custom-slot-backup-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const slotKey = btn.getAttribute('data-slot');
+            openSkinBackupModal(slotKey);
         });
     });
 
@@ -2052,6 +2101,137 @@ function setupWorkspacesUI() {
     }
 
     renderCustomWorkspacesUI();
+    setupSkinBackupModal();
+}
+
+let activeBackupSlotKey = null;
+
+function openSkinBackupModal(slotKey) {
+    activeBackupSlotKey = slotKey;
+    const customSlots = loadCustomWorkspaces();
+    const slotData = customSlots[slotKey];
+    if (!slotData) return;
+
+    const modal = document.getElementById('skin-backup-modal');
+    const titleEl = document.getElementById('skin-modal-slot-title');
+    const subEl = document.getElementById('skin-modal-slot-sub');
+    if (!modal) return;
+
+    if (titleEl) titleEl.textContent = slotData.name || 'Custom Skin';
+    const widgetCount = slotData.count || (slotData.widgets ? slotData.widgets.length : 0);
+    if (subEl) subEl.textContent = `${widgetCount} widgets • Saved ${slotData.date || 'Recently'}`;
+
+    modal.style.display = 'flex';
+}
+
+function closeSkinBackupModal() {
+    const modal = document.getElementById('skin-backup-modal');
+    if (modal) modal.style.display = 'none';
+    activeBackupSlotKey = null;
+}
+
+function setupSkinBackupModal() {
+    const modal = document.getElementById('skin-backup-modal');
+    const closeBtn = document.getElementById('skin-backup-close-btn');
+    const exportBtn = document.getElementById('skin-backup-export-btn');
+    const importBtn = document.getElementById('skin-backup-import-btn');
+    const fileInput = document.getElementById('skin-backup-file-input');
+
+    if (!modal) return;
+
+    if (closeBtn) closeBtn.onclick = closeSkinBackupModal;
+    modal.onclick = (e) => {
+        if (e.target === modal) closeSkinBackupModal();
+    };
+
+    if (exportBtn) {
+        exportBtn.onclick = () => {
+            if (!activeBackupSlotKey) return;
+            const customSlots = loadCustomWorkspaces();
+            const slotData = customSlots[activeBackupSlotKey];
+            if (!slotData || !slotData.widgets) {
+                if (window.showToast) window.showToast('No widgets in this skin to backup');
+                return;
+            }
+
+            const payload = {
+                version: "1.0",
+                progridVersion: "0.3.1",
+                exportedAt: new Date().toISOString(),
+                skinName: slotData.name || "Custom Skin",
+                widgets: slotData.widgets
+            };
+
+            const safeFilename = (slotData.name || activeBackupSlotKey)
+                .toLowerCase()
+                .replace(/[^a-z0-9_-]/g, '-')
+                .replace(/-+/g, '-') + '-skin.json';
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", safeFilename);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+
+            if (window.showToast) window.showToast(`Backup exported: ${safeFilename}`);
+            if (navigator.vibrate) navigator.vibrate(35);
+            closeSkinBackupModal();
+        };
+    }
+
+    if (importBtn && fileInput) {
+        importBtn.onclick = () => {
+            fileInput.value = '';
+            fileInput.click();
+        };
+
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file || !activeBackupSlotKey) return;
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const parsed = JSON.parse(ev.target.result);
+                    let importedWidgets = null;
+                    let importedName = null;
+
+                    if (Array.isArray(parsed)) {
+                        importedWidgets = parsed;
+                    } else if (parsed && Array.isArray(parsed.widgets)) {
+                        importedWidgets = parsed.widgets;
+                        importedName = parsed.skinName || null;
+                    }
+
+                    if (importedWidgets && importedWidgets.length > 0) {
+                        const customSlots = loadCustomWorkspaces();
+                        const currentName = importedName || (customSlots[activeBackupSlotKey] ? customSlots[activeBackupSlotKey].name : 'Restored Skin');
+                        const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+                        customSlots[activeBackupSlotKey] = {
+                            name: currentName,
+                            date: dateStr,
+                            count: importedWidgets.length,
+                            widgets: importedWidgets
+                        };
+
+                        saveCustomWorkspaces(customSlots);
+                        renderCustomWorkspacesUI();
+                        if (window.showToast) window.showToast(`Skin restored successfully (${importedWidgets.length} widgets)`);
+                        if (navigator.vibrate) navigator.vibrate(40);
+                        closeSkinBackupModal();
+                    } else {
+                        if (window.showToast) window.showToast('Invalid skin file: no widgets found');
+                    }
+                } catch {
+                    if (window.showToast) window.showToast('Error reading JSON file');
+                }
+            };
+            reader.readAsText(file);
+        };
+    }
 }
 
 function setupAppearanceSubtabs() {

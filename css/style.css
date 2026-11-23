@@ -2529,11 +2529,68 @@ body.edit-mode .web-install-banner {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 4px;
+}
+.custom-slot-name-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
 }
 .custom-slot-name {
     font-size: 11px;
     font-weight: 700;
     color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.custom-slot-rename-btn {
+    background: none;
+    border: none;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    opacity: 0.65;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+.custom-slot-rename-btn:hover {
+    opacity: 1;
+    color: #60a5fa;
+    background: rgba(255, 255, 255, 0.08);
+}
+.custom-slot-rename-btn:active {
+    transform: scale(0.92);
+}
+.custom-slot-backup-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 2.5px 6px;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 3.5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    line-height: 1.1;
+}
+.custom-slot-backup-btn:hover {
+    background: rgba(59, 130, 246, 0.16);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #60a5fa;
+}
+.custom-slot-backup-btn:active {
+    transform: scale(0.94);
 }
 .custom-slot-meta {
     font-size: 9px;
@@ -2652,4 +2709,47 @@ body.edit-mode .web-install-banner {
     0% { transform: scale(1); }
     50% { transform: scale(1.35); }
     100% { transform: scale(1); }
+}
+
+/* Skin Backup & Restore Modal Action Buttons */
+.skin-modal-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+}
+.skin-modal-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(96, 165, 250, 0.4);
+    transform: translateY(-1px);
+}
+.skin-modal-action-btn:active {
+    transform: scale(0.98);
+}
+.skin-modal-action-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.skin-modal-action-icon.export {
+    background: rgba(59, 130, 246, 0.18);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.skin-modal-action-icon.import {
+    background: rgba(16, 185, 129, 0.18);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
 }
