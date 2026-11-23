@@ -13,6 +13,7 @@ import '../widgets/notes.js';
 import '../widgets/community/finance.js';
 import '../widgets/community/pomodoro.js';
 import '../widgets/community/quote.js';
+import '../widgets/community/weather.js';
 
 let state = { editMode: false, blurValue: 27, presetBg: '1', theme: 'dark', designTheme: 'frosted-glass', customBg: null, widgets: [] };
 window.state = state;
@@ -2156,7 +2157,7 @@ function setupSkinBackupModal() {
 
             const payload = {
                 version: "1.0",
-                progridVersion: "0.3.1",
+                progridVersion: "0.3.4",
                 exportedAt: new Date().toISOString(),
                 skinName: slotData.name || "Custom Skin",
                 widgets: slotData.widgets
@@ -2767,6 +2768,100 @@ function renderFinanceAssetChips() {
     if (addSelect) addSelect.disabled = isFull;
 }
 
+let weatherSearchDebounce = null;
+function setupWeatherSearch() {
+    const searchInput = document.getElementById('edit-weather-city-search');
+    const dropdown = document.getElementById('edit-weather-city-dropdown');
+    const spinner = document.getElementById('edit-weather-search-spinner');
+    if (!searchInput || !dropdown) return;
+
+    searchInput.oninput = () => {
+        clearTimeout(weatherSearchDebounce);
+        const q = searchInput.value.trim();
+        if (q.length < 2) {
+            dropdown.style.display = 'none';
+            dropdown.innerHTML = '';
+            if (spinner) spinner.style.display = 'none';
+            return;
+        }
+
+        if (spinner) spinner.style.display = 'block';
+        weatherSearchDebounce = setTimeout(async () => {
+            try {
+                const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=en&format=json`);
+                if (res.ok) {
+                    const data = await res.json();
+                    renderWeatherSearchResults(data.results || []);
+                } else {
+                    dropdown.style.display = 'none';
+                }
+            } catch (err) {
+                console.warn('Geocoding search error:', err);
+                dropdown.style.display = 'none';
+            } finally {
+                if (spinner) spinner.style.display = 'none';
+            }
+        }, 320);
+    };
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+}
+
+function renderWeatherSearchResults(results) {
+    const dropdown = document.getElementById('edit-weather-city-dropdown');
+    if (!dropdown) return;
+
+    if (!results || results.length === 0) {
+        dropdown.innerHTML = `<div style="padding: 10px 12px; font-size: 12px; color: var(--text-secondary); text-align: center;">No locations found</div>`;
+        dropdown.style.display = 'block';
+        return;
+    }
+
+    dropdown.innerHTML = results.map((item, idx) => {
+        const admin = [item.admin1, item.country].filter(Boolean).join(', ');
+        return `
+            <div class="weather-search-result-item" data-idx="${idx}" style="padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; transition: background 0.15s ease;">
+                <div style="display: flex; flex-direction: column; overflow: hidden; text-align: left;">
+                    <span style="font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</span>
+                    <span style="font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${admin}</span>
+                </div>
+                <span style="font-size: 10.5px; opacity: 0.6; font-family: monospace; flex-shrink: 0;">${Number(item.latitude).toFixed(2)}°, ${Number(item.longitude).toFixed(2)}°</span>
+            </div>
+        `;
+    }).join('');
+
+    dropdown.querySelectorAll('.weather-search-result-item').forEach(el => {
+        el.onmouseenter = () => el.style.background = 'rgba(255, 255, 255, 0.08)';
+        el.onmouseleave = () => el.style.background = 'transparent';
+        el.onclick = () => {
+            const idx = parseInt(el.getAttribute('data-idx'));
+            const item = results[idx];
+            if (!item) return;
+
+            document.getElementById('edit-weather-city').value = item.name;
+            document.getElementById('edit-weather-country').value = item.country || '';
+            document.getElementById('edit-weather-country-code').value = item.country_code || '';
+            document.getElementById('edit-weather-lat').value = item.latitude;
+            document.getElementById('edit-weather-lon').value = item.longitude;
+
+            const label = document.getElementById('edit-weather-city-label');
+            const coords = document.getElementById('edit-weather-coords-label');
+            if (label) label.textContent = `${item.name}, ${item.country || ''}`;
+            if (coords) coords.textContent = `${Number(item.latitude).toFixed(2)}°, ${Number(item.longitude).toFixed(2)}°`;
+
+            dropdown.style.display = 'none';
+            const searchInput = document.getElementById('edit-weather-city-search');
+            if (searchInput) searchInput.value = '';
+        };
+    });
+
+    dropdown.style.display = 'block';
+}
+
 function openModal(w, isPreAdd = false) {
     if (!isPreAdd && Date.now() - (window.__lastDropTimestamp || 0) < 450) return;
     const overlay = document.getElementById('modal-overlay');
@@ -2799,6 +2894,7 @@ function openModal(w, isPreAdd = false) {
     document.querySelectorAll('.id-clock-only').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.id-finance-only').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.id-quote-only').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.id-weather-only').forEach(el => el.style.display = 'none');
 
     if (w.type === 'shortcut') {
         document.querySelectorAll('.id-shortcut-only').forEach(el => el.style.display = 'flex');
@@ -2902,6 +2998,33 @@ function openModal(w, isPreAdd = false) {
         if (langSelect) langSelect.value = w.language || 'all';
         const themeSelect = document.getElementById('edit-quote-theme');
         if (themeSelect) themeSelect.value = w.quoteTheme || 'default';
+    } else if (w.type === 'weather') {
+        document.querySelectorAll('.id-weather-only').forEach(el => {
+            el.style.display = el.classList.contains('glass-toggle-switch') ? 'inline-block' : 'flex';
+        });
+        const cityIn = document.getElementById('edit-weather-city');
+        const countryIn = document.getElementById('edit-weather-country');
+        const countryCodeIn = document.getElementById('edit-weather-country-code');
+        const latIn = document.getElementById('edit-weather-lat');
+        const lonIn = document.getElementById('edit-weather-lon');
+        const label = document.getElementById('edit-weather-city-label');
+        const coords = document.getElementById('edit-weather-coords-label');
+        const unitSelect = document.getElementById('edit-weather-unit');
+        const forecastCheck = document.getElementById('edit-weather-forecast');
+        const searchInput = document.getElementById('edit-weather-city-search');
+
+        if (cityIn) cityIn.value = w.city || 'Tehran';
+        if (countryIn) countryIn.value = w.country || 'Iran';
+        if (countryCodeIn) countryCodeIn.value = w.countryCode || 'IR';
+        if (latIn) latIn.value = w.lat !== undefined ? w.lat : 35.6892;
+        if (lonIn) lonIn.value = w.lon !== undefined ? w.lon : 51.3890;
+        if (label) label.textContent = `${w.city || 'Tehran'}, ${w.country || 'Iran'}`;
+        if (coords) coords.textContent = `${Number(w.lat || 35.6892).toFixed(2)}°, ${Number(w.lon || 51.3890).toFixed(2)}°`;
+        if (unitSelect) unitSelect.value = w.unit || 'C';
+        if (forecastCheck) forecastCheck.checked = w.showForecast !== false;
+        if (searchInput) searchInput.value = '';
+
+        setupWeatherSearch();
     }
     
     currentWidgetBgSelection = w.bg || '#ffffff';
@@ -2987,6 +3110,15 @@ function saveWidgetSettings() {
             if (lang) newWidget.language = lang.value;
             const theme = document.getElementById('edit-quote-theme');
             if (theme) newWidget.quoteTheme = theme.value;
+        } else if (type === 'weather') {
+            newWidget.city = document.getElementById('edit-weather-city').value || 'Tehran';
+            newWidget.country = document.getElementById('edit-weather-country').value || 'Iran';
+            newWidget.countryCode = document.getElementById('edit-weather-country-code').value || 'IR';
+            newWidget.lat = parseFloat(document.getElementById('edit-weather-lat').value) || 35.6892;
+            newWidget.lon = parseFloat(document.getElementById('edit-weather-lon').value) || 51.3890;
+            newWidget.unit = document.getElementById('edit-weather-unit').value || 'C';
+            newWidget.showForecast = document.getElementById('edit-weather-forecast').checked;
+            newWidget.lastUpdate = 0;
         }
 
         newWidget.idealLayout = { x: newWidget.x, y: newWidget.y, w: newWidget.w, h: newWidget.h, baseCols: grid.columns };
@@ -3042,6 +3174,15 @@ function saveWidgetSettings() {
             if (lang) w.language = lang.value;
             const theme = document.getElementById('edit-quote-theme');
             if (theme) w.quoteTheme = theme.value;
+        } else if (w.type === 'weather') {
+            w.city = document.getElementById('edit-weather-city').value || 'Tehran';
+            w.country = document.getElementById('edit-weather-country').value || 'Iran';
+            w.countryCode = document.getElementById('edit-weather-country-code').value || 'IR';
+            w.lat = parseFloat(document.getElementById('edit-weather-lat').value) || 35.6892;
+            w.lon = parseFloat(document.getElementById('edit-weather-lon').value) || 51.3890;
+            w.unit = document.getElementById('edit-weather-unit').value || 'C';
+            w.showForecast = document.getElementById('edit-weather-forecast').checked;
+            w.lastUpdate = 0;
         }
         
         w.idealLayout = { x: w.x, y: w.y, w: w.w, h: w.h, baseCols: grid.columns };
@@ -3221,7 +3362,7 @@ function isNewerVersion(remote, current) {
     return false;
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.3.1') {
+function launchUpdateSplashScreen(targetVer = 'v0.3.4') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -3317,10 +3458,10 @@ function setupAboutModal() {
     if (aboutBtn) {
         aboutBtn.addEventListener('click', () => {
             const verBadge = document.getElementById('about-app-version');
-            if (verBadge) verBadge.textContent = 'v0.3.1';
+            if (verBadge) verBadge.textContent = 'v0.3.4';
             const subTitle = document.getElementById('update-status-sub');
-            if (subTitle && !subTitle.textContent.includes('v0.3.1')) {
-                subTitle.textContent = 'Running official v0.3.1 release';
+            if (subTitle && !subTitle.textContent.includes('v0.3.4')) {
+                subTitle.textContent = 'Running official v0.3.4 release';
             }
             aboutModal.style.display = 'flex';
         });
@@ -3343,7 +3484,7 @@ function setupAboutModal() {
 
             // Only launch splash screen if an actual new update was found and verified
             if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.3.1';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.3.4';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -3363,7 +3504,7 @@ function setupAboutModal() {
                 }
 
                 let remoteVersion = null;
-                const currentVersion = '0.3.1';
+                const currentVersion = '0.3.4';
 
                 // 1. Direct GitHub Releases API check
                 try {
@@ -3422,7 +3563,7 @@ function setupAboutModal() {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Running standalone v0.3.1 release.';
+                if (updateSub) updateSub.textContent = 'Running standalone v0.3.4 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
                 checkUpdateBtn.setAttribute('data-action', 'check');
                 checkUpdateBtn.removeAttribute('data-target-ver');

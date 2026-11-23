@@ -13,6 +13,7 @@ const BASE_DOWNLOADS = {
     notes: 36,
     pomodoro: 52,
     finance: 64,
+    weather: 42,
     quote: 29
 };
 
@@ -21,6 +22,7 @@ const BASE_LIKES = {
     notes: 9,
     pomodoro: 17,
     finance: 22,
+    weather: 18,
     quote: 8
 };
 
@@ -257,6 +259,23 @@ export class WidgetHubEngine {
                 verified: true,
                 description: "Professional live financial tracker with real-time crypto & forex rates, USD/IRT currency toggle, responsive tiles, and 24h charts.",
                 scriptUrl: "./widgets/community/finance.js"
+            },
+            {
+                id: "weather",
+                name: "Live Weather",
+                author: "MR Prog",
+                version: "1.0.0",
+                downloads: this.getDownloads("weather"),
+                category: "lifestyle",
+                defaultW: 2,
+                defaultH: 2,
+                minW: 2,
+                minH: 1,
+                maxW: 4,
+                maxH: 3,
+                verified: true,
+                description: "Open-Meteo live weather tracker with 7-day offline storage, worldwide city search, and Breezy Weather accuracy.",
+                scriptUrl: "./widgets/community/weather.js"
             },
             {
                 id: "quote",

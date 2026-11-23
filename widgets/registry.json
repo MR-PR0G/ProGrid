@@ -53,6 +53,23 @@
     "scriptUrl": "./widgets/community/finance.js"
   },
   {
+    "id": "weather",
+    "name": "Live Weather",
+    "author": "MR Prog",
+    "version": "1.0.0",
+    "downloads": "42",
+    "category": "lifestyle",
+    "defaultW": 2,
+    "defaultH": 2,
+    "minW": 2,
+    "minH": 1,
+    "maxW": 4,
+    "maxH": 3,
+    "verified": true,
+    "description": "Open-Meteo live weather tracker with 7-day offline storage, worldwide city search, and Breezy Weather accuracy.",
+    "scriptUrl": "./widgets/community/weather.js"
+  },
+  {
     "id": "quote",
     "name": "Daily Wisdom",
     "author": "MR Prog",

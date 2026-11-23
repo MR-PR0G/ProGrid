@@ -577,6 +577,45 @@
                 </select>
             </div>
 
+            <!-- Live Weather Widget Configuration Options -->
+            <div class="modal-field id-weather-only" style="display: none; flex-direction: column; gap: 8px; position: relative;">
+                <label style="color: var(--text-secondary); font-size: 12px; font-weight: 600;">Worldwide Location Search</label>
+                <div style="position: relative; width: 100%;">
+                    <input type="text" id="edit-weather-city-search" class="modal-input" placeholder="Search any city worldwide (e.g. Tehran, London, Tokyo)..." autocomplete="off" style="width: 100%; padding-right: 32px;">
+                    <div id="edit-weather-search-spinner" style="position: absolute; right: 10px; top: 9px; display: none; opacity: 0.7;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" class="spinning"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                    </div>
+                </div>
+                <div id="edit-weather-city-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--panel-bg); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); border: 1px solid var(--panel-border); border-radius: 12px; max-height: 180px; overflow-y: auto; z-index: 1000; box-shadow: 0 12px 32px rgba(0,0,0,0.36); padding: 4px;">
+                </div>
+                <div id="edit-weather-selected-badge" style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-secondary); padding: 6px 10px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid var(--panel-border);">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span id="edit-weather-city-label" style="font-weight: 500; color: var(--text-primary);">Tehran, Iran</span>
+                    </div>
+                    <span id="edit-weather-coords-label" style="font-size: 10.5px; opacity: 0.6; font-family: monospace;">35.69°N, 51.39°E</span>
+                </div>
+                <input type="hidden" id="edit-weather-city" value="Tehran">
+                <input type="hidden" id="edit-weather-country" value="Iran">
+                <input type="hidden" id="edit-weather-country-code" value="IR">
+                <input type="hidden" id="edit-weather-lat" value="35.6892">
+                <input type="hidden" id="edit-weather-lon" value="51.3890">
+            </div>
+            <div class="modal-field id-weather-only" style="display: none; align-items: center; justify-content: space-between; padding: 4px 0;">
+                <label style="color: var(--text-secondary); font-size: 12px; font-weight: 500;">Temperature Unit</label>
+                <select class="modal-input" id="edit-weather-unit" style="width: 140px; height: 34px;">
+                    <option value="C">Celsius (°C)</option>
+                    <option value="F">Fahrenheit (°F)</option>
+                </select>
+            </div>
+            <div class="modal-field id-weather-only" style="display: none; align-items: center; justify-content: space-between; padding: 4px 0;">
+                <label style="color: var(--text-secondary); font-size: 12px; font-weight: 500;">Show 7-Day Forecast</label>
+                <label class="glass-toggle-switch">
+                    <input type="checkbox" id="edit-weather-forecast" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
             <div style="width: 100%; height: 1px; background: var(--panel-border); margin: 4px 0;"></div>
 
             <!-- Compact 1-line Color Configuration Row -->
@@ -692,7 +731,7 @@
                 <div class="about-title-block">
                     <h3 class="about-name">ProGrid Workspace</h3>
                     <div class="about-badge-row">
-                        <span class="about-version-badge" id="about-app-version">v0.3.1</span>
+                        <span class="about-version-badge" id="about-app-version">v0.3.4</span>
                         <span class="about-license-badge">GNU GPLv3</span>
                     </div>
                 </div>
@@ -726,7 +765,7 @@
                     <div class="update-indicator-dot" id="update-indicator-dot"></div>
                     <div class="update-info-text">
                         <span class="update-title" id="update-status-title">System Up to Date</span>
-                        <span class="update-sub" id="update-status-sub">Running official v0.3.1 release</span>
+                        <span class="update-sub" id="update-status-sub">Running official v0.3.4 release</span>
                     </div>
                 </div>
                 <button id="about-check-update-btn" class="about-update-action-btn">
@@ -837,7 +876,7 @@
             <div class="update-splash-bar-track">
                 <div id="update-splash-bar-progress" class="update-splash-bar-fill"></div>
             </div>
-            <span id="update-splash-ver" class="update-splash-version">Upgrading to v0.3.1</span>
+            <span id="update-splash-ver" class="update-splash-version">Upgrading to v0.3.4</span>
         </div>
     </div>
 
@@ -846,7 +885,7 @@
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
-        <span id="update-toast-text">ProGrid updated to v0.3.1 successfully</span>
+        <span id="update-toast-text">ProGrid updated to v0.3.4 successfully</span>
     </div>
 
     <script type="text/javascript">
