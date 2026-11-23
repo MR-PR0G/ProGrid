@@ -898,7 +898,7 @@ body.edit-mode .first-visit-tip { display: none !important; }
     transform: none;
 }
 
-/* About ProGrid Modal */
+/* About ProSpace Modal */
 .about-modal-card {
     background: var(--modal-bg);
     border: 1px solid var(--panel-border);

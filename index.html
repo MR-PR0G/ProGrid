@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="ProGrid">
-    <meta name="apple-mobile-web-app-title" content="ProGrid">
+    <meta name="application-name" content="ProSpace">
+    <meta name="apple-mobile-web-app-title" content="ProSpace">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1e2126">
-    <title>ProGrid Workspace</title>
+    <title>ProSpace Workspace</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
@@ -137,9 +137,9 @@
     <!-- Floating Web Install Toast (Elegant, dismissible, native-style) -->
     <aside id="web-install-banner" class="web-install-banner" style="display: none;" aria-label="Install App">
         <div class="install-banner-left">
-            <img src="icons/icon-192.png" alt="ProGrid" width="34" height="34" class="install-banner-app-icon">
+            <img src="icons/icon-192.png" alt="ProSpace" width="34" height="34" class="install-banner-app-icon">
             <div class="install-banner-meta">
-                <span class="install-banner-title">Install ProGrid</span>
+                <span class="install-banner-title">Install ProSpace</span>
                 <span class="install-banner-sub">Fast • Offline • Fullscreen</span>
             </div>
         </div>
@@ -156,7 +156,7 @@
 
     <div id="edit-panel">
         <div class="panel-header-row">
-            <button id="panel-about-btn" class="panel-header-icon-btn left" title="About ProGrid" aria-label="About ProGrid">
+            <button id="panel-about-btn" class="panel-header-icon-btn left" title="About ProSpace" aria-label="About ProSpace">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -728,17 +728,17 @@
         </div>
     </div>
 
-    <!-- About ProGrid Modal -->
+    <!-- About ProSpace Modal -->
     <div id="about-modal" style="display: none; position: fixed; inset: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.68); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); z-index: 10070; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
         <div class="about-modal-card">
             <div class="about-header">
                 <div class="about-app-logo">
-                    <img src="icons/icon-192.png" alt="ProGrid" width="46" height="46" style="border-radius: 12px; display: block;" />
+                    <img src="icons/icon-192.png" alt="ProSpace" width="46" height="46" style="border-radius: 12px; display: block;" />
                 </div>
                 <div class="about-title-block">
-                    <h3 class="about-name">ProGrid Workspace</h3>
+                    <h3 class="about-name">ProSpace Workspace</h3>
                     <div class="about-badge-row">
-                        <span class="about-version-badge" id="about-app-version">v0.3.5</span>
+                        <span class="about-version-badge" id="about-app-version">v0.4.0</span>
                         <span class="about-license-badge">GNU GPLv3</span>
                     </div>
                 </div>
@@ -755,7 +755,7 @@
                 </div>
                 <div class="about-spec-item">
                     <span class="spec-label">Engine</span>
-                    <span class="spec-val">ProGrid Fluid Matrix 1.6 LTS</span>
+                    <span class="spec-val">ProSpace Fluid Matrix 1.6 LTS</span>
                 </div>
                 <div class="about-spec-item">
                     <span class="spec-label">License</span>
@@ -763,7 +763,7 @@
                 </div>
                 <div class="about-spec-item">
                     <span class="spec-label">Repository</span>
-                    <a href="https://github.com/MR-PR0G/ProGrid" target="_blank" rel="noopener" class="spec-link">MR-PR0G/ProGrid</a>
+                    <a href="https://github.com/MR-PR0G/ProSpace" target="_blank" rel="noopener" class="spec-link">MR-PR0G/ProSpace</a>
                 </div>
             </div>
 
@@ -772,7 +772,7 @@
                     <div class="update-indicator-dot" id="update-indicator-dot"></div>
                     <div class="update-info-text">
                         <span class="update-title" id="update-status-title">System Up to Date</span>
-                        <span class="update-sub" id="update-status-sub">Running official v0.3.5 release</span>
+                        <span class="update-sub" id="update-status-sub">Running official v0.4.0 release</span>
                     </div>
                 </div>
                 <button id="about-check-update-btn" class="about-update-action-btn">
@@ -948,7 +948,7 @@
                 </svg>
             </div>
             <div>
-                <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 700; color: var(--text-primary);">Install ProGrid</h3>
+                <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 700; color: var(--text-primary);">Install ProSpace</h3>
                 <p id="pwa-install-subtitle" style="margin: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.4;">Add to your device home screen for a fast, standalone full-screen experience.</p>
             </div>
             <div id="pwa-install-instructions" style="background: rgba(255,255,255,0.04); border: 1px solid var(--panel-border); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
@@ -968,14 +968,14 @@
         <div class="update-splash-content">
             <div class="update-splash-logo-wrap">
                 <div class="update-splash-glow"></div>
-                <img src="icons/icon-192.png" alt="ProGrid" class="update-splash-logo" width="76" height="76" />
+                <img src="icons/icon-192.png" alt="ProSpace" class="update-splash-logo" width="76" height="76" />
             </div>
-            <h2 class="update-splash-title">Updating ProGrid Workspace</h2>
+            <h2 class="update-splash-title">Updating ProSpace Workspace</h2>
             <p id="update-splash-step" class="update-splash-step">Preparing system upgrade...</p>
             <div class="update-splash-bar-track">
                 <div id="update-splash-bar-progress" class="update-splash-bar-fill"></div>
             </div>
-            <span id="update-splash-ver" class="update-splash-version">Upgrading to v0.3.5</span>
+            <span id="update-splash-ver" class="update-splash-version">Upgrading to v0.4.0</span>
         </div>
     </div>
 
@@ -984,7 +984,7 @@
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
-        <span id="update-toast-text">ProGrid updated to v0.3.5 successfully</span>
+        <span id="update-toast-text">ProSpace updated to v0.4.0 successfully</span>
     </div>
 
     <script type="text/javascript">

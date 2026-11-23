@@ -1,4 +1,4 @@
-const CACHE_NAME = 'progrid-cache-v0.5.7';
+const CACHE_NAME = 'prospace-cache-v0.6.0';
 const urlsToCache = [
   './',
   './index.html',
@@ -87,7 +87,7 @@ self.addEventListener('fetch', event => {
 
         if (cached) return cached;
 
-        return new Response('<!DOCTYPE html><html><body><h1>ProGrid Offline</h1></body></html>', {
+        return new Response('<!DOCTYPE html><html><body><h1>ProSpace Offline</h1></body></html>', {
           headers: { 'Content-Type': 'text/html; charset=utf-8' }
         });
       })()

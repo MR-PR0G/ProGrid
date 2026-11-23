@@ -1,12 +1,12 @@
 /**
- * ProGrid Matrix Engine v1.6 LTS
+ * ProSpace Matrix Engine v1.6 LTS
  * Viewport-adaptive dynamic grid system with fluid magnet physics,
  * locality-first collision resolution, zero-overlap guarantee, and lightweight drag dynamics.
  */
 
 export class GridEngine {
     constructor() {
-        this.version = '1.6.0 ProGrid Matrix Engine';
+        this.version = '1.6.0 ProSpace Matrix Engine';
         this.BASE_CELL_SIZE = 96;
         this.BASE_GAP = 16;
         this.CELL_SIZE = 96;

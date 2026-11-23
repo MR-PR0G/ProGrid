@@ -1141,7 +1141,7 @@ function setupGlobalEvents() {
         // Otherwise display step-by-step modal guide tailored to user device
         if (pwaInstructions) {
             if (isIOS) {
-                if (pwaSubtitle) pwaSubtitle.textContent = 'Follow these simple steps in Safari to add ProGrid to your iPhone / iPad home screen:';
+                if (pwaSubtitle) pwaSubtitle.textContent = 'Follow these simple steps in Safari to add ProSpace to your iPhone / iPad home screen:';
                 pwaInstructions.innerHTML = `
                     <div class="pwa-step-item">
                         <span class="pwa-step-num">1</span>
@@ -1158,7 +1158,7 @@ function setupGlobalEvents() {
                 `;
                 if (pwaTriggerBtn) pwaTriggerBtn.style.display = 'none';
             } else {
-                if (pwaSubtitle) pwaSubtitle.textContent = 'Install ProGrid for instant offline access and native app mode:';
+                if (pwaSubtitle) pwaSubtitle.textContent = 'Install ProSpace for instant offline access and native app mode:';
                 pwaInstructions.innerHTML = `
                     <div class="pwa-step-item">
                         <span class="pwa-step-num">1</span>
@@ -1170,7 +1170,7 @@ function setupGlobalEvents() {
                     </div>
                     <div class="pwa-step-item">
                         <span class="pwa-step-num">3</span>
-                        <span class="pwa-step-text">Confirm installation to launch ProGrid anytime from your apps list.</span>
+                        <span class="pwa-step-text">Confirm installation to launch ProSpace anytime from your apps list.</span>
                     </div>
                 `;
                 if (pwaTriggerBtn) {
@@ -1254,7 +1254,7 @@ function setupGlobalEvents() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
             const dlAnchor = document.createElement('a');
             dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `progrid-backup-${new Date().toISOString().slice(0, 10)}.json`);
+            dlAnchor.setAttribute("download", `prospace-backup-${new Date().toISOString().slice(0, 10)}.json`);
             document.body.appendChild(dlAnchor);
             dlAnchor.click();
             dlAnchor.remove();
@@ -1466,7 +1466,7 @@ function renderInstalledDrawerList() {
     let html = '';
     filtered.forEach(m => {
         const isCore = CORE_WIDGET_TYPES.includes(m.type);
-        const author = isCore ? 'ProGrid' : (m.author || 'MR Prog');
+        const author = isCore ? 'ProSpace' : (m.author || 'MR Prog');
         const rawVer = m.version || '1.5.0';
         const verStr = rawVer.startsWith('v') ? rawVer : `v${rawVer}`;
         const iconSvg = getWidgetIconSvg(m.type);
@@ -2352,7 +2352,8 @@ function setupSkinBackupModal() {
 
             const payload = {
                 version: "1.0",
-                progridVersion: "0.3.5",
+                prospaceVersion: "0.4.0",
+                progridVersion: "0.4.0",
                 exportedAt: new Date().toISOString(),
                 skinName: slotData.name || "Custom Skin",
                 widgets: slotData.widgets
@@ -3452,7 +3453,7 @@ function openWidgetInfo(wOrMeta) {
     let title = '';
     let type = '';
     let w = 1, h = 1;
-    let author = 'ProGrid';
+    let author = 'ProSpace';
     let version = '1.0.0';
     let desc = '';
 
@@ -3471,10 +3472,10 @@ function openWidgetInfo(wOrMeta) {
     w = wOrMeta.w || (meta && (meta.defaultW || meta.w)) || 1;
     h = wOrMeta.h || (meta && (meta.defaultH || meta.h)) || 1;
     const isCore = CORE_WIDGET_TYPES.includes(type);
-    author = (meta && meta.author) || wOrMeta.author || (isCore ? 'ProGrid' : 'MR Prog');
+    author = (meta && meta.author) || wOrMeta.author || (isCore ? 'ProSpace' : 'MR Prog');
     version = (meta && meta.version) || wOrMeta.version || '1.5.0';
     if (!version.startsWith('v')) version = `v${version}`;
-    desc = (meta && meta.description) || widgetDescriptions[type] || 'Modular ProGrid fluid widget component.';
+    desc = (meta && meta.description) || widgetDescriptions[type] || 'Modular ProSpace fluid widget component.';
 
     const iconEl = document.getElementById('info-w-icon');
     const labelEl = document.getElementById('info-w-label');
@@ -3557,7 +3558,7 @@ function isNewerVersion(remote, current) {
     return false;
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.3.5') {
+function launchUpdateSplashScreen(targetVer = 'v0.4.0') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -3614,7 +3615,7 @@ function launchUpdateSplashScreen(targetVer = 'v0.3.5') {
 
     // Stage 3: Workspace reload
     setTimeout(() => {
-        setStep('Restarting ProGrid Workspace...', 95);
+        setStep('Restarting ProSpace Workspace...', 95);
     }, 900);
 
     setTimeout(() => {
@@ -3629,7 +3630,7 @@ function showUpdateSuccessToast(verStr) {
     if (!toast) return;
 
     if (textEl) {
-        textEl.textContent = `ProGrid updated to ${verStr} successfully!`;
+        textEl.textContent = `ProSpace updated to ${verStr} successfully!`;
     }
 
     toast.classList.add('active');
@@ -3653,10 +3654,10 @@ function setupAboutModal() {
     if (aboutBtn) {
         aboutBtn.addEventListener('click', () => {
             const verBadge = document.getElementById('about-app-version');
-            if (verBadge) verBadge.textContent = 'v0.3.5';
+            if (verBadge) verBadge.textContent = 'v0.4.0';
             const subTitle = document.getElementById('update-status-sub');
-            if (subTitle && !subTitle.textContent.includes('v0.3.5')) {
-                subTitle.textContent = 'Running official v0.3.5 release';
+            if (subTitle && !subTitle.textContent.includes('v0.4.0')) {
+                subTitle.textContent = 'Running official v0.4.0 release';
             }
             aboutModal.style.display = 'flex';
         });
@@ -3679,7 +3680,7 @@ function setupAboutModal() {
 
             // Only launch splash screen if an actual new update was found and verified
             if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.3.5';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.0';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -3699,15 +3700,23 @@ function setupAboutModal() {
                 }
 
                 let remoteVersion = null;
-                const currentVersion = '0.3.5';
+                const currentVersion = '0.4.0';
 
-                // 1. Direct GitHub Releases API check
+                // 1. Direct GitHub Releases API check (checks ProSpace with fallback to ProGrid)
                 try {
-                    const releaseRes = await fetch('https://api.github.com/repos/MR-PR0G/ProGrid/releases/latest', {
+                    let releaseRes = await fetch('https://api.github.com/repos/MR-PR0G/ProSpace/releases/latest', {
                         headers: { 'Accept': 'application/vnd.github.v3+json' },
                         signal: AbortSignal.timeout(3500)
-                    });
-                    if (releaseRes.ok) {
+                    }).catch(() => null);
+
+                    if (!releaseRes || !releaseRes.ok) {
+                        releaseRes = await fetch('https://api.github.com/repos/MR-PR0G/ProGrid/releases/latest', {
+                            headers: { 'Accept': 'application/vnd.github.v3+json' },
+                            signal: AbortSignal.timeout(3500)
+                        }).catch(() => null);
+                    }
+
+                    if (releaseRes && releaseRes.ok) {
                         const relData = await releaseRes.json();
                         if (relData && relData.tag_name) {
                             remoteVersion = relData.tag_name.replace(/^v/, '');
@@ -3718,11 +3727,19 @@ function setupAboutModal() {
                 // 2. Raw Repository Manifest Check
                 if (!remoteVersion) {
                     try {
-                        const gitRes = await fetch(`https://raw.githubusercontent.com/MR-PR0G/ProGrid/main/manifest.json?t=${Date.now()}`, {
+                        let gitRes = await fetch(`https://raw.githubusercontent.com/MR-PR0G/ProSpace/main/manifest.json?t=${Date.now()}`, {
                             cache: 'no-store',
                             signal: AbortSignal.timeout(3500)
-                        });
-                        if (gitRes.ok) {
+                        }).catch(() => null);
+
+                        if (!gitRes || !gitRes.ok) {
+                            gitRes = await fetch(`https://raw.githubusercontent.com/MR-PR0G/ProGrid/main/manifest.json?t=${Date.now()}`, {
+                                cache: 'no-store',
+                                signal: AbortSignal.timeout(3500)
+                            }).catch(() => null);
+                        }
+
+                        if (gitRes && gitRes.ok) {
                             const gitData = await gitRes.json();
                             if (gitData && gitData.version) {
                                 remoteVersion = gitData.version;
@@ -3749,7 +3766,7 @@ function setupAboutModal() {
                 } else {
                     if (updateDot) updateDot.className = 'update-indicator-dot';
                     if (updateTitle) updateTitle.textContent = 'System Up to Date';
-                    if (updateSub) updateSub.textContent = `ProGrid v${currentVersion} is the latest verified release.`;
+                    if (updateSub) updateSub.textContent = `ProSpace v${currentVersion} is the latest verified release.`;
                     if (btnLabel) btnLabel.textContent = 'Check Updates';
                     checkUpdateBtn.setAttribute('data-action', 'check');
                     checkUpdateBtn.removeAttribute('data-target-ver');
@@ -3758,7 +3775,7 @@ function setupAboutModal() {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Running standalone v0.3.5 release.';
+                if (updateSub) updateSub.textContent = 'Running standalone v0.4.0 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
                 checkUpdateBtn.setAttribute('data-action', 'check');
                 checkUpdateBtn.removeAttribute('data-target-ver');
