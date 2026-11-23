@@ -427,6 +427,7 @@ function attachInteractionEngine(el, w, instance) {
             openModal(w);
         } else {
             if (navigator.vibrate) navigator.vibrate(50);
+            window.toggleEditMode(true);
             showWidgetQuickMenu(w, el, { x: e.clientX, y: e.clientY });
         }
     });
@@ -734,7 +735,7 @@ function attachInteractionEngine(el, w, instance) {
             const onNormalPointerMove = (moveEv) => {
                 const dx = moveEv.clientX - initialPointerX;
                 const dy = moveEv.clientY - initialPointerY;
-                if (Math.hypot(dx, dy) > 8) {
+                if (Math.hypot(dx, dy) > 22) {
                     hasMovedPastThreshold = true;
                     if (widgetLongPressTimer) {
                         clearTimeout(widgetLongPressTimer);
@@ -758,11 +759,12 @@ function attachInteractionEngine(el, w, instance) {
             window.addEventListener('pointercancel', onNormalPointerUp);
 
             widgetLongPressTimer = setTimeout(() => {
-                if (!hasMovedPastThreshold) {
-                    if (navigator.vibrate) navigator.vibrate(50);
+                if (!hasMovedPastThreshold && !state.editMode) {
+                    if (navigator.vibrate) navigator.vibrate(60);
+                    window.toggleEditMode(true);
                     showWidgetQuickMenu(w, el, { x: initialPointerX, y: initialPointerY });
                 }
-            }, 460);
+            }, 440);
             return;
         }
 
@@ -795,51 +797,123 @@ function attachInteractionEngine(el, w, instance) {
 }
 
 function setupBackgroundActivationSensors() {
-    let touchStartedOnBg = false;
+    let startX = 0;
+    let startY = 0;
+    let isTrackingBg = false;
+    let lastTapTime = 0;
 
-    window.addEventListener('mousedown', (e) => {
-        if (state.editMode || (e.target !== container && e.target !== document.getElementById('app-container') && e.target !== document.getElementById('grid-scale-wrapper'))) return;
-        bgLongPressTimeout = setTimeout(() => {
+    const clearBgTimer = () => {
+        if (bgLongPressTimeout) {
+            clearTimeout(bgLongPressTimeout);
+            bgLongPressTimeout = null;
+        }
+        isTrackingBg = false;
+    };
+
+    const isInteractiveElement = (target) => {
+        if (!target || !target.closest) return false;
+        return !!(
+            target.closest('.widget-wrapper') ||
+            target.closest('#edit-panel') ||
+            target.closest('#modal-overlay') ||
+            target.closest('#about-modal') ||
+            target.closest('#widget-info-modal') ||
+            target.closest('#custom-gradient-modal') ||
+            target.closest('#skin-backup-modal') ||
+            target.closest('#folder-overlay-view') ||
+            target.closest('#widget-quick-menu') ||
+            target.closest('#pwa-install-modal') ||
+            target.closest('#first-visit-tip') ||
+            target.closest('#done-btn') ||
+            target.closest('#enter-edit-btn') ||
+            target.closest('button, input, textarea, select, a')
+        );
+    };
+
+    const onBgPressStart = (clientX, clientY, target) => {
+        if (state.editMode) return;
+        if (isInteractiveElement(target)) return;
+
+        // Double-tap on background detection (under 320ms)
+        const now = Date.now();
+        if (now - lastTapTime < 320) {
+            clearBgTimer();
             if (navigator.vibrate) navigator.vibrate(50);
             window.toggleEditMode(true);
-        }, 700);
-    });
-    window.addEventListener('mouseup', () => { if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout); });
-    
-    window.addEventListener('touchstart', (e) => {
-        if (state.editMode) return;
-        touchStartedOnBg = (
-            e.target === container ||
-            e.target === document.getElementById('app-container') ||
-            e.target === document.getElementById('grid-scale-wrapper') ||
-            e.target === dynamicBgLayer
-        );
-        if (e.touches && e.touches[0]) {
-            touchStartY = e.touches[0].clientY;
+            lastTapTime = 0;
+            return;
         }
-        if (touchStartedOnBg) {
-            bgLongPressTimeout = setTimeout(() => {
-                if (navigator.vibrate) navigator.vibrate(50);
+        lastTapTime = now;
+
+        startX = clientX;
+        startY = clientY;
+        isTrackingBg = true;
+
+        clearBgTimer();
+        bgLongPressTimeout = setTimeout(() => {
+            if (isTrackingBg && !state.editMode) {
+                if (navigator.vibrate) navigator.vibrate(60);
                 window.toggleEditMode(true);
-            }, 650);
+                clearBgTimer();
+            }
+        }, 440);
+    };
+
+    const onBgPressMove = (clientX, clientY) => {
+        if (!isTrackingBg || state.editMode) return;
+        const dist = Math.hypot(clientX - startX, clientY - startY);
+        if (dist > 22) {
+            clearBgTimer();
+        }
+    };
+
+    // Universal Pointer Events (Desktop mouse + mobile touch)
+    window.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        onBgPressStart(e.clientX, e.clientY, e.target);
+    }, { passive: true });
+
+    window.addEventListener('pointermove', (e) => {
+        onBgPressMove(e.clientX, e.clientY);
+    }, { passive: true });
+
+    window.addEventListener('pointerup', clearBgTimer, { passive: true });
+    window.addEventListener('pointercancel', clearBgTimer, { passive: true });
+
+    // Touch events fallback for mobile webviews
+    window.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches[0]) {
+            onBgPressStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
         }
     }, { passive: true });
 
     window.addEventListener('touchmove', (e) => {
-        if (state.editMode) return;
-        if (touchStartedOnBg && e.touches && e.touches[0]) {
-            let diffY = Math.abs(touchStartY - e.touches[0].clientY);
-            if (diffY > 10) {
-                if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout);
-                touchStartedOnBg = false;
-            }
+        if (e.touches && e.touches[0]) {
+            onBgPressMove(e.touches[0].clientX, e.touches[0].clientY);
         }
     }, { passive: true });
 
-    window.addEventListener('touchend', () => {
-        if (bgLongPressTimeout) clearTimeout(bgLongPressTimeout);
-        touchStartedOnBg = false;
+    window.addEventListener('touchend', clearBgTimer, { passive: true });
+    window.addEventListener('touchcancel', clearBgTimer, { passive: true });
+
+    // Context menu fallback on background (Android / iOS / desktop right click)
+    window.addEventListener('contextmenu', (e) => {
+        if (!state.editMode && !isInteractiveElement(e.target)) {
+            e.preventDefault();
+            if (navigator.vibrate) navigator.vibrate(60);
+            window.toggleEditMode(true);
+        }
     });
+
+    // Enter Edit Mode button listener
+    const enterEditBtn = document.getElementById('enter-edit-btn');
+    if (enterEditBtn) {
+        enterEditBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (navigator.vibrate) navigator.vibrate(40);
+            window.toggleEditMode(true);
+        });
+    }
 }
 
 function updateColorUI(target, color) {

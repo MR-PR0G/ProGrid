@@ -259,6 +259,41 @@ body.edit-mode #delete-zone.hovered {
     box-shadow: 0 0 18px rgba(239, 68, 68, 0.6);
 }
 
+#enter-edit-btn {
+    position: fixed;
+    bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 10px));
+    right: max(14px, calc(env(safe-area-inset-right, 0px) + 12px));
+    background: rgba(18, 24, 38, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    color: var(--text-secondary);
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 17px;
+    font-weight: 600;
+    font-size: 11.5px;
+    cursor: pointer;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity 0.25s, transform 0.15s, background 0.15s, color 0.15s, border-color 0.15s;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+}
+#enter-edit-btn:hover {
+    background: rgba(30, 41, 59, 0.9);
+    color: var(--text-primary);
+    border-color: rgba(96, 165, 250, 0.45);
+    transform: scale(1.04);
+}
+#enter-edit-btn:active {
+    transform: scale(0.96);
+}
+body.edit-mode #enter-edit-btn {
+    display: none !important;
+}
+
 #done-btn {
     position: fixed;
     bottom: -100px;
