@@ -253,19 +253,28 @@
 
             <!-- View 1: Curated Workspaces List -->
             <div class="workspaces-view-container active" id="ws-view-curated">
-                <div class="workspaces-cards-scroll">
+                <div class="custom-workspaces-grid" id="curated-workspaces-grid">
                     <!-- Preset 1: Default Workspace -->
-                    <div class="workspace-card" data-preset="default">
-                        <div class="workspace-card-header">
-                            <span class="workspace-badge default">Default</span>
-                            <span class="workspace-widgets-count">4 Widgets</span>
+                    <div class="custom-workspace-slot" data-preset="default">
+                        <div class="custom-slot-active-top">
+                            <span class="custom-slot-name">Default Workspace</span>
+                            <span class="custom-slot-meta">4 widgets</span>
                         </div>
-                        <div class="workspace-card-title">Default Workspace</div>
-                        <div class="workspace-card-desc">Digital Clock, Web Search, Tasks checklist, and Gold &amp; USD Toman rate tracker.</div>
-                        <div class="workspace-card-preview-icons">
-                            <span>⏰</span><span>🔍</span><span>✅</span><span>📈</span>
+                        <div style="font-size: 8.5px; color: var(--text-secondary); margin: 2px 0;">System Core Preset</div>
+                        <div class="custom-slot-actions">
+                            <button type="button" class="custom-slot-apply-btn workspace-apply-btn" data-preset="default" style="width: 100%;">Apply</button>
                         </div>
-                        <button type="button" class="workspace-apply-btn" data-preset="default">Apply Layout</button>
+                    </div>
+
+                    <!-- Preset 2: Explore / Add More Skins (Store Placeholder) -->
+                    <div class="custom-workspace-slot empty" id="curated-add-slot-btn" title="Explore more skins">
+                        <div class="custom-slot-save-icon">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </div>
+                        <span class="custom-slot-empty-title">Explore Skins</span>
+                        <span style="font-size: 8.5px; color: var(--text-secondary); opacity: 0.7;">Coming in future updates</span>
                     </div>
                 </div>
             </div>

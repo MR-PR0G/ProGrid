@@ -1961,12 +1961,13 @@ function renderCustomWorkspacesUI() {
                     <div style="font-size: 8.5px; color: var(--text-secondary); margin: 2px 0;">Saved ${slotData.date || 'Recently'}</div>
                     <div class="custom-slot-actions">
                         <button type="button" class="custom-slot-apply-btn" data-slot="${slotKey}">Apply</button>
-                        <button type="button" class="custom-slot-icon-btn custom-slot-overwrite-btn" data-slot="${slotKey}" title="Overwrite with current layout">
-                            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <button type="button" class="custom-slot-overwrite-btn" data-slot="${slotKey}" title="Overwrite with current layout">
+                            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
                             </svg>
+                            <span>Update</span>
                         </button>
-                        <button type="button" class="custom-slot-icon-btn custom-slot-clear-btn" data-slot="${slotKey}" title="Clear slot">
+                        <button type="button" class="custom-slot-clear-btn" data-slot="${slotKey}" title="Clear slot">
                             <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
@@ -2041,6 +2042,14 @@ function setupWorkspacesUI() {
             applyWorkspacePreset(presetId);
         });
     });
+
+    const curatedAddBtn = document.getElementById('curated-add-slot-btn');
+    if (curatedAddBtn) {
+        curatedAddBtn.addEventListener('click', () => {
+            if (window.showToast) window.showToast('Online Skin Store coming soon in future updates');
+            if (navigator.vibrate) navigator.vibrate(30);
+        });
+    }
 
     renderCustomWorkspacesUI();
 }
