@@ -17,8 +17,12 @@
       <img src="https://img.shields.io/badge/🚀%20Live%20Demo-Launch%20ProSpace-3b82f6?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Demo">
     </a>
     &nbsp;
-    <a href="https://mr-pr0g.github.io/ProGrid/" target="_blank" rel="noopener">
+    <a href="https://mr-pr0g.github.io/ProSpace/" target="_blank" rel="noopener">
       <img src="https://img.shields.io/badge/🌐%20Web%20App-Open%20Dashboard-10b981?style=for-the-badge&logo=pwa&logoColor=white" alt="Web App">
+    </a>
+    &nbsp;
+    <a href="https://github.com/MR-PR0G/ProSpace" target="_blank" rel="noopener">
+      <img src="https://img.shields.io/badge/⭐%20GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Repo">
     </a>
   </p>
 </div>
@@ -51,8 +55,8 @@
 
 ### 🧩 ProSpace Fluid Matrix Engine (v1.6 LTS)
 - **Locality-First Collision Cascade:** Continuous live collision resolution with downward displacement and mutual swapping — widgets never overlap or deadlock.
-- **Dynamic Capacity Scaling:** Automatically expands rows on the fly during drag sessions to accommodate any layout.
-- **Universal Pointer Interaction:** Smooth touch, pen, and mouse gesture handling with pointer capture to prevent ghost drags.
+- **Screen-Locked Grid Viewport:** Grid rows are strictly locked and fitted to the screen viewport height so all widgets remain visible without unwanted page overflow.
+- **Universal Pointer Interaction:** Smooth touch, pen, and mouse gesture handling with pointer capture and hardware-accelerated animations.
 
 ### 🗂️ Workspaces & Custom Skins Studio
 - **Curated Workspaces:** Ready-to-use default setups featuring top clock, integrated search, task manager, and currency rates.
@@ -121,13 +125,12 @@ Navigate to `http://localhost:8080` in your browser.
 
 | Action | Mobile Gesture | Desktop / Mouse |
 | :--- | :--- | :--- |
-| **Enter Edit Mode** | Long-press (440ms) on background or any widget | Long-press left click / Right-click contextmenu |
-| **Quick Customize** | Tap the floating **Customize** button | Click the floating **Customize** button |
-| **Double-Tap Action** | Double-tap any empty background space | Double-click empty background |
+| **Enter Edit Mode** | Long-press (~420ms) on empty background | Long-press left click on background |
+| **Widget Quick Menu** | Long-press (~420ms) directly on widget | Long-press left click / Right-click context menu |
 | **Exit Edit Mode** | Tap the floating **Done** button | Click **Done** / Press `Escape` |
 | **Move / Reorder** | Drag widget across cells in Edit Mode | Drag widget with mouse in Edit Mode |
-| **Resize Widget** | Drag bottom-right corner resize handle | Drag corner handle |
-| **Delete Widget** | Drag widget into top **Delete Zone** | Drag into Delete Zone or use Modal Delete |
+| **Resize Widget** | Drag bottom-right corner resize handle | Drag corner handle (turns red at limits) |
+| **Delete Widget** | Drag widget into bottom-left **Delete Zone** | Drag into Delete Zone or use Modal Delete |
 
 ---
 
