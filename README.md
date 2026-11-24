@@ -1,28 +1,16 @@
 <div align="center">
   <h1>🌌 ProSpace Workspace</h1>
-  <p><b>Version 0.4.3 • Developed with passion by MR Prog</b></p>
   <p>An ultra-fluid, customizable, offline-first dashboard & workspace for Desktop, Mobile, and Browser Extensions.</p>
 
   <p>
-    <a href="https://github.com/MR-PR0G/ProSpace/releases"><img src="https://img.shields.io/badge/Version-0.4.3-3b82f6.svg?style=flat-square" alt="Version 0.4.3"></a>
-    <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Extension%20%7C%20PWA-10b981.svg?style=flat-square" alt="Platform">
-    <img src="https://img.shields.io/badge/Engine-Fluid%20Matrix%201.6%20LTS-8b5cf6.svg?style=flat-square" alt="Engine">
-    <img src="https://img.shields.io/badge/Offline-100%25%20First-a855f7.svg?style=flat-square" alt="Offline First">
-    <img src="https://img.shields.io/badge/Dependencies-0%20Zero-f59e0b.svg?style=flat-square" alt="Zero Dependencies">
-    <img src="https://img.shields.io/badge/License-GNU%20GPLv3-06b6d4.svg?style=flat-square" alt="GNU GPLv3">
+    <a href="https://github.com/MR-PR0G/ProSpace/releases"><img src="https://img.shields.io/badge/Version-0.4.3-3b82f6.svg?style=flat-square" alt="Version"></a>
+    <img src="https://img.shields.io/badge/Platform-PWA%20%7C%20Extension-10b981.svg?style=flat-square" alt="Platform">
+    <img src="https://img.shields.io/badge/License-GPL--3.0-06b6d4.svg?style=flat-square" alt="License">
   </p>
 
   <p>
     <a href="https://mr-pr0g.github.io/ProSpace/" target="_blank" rel="noopener">
-      <img src="https://img.shields.io/badge/🚀%20Live%20Demo-Launch%20ProSpace-3b82f6?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Demo">
-    </a>
-    &nbsp;
-    <a href="https://mr-pr0g.github.io/ProSpace/" target="_blank" rel="noopener">
-      <img src="https://img.shields.io/badge/🌐%20Web%20App-Open%20Dashboard-10b981?style=for-the-badge&logo=pwa&logoColor=white" alt="Web App">
-    </a>
-    &nbsp;
-    <a href="https://github.com/MR-PR0G/ProSpace" target="_blank" rel="noopener">
-      <img src="https://img.shields.io/badge/⭐%20GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Repo">
+      <img src="https://img.shields.io/badge/🚀%20Launch%20Live%20Demo-mr--pr0g.github.io%2FProSpace-3b82f6?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Launch Live Demo">
     </a>
   </p>
 </div>
