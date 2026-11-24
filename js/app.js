@@ -403,6 +403,7 @@ function attachInteractionEngine(el, w, instance) {
     let dragOffsetX = 0, dragOffsetY = 0;
     let isDragging = false;
     let isResizing = false;
+    let isPointerDownOnHandle = false;
     let hasMovedPastThreshold = false;
     let pointerDownTime = 0;
     let widgetLongPressTimer = null;
@@ -440,7 +441,7 @@ function attachInteractionEngine(el, w, instance) {
         if (!isDragging && !isResizing) {
             if (moveDist > 5) {
                 hasMovedPastThreshold = true;
-                if (e.target && e.target.classList.contains('resize-handle')) {
+                if (isPointerDownOnHandle) {
                     isResizing = true;
                     el.classList.add('resizing');
                 } else {
@@ -562,11 +563,24 @@ function attachInteractionEngine(el, w, instance) {
                 el.style.width = `${Math.max(50, rawW)}px`;
                 el.style.height = `${Math.max(50, rawH)}px`;
 
-                let maxAllowedW = w.type === 'search' ? grid.columns : Math.min(meta.maxW || 4, grid.columns);
-                let gridW = Math.max(minW, Math.min(maxAllowedW, Math.round((rawW - grid.gap) / step)));
-                let gridH = Math.max(minH, Math.round((rawH - grid.gap) / step));
+                let maxAllowedW = w.type === 'search' ? (grid.columns - w.x) : Math.min(meta.maxW || 4, grid.columns - w.x);
+                let maxAllowedH = Math.min(meta.maxH || 4, Math.max(minH, grid.minRows - w.y));
 
-                if (w.x + gridW > grid.columns) gridW = grid.columns - w.x;
+                let gridW = Math.max(minW, Math.min(maxAllowedW, Math.round((rawW - grid.gap) / step)));
+                let gridH = Math.max(minH, Math.min(maxAllowedH, Math.round((rawH - grid.gap) / step)));
+
+                // Check if user is attempting to resize past boundary limits -> activate red pulse
+                const atWidthLimit = (rawW > (maxAllowedW * step - grid.gap + 2));
+                const atHeightLimit = (rawH > (maxAllowedH * step - grid.gap + 2));
+                const isAtLimit = atWidthLimit || atHeightLimit;
+
+                if (isAtLimit) {
+                    el.classList.add('max-limit-reached');
+                    if (ghost) ghost.classList.add('max-limit-reached');
+                } else {
+                    el.classList.remove('max-limit-reached');
+                    if (ghost) ghost.classList.remove('max-limit-reached');
+                }
 
                 if (gridW === lastGridW && gridH === lastGridH) {
                     return;
@@ -578,9 +592,6 @@ function attachInteractionEngine(el, w, instance) {
 
                 if (initialWidgetsState) {
                     const layoutRes = grid.computeLiveDragLayout(w.id, w.x, w.y, gridW, gridH, initialWidgetsState);
-                    if (layoutRes.totalRows > grid.rowsCount) {
-                        container.style.height = `${layoutRes.totalRows * grid.cellSize + (layoutRes.totalRows - 1) * grid.gap}px`;
-                    }
                     layoutRes.widgets.forEach(lw => {
                         if (lw.id !== w.id && !lw.isHidden) {
                             const otherDOM = document.getElementById(lw.id);
@@ -604,6 +615,7 @@ function attachInteractionEngine(el, w, instance) {
         window.removeEventListener('blur', onGlobalPointerUp);
 
         if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
+        isPointerDownOnHandle = false;
         if (!state.editMode) return;
 
         const duration = Date.now() - pointerDownTime;
@@ -673,12 +685,13 @@ function attachInteractionEngine(el, w, instance) {
                         target.h = lw.h;
                     }
                 });
-                grid.rows = Math.max(grid.minRows || 4, lastComputedDragLayout.totalRows);
+                grid.rows = grid.minRows;
+                grid.syncContainerDimensions();
             } else if (ghost) {
                 const finalCol = Math.round(parseInt(ghost.style.left) / step);
                 const finalRow = Math.round(parseInt(ghost.style.top) / step);
                 w.x = Math.max(0, Math.min(finalCol, grid.columns - w.w));
-                w.y = Math.max(0, finalRow);
+                w.y = Math.max(0, Math.min(finalRow, Math.max(0, grid.minRows - w.h)));
                 grid.omniMagnetPush(w, state.widgets);
             }
             lastComputedDragLayout = null;
@@ -686,6 +699,8 @@ function attachInteractionEngine(el, w, instance) {
             lastTargetRow = -1;
         } else if (isResizing) {
             isResizing = false;
+            el.classList.remove('max-limit-reached');
+            if (ghost) ghost.classList.remove('max-limit-reached');
             if (lastComputedDragLayout && lastComputedDragLayout.widgets) {
                 lastComputedDragLayout.widgets.forEach(lw => {
                     const target = state.widgets.find(item => item.id === lw.id);
@@ -696,13 +711,15 @@ function attachInteractionEngine(el, w, instance) {
                         target.h = lw.h;
                     }
                 });
-                grid.rows = Math.max(grid.minRows || 4, lastComputedDragLayout.totalRows);
+                grid.rows = grid.minRows;
+                grid.syncContainerDimensions();
             } else if (ghost) {
                 const finalW = Math.round((parseInt(ghost.style.width) + grid.gap) / step);
                 const finalH = Math.round((parseInt(ghost.style.height) + grid.gap) / step);
-                let maxAllowedW = w.type === 'search' ? grid.columns : Math.min(meta.maxW || 4, grid.columns);
+                let maxAllowedW = w.type === 'search' ? (grid.columns - w.x) : Math.min(meta.maxW || 4, grid.columns - w.x);
+                let maxAllowedH = Math.min(meta.maxH || 4, Math.max(minH, grid.minRows - w.y));
                 w.w = Math.max(minW, Math.min(maxAllowedW, finalW));
-                w.h = Math.max(minH, finalH);
+                w.h = Math.max(minH, Math.min(maxAllowedH, finalH));
                 grid.omniMagnetPush(w, state.widgets);
             }
             if (instance && instance.onResize) {
@@ -742,7 +759,8 @@ function attachInteractionEngine(el, w, instance) {
         lastGridW = -1;
         lastGridH = -1;
 
-        if (e.target.classList.contains('resize-handle')) {
+        isPointerDownOnHandle = !!(e.target && e.target.classList.contains('resize-handle'));
+        if (isPointerDownOnHandle) {
             startW = el.offsetWidth;
             startH = el.offsetHeight;
         } else {
@@ -766,7 +784,6 @@ let longPressStartX = 0;
 let longPressStartY = 0;
 let longPressTarget = null;
 let isTrackingLongPress = false;
-let lastBackgroundTapTime = 0;
 
 function isInteractiveModalOrInput(target) {
     if (!target || !target.closest) return false;
@@ -839,22 +856,10 @@ function setupGlobalLongPressSensor() {
         }
     }, true);
 
-    // 2. Primary touch/pointer sensor
+    // 2. Core long-press start and move handlers
     const onStart = (clientX, clientY, target) => {
         if (state.editMode) return;
         if (isInteractiveModalOrInput(target)) return;
-
-        // Double-tap on background shortcut (< 320ms)
-        const isBg = !target.closest('.widget-wrapper');
-        const now = Date.now();
-        if (isBg && now - lastBackgroundTapTime < 320) {
-            cancelGlobalLongPress();
-            if (navigator.vibrate) try { navigator.vibrate(50); } catch (e) {}
-            window.toggleEditMode(true);
-            lastBackgroundTapTime = 0;
-            return;
-        }
-        if (isBg) lastBackgroundTapTime = now;
 
         longPressStartX = clientX;
         longPressStartY = clientY;
@@ -866,34 +871,40 @@ function setupGlobalLongPressSensor() {
             if (isTrackingLongPress && !state.editMode) {
                 handleLongPressTrigger(longPressStartX, longPressStartY, longPressTarget);
             }
-        }, 380);
+        }, 420);
     };
 
     const onMove = (clientX, clientY) => {
         if (!isTrackingLongPress || state.editMode) return;
         const dist = Math.hypot(clientX - longPressStartX, clientY - longPressStartY);
-        if (dist > 25) {
+        if (dist > 18) {
             cancelGlobalLongPress();
         }
     };
 
-    // Pointer events (Desktop mouse + touch devices)
+    // Pointer events (Desktop mouse only - touch is handled cleanly by touchstart)
     window.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'touch') return;
         if (e.pointerType === 'mouse' && e.button !== 0) return;
         onStart(e.clientX, e.clientY, e.target);
     }, { passive: true });
 
     window.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'touch') return;
         onMove(e.clientX, e.clientY);
     }, { passive: true });
 
-    window.addEventListener('pointerup', cancelGlobalLongPress, { passive: true });
-    window.addEventListener('pointercancel', cancelGlobalLongPress, { passive: true });
+    window.addEventListener('pointerup', (e) => {
+        if (e.pointerType === 'touch') return;
+        cancelGlobalLongPress();
+    }, { passive: true });
 
-    // Touch events for mobile browsers (where pointercancel might fire on touch-scroll detection)
+    // Touch events for mobile browsers (with zero touch/pointer duplicate conflicts)
     window.addEventListener('touchstart', (e) => {
-        if (e.touches && e.touches[0]) {
+        if (e.touches && e.touches.length === 1) {
             onStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
+        } else {
+            cancelGlobalLongPress();
         }
     }, { passive: true });
 
@@ -904,6 +915,7 @@ function setupGlobalLongPressSensor() {
     }, { passive: true });
 
     window.addEventListener('touchend', cancelGlobalLongPress, { passive: true });
+    window.addEventListener('touchcancel', cancelGlobalLongPress, { passive: true });
 
     // Native contextmenu event (Android long-press / desktop right click)
     window.addEventListener('contextmenu', (e) => {
@@ -2350,8 +2362,8 @@ function setupSkinBackupModal() {
 
             const payload = {
                 version: "1.0",
-                prospaceVersion: "0.4.2",
-                progridVersion: "0.4.2",
+                prospaceVersion: "0.4.3",
+                progridVersion: "0.4.3",
                 exportedAt: new Date().toISOString(),
                 skinName: slotData.name || "Custom Skin",
                 widgets: slotData.widgets
@@ -3556,7 +3568,7 @@ function isNewerVersion(remote, current) {
     return false;
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.4.2') {
+function launchUpdateSplashScreen(targetVer = 'v0.4.3') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -3652,10 +3664,10 @@ function setupAboutModal() {
     if (aboutBtn) {
         aboutBtn.addEventListener('click', () => {
             const verBadge = document.getElementById('about-app-version');
-            if (verBadge) verBadge.textContent = 'v0.4.2';
+            if (verBadge) verBadge.textContent = 'v0.4.3';
             const subTitle = document.getElementById('update-status-sub');
-            if (subTitle && !subTitle.textContent.includes('v0.4.2')) {
-                subTitle.textContent = 'Running official v0.4.2 release';
+            if (subTitle && !subTitle.textContent.includes('v0.4.3')) {
+                subTitle.textContent = 'Running official v0.4.3 release';
             }
             aboutModal.style.display = 'flex';
         });
@@ -3678,7 +3690,7 @@ function setupAboutModal() {
 
             // Only launch splash screen if an actual new update was found and verified
             if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.2';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.3';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -3698,7 +3710,7 @@ function setupAboutModal() {
                 }
 
                 let remoteVersion = null;
-                const currentVersion = '0.4.2';
+                const currentVersion = '0.4.3';
 
                 // 1. Direct GitHub Releases API check (checks ProSpace with fallback to ProGrid)
                 try {
@@ -3773,7 +3785,7 @@ function setupAboutModal() {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Running standalone v0.4.2 release.';
+                if (updateSub) updateSub.textContent = 'Running standalone v0.4.3 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
                 checkUpdateBtn.setAttribute('data-action', 'check');
                 checkUpdateBtn.removeAttribute('data-target-ver');

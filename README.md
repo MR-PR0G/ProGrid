@@ -1,10 +1,10 @@
 <div align="center">
   <h1>🌌 ProSpace Workspace</h1>
-  <p><b>Version 0.4.2 • Developed with passion by MR Prog</b></p>
+  <p><b>Version 0.4.3 • Developed with passion by MR Prog</b></p>
   <p>An ultra-fluid, customizable, offline-first dashboard & workspace for Desktop, Mobile, and Browser Extensions.</p>
 
   <p>
-    <a href="https://github.com/MR-PR0G/ProSpace/releases"><img src="https://img.shields.io/badge/Version-0.4.2-3b82f6.svg?style=flat-square" alt="Version 0.4.2"></a>
+    <a href="https://github.com/MR-PR0G/ProSpace/releases"><img src="https://img.shields.io/badge/Version-0.4.3-3b82f6.svg?style=flat-square" alt="Version 0.4.3"></a>
     <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Extension%20%7C%20PWA-10b981.svg?style=flat-square" alt="Platform">
     <img src="https://img.shields.io/badge/Engine-Fluid%20Matrix%201.6%20LTS-8b5cf6.svg?style=flat-square" alt="Engine">
     <img src="https://img.shields.io/badge/Offline-100%25%20First-a855f7.svg?style=flat-square" alt="Offline First">

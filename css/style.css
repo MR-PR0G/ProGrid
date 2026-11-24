@@ -109,7 +109,14 @@ body.edit-mode.shelf-collapsed #app-container {
     height: 100vh;
     pointer-events: none;
     z-index: 1;
-    transition: backdrop-filter 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    opacity: 0;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: opacity 0.25s ease;
+}
+
+body.edit-mode #blur-overlay {
+    opacity: 1;
 }
 
 #grid-scale-wrapper {
@@ -147,8 +154,8 @@ body.light-mode .grid-cell-visual { background: rgba(0, 0, 0, 0.015); }
 body.edit-mode .grid-cell-visual { display: block; }
 
 @keyframes widgetJiggle {
-    0% { transform: rotate(-0.3deg); }
-    100% { transform: rotate(0.3deg); }
+    0% { transform: translate3d(0, 0, 0) rotate(-0.35deg); }
+    100% { transform: translate3d(0, 0, 0) rotate(0.35deg); }
 }
 
 .widget-wrapper {
@@ -162,12 +169,12 @@ body.edit-mode .grid-cell-visual { display: block; }
     -webkit-tap-highlight-color: transparent;
     contain: layout style;
     transform: translateZ(0);
-    will-change: transform, left, top, width, height;
-    transition: box-shadow 0.2s, left 0.3s cubic-bezier(0.25, 1, 0.5, 1), top 0.3s cubic-bezier(0.25, 1, 0.5, 1), width 0.3s cubic-bezier(0.25, 1, 0.5, 1), height 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    transition: box-shadow 0.2s ease, left 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), width 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), height 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 body.edit-mode .widget-wrapper {
     touch-action: none;
+    will-change: transform, left, top;
 }
 
 body.edit-mode .widget-wrapper:not(.dragging):not(.resizing) {

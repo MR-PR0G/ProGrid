@@ -58,11 +58,7 @@ export class GridEngine {
             this.GAP = Math.round(baseGap * scale);
         }
 
-        if (window.state && Array.isArray(window.state.widgets) && window.state.widgets.length > 0) {
-            const maxY = this.calculateMaxY(window.state.widgets);
-            this.rows = Math.max(this.minRows, maxY);
-        }
-
+        this.rows = this.minRows;
         this.syncContainerDimensions();
     }
 
@@ -189,9 +185,9 @@ export class GridEngine {
         }
 
         const safeW = Math.max(1, Math.min(targetW, this.cols));
-        const safeH = Math.max(1, targetH);
+        const safeH = Math.max(1, Math.min(targetH, this.minRows));
         const safeX = Math.max(0, Math.min(targetX, this.cols - safeW));
-        const safeY = Math.max(0, targetY);
+        const safeY = Math.max(0, Math.min(targetY, Math.max(0, this.minRows - safeH)));
 
         // Deep clone snapshot to keep state immutable until final commit
         const layout = snapshotWidgets.map(w => ({
@@ -301,10 +297,8 @@ export class GridEngine {
             }
         });
 
-        if (res.totalRows > this.rows) {
-            this.rows = res.totalRows;
-            this.syncContainerDimensions();
-        }
+        this.rows = this.minRows;
+        this.syncContainerDimensions();
         return true;
     }
 
@@ -312,14 +306,16 @@ export class GridEngine {
         const visible = widgets.filter(w => !w.isHidden);
         if (visible.length === 0) return;
 
-        // Clamp boundaries
+        // Clamp boundaries strictly within screen columns & locked rows capacity
         visible.forEach(w => {
             const minW = w.type === 'search' ? 2 : 1;
-            const maxH = w.type === 'search' ? 1 : 99;
-            w.w = Math.max(minW, Math.min(w.w || 1, this.cols));
+            const meta = window.WidgetGlobals ? window.WidgetGlobals.getMetadata(w.type) : null;
+            const maxW = w.type === 'search' ? this.cols : Math.min((meta && meta.maxW) || 4, this.cols);
+            const maxH = Math.min((meta && meta.maxH) || 4, this.minRows);
+            w.w = Math.max(minW, Math.min(w.w || 1, maxW));
             w.h = Math.max(1, Math.min(w.h || 1, maxH));
             w.x = Math.max(0, Math.min(w.x || 0, this.cols - w.w));
-            w.y = Math.max(0, w.y || 0);
+            w.y = Math.max(0, Math.min(w.y || 0, Math.max(0, this.minRows - w.h)));
         });
 
         // Stable top-to-bottom, left-to-right sort
@@ -334,16 +330,15 @@ export class GridEngine {
             if (!hasConflict) {
                 placed.push(item);
             } else {
-                // Find nearest slot using proximity cost function - NEVER jump to top-right
+                // Find nearest slot using proximity cost function
                 const bestSlot = this.findNearestAvailableSlot(item.w, item.h, item.x, item.y, placed, item.id);
                 item.x = bestSlot.x;
-                item.y = bestSlot.y;
+                item.y = Math.min(bestSlot.y, Math.max(0, this.minRows - item.h));
                 placed.push(item);
             }
         }
 
-        const maxRows = Math.max(this.minRows || 4, this.calculateMaxY(visible));
-        this.rows = maxRows;
+        this.rows = this.minRows;
         this.syncContainerDimensions();
     }
 }
