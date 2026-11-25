@@ -17,8 +17,8 @@ const ASSET_SVGS = {
 };
 
 const ASSET_REGISTRY = [
-    { id: 'USDIRR', name: 'US Dollar', symbol: 'USD', price: 92000, change: 0.35, high: 92600, low: 91400, icon: ASSET_SVGS.USDIRR, type: 'forex', unit: 'Toman' },
-    { id: 'GOLD', name: 'Gold (Ounce)', symbol: 'GOLD', price: 2684.5, change: 0.62, high: 2695.0, low: 2670.0, icon: ASSET_SVGS.GOLD, type: 'commodities', unit: '$' },
+    { id: 'USDIRR', name: 'US Dollar', symbol: 'USD', price: 283890, change: 1.25, high: 285200, low: 278700, icon: ASSET_SVGS.USDIRR, type: 'forex', unit: 'Toman' },
+    { id: 'GOLD', name: 'Gold (Ounce)', symbol: 'GOLD', price: 3554.89, change: 0.62, high: 3675.0, low: 3550.0, icon: ASSET_SVGS.GOLD, type: 'commodities', unit: '$' },
     { id: 'BTC', name: 'Bitcoin', symbol: 'BTC', price: 91450, change: 2.34, high: 92800, low: 89400, icon: ASSET_SVGS.BTC, type: 'crypto', unit: '$' },
     { id: 'ETH', name: 'Ethereum', symbol: 'ETH', price: 3120, change: -0.85, high: 3190, low: 3080, icon: ASSET_SVGS.ETH, type: 'crypto', unit: '$' },
     { id: 'SOL', name: 'Solana', symbol: 'SOL', price: 198.4, change: 4.12, high: 202.5, low: 189.0, icon: ASSET_SVGS.SOL, type: 'crypto', unit: '$' },
@@ -73,10 +73,10 @@ export default class FinanceWidget extends BaseWidget {
                         if (a.id === 'USDIRR') {
                             a.name = 'US Dollar';
                             a.symbol = 'USD';
-                            if (a.price > 500000 || a.price < 30000) {
-                                a.price = 92000;
-                                a.high = 92600;
-                                a.low = 91400;
+                            if (a.price > 2000000 || a.price < 50000) {
+                                a.price = 283890;
+                                a.high = 285200;
+                                a.low = 278700;
                             }
                         }
                         if (a.id === 'GOLD') {
@@ -123,7 +123,7 @@ export default class FinanceWidget extends BaseWidget {
 
     getUsdToTomanRate() {
         const usdirr = this.assets.find(a => a.id === 'USDIRR');
-        return (usdirr && usdirr.price >= 30000 && usdirr.price <= 500000) ? usdirr.price : 92000;
+        return (usdirr && usdirr.price >= 50000 && usdirr.price <= 2000000) ? usdirr.price : 283890;
     }
 
     getAssetCurrency(asset) {
@@ -256,29 +256,79 @@ export default class FinanceWidget extends BaseWidget {
             } catch {}
         }
 
-        // 2. Fetch Live USDIRR / Market Toman Rate (Nobitex -> TetherLand -> Wallex)
+        // 2. Fetch Live USDIRR / Free Market Toman & Gold Rates (TGJU -> Nobitex -> Tetherland)
         let irRateFetched = false;
         try {
-            const nobitexRes = await fetch('https://api.nobitex.ir/market/stats?srcCurrency=usdt&dstCurrency=rls', { signal: AbortSignal.timeout(4000) });
-            if (nobitexRes.ok) {
-                const nobitexData = await nobitexRes.json();
-                const pairStats = (nobitexData && nobitexData.stats && nobitexData.stats['usdt-rls']) || (nobitexData && nobitexData['usdt-rls']);
-                const usdtRial = pairStats && pairStats.latest ? parseFloat(pairStats.latest) : 0;
-                if (usdtRial > 100000) {
-                    const usdtToman = Math.round(usdtRial / 10);
-                    const tmnTarget = this.assets.find(f => f.id === 'USDIRR');
-                    if (tmnTarget) {
-                        tmnTarget.price = usdtToman;
-                        if (pairStats.dayChange !== undefined) {
-                            tmnTarget.change = parseFloat(pairStats.dayChange) || tmnTarget.change;
+            const tgjuRes = await fetch('https://api.tgju.org/v1/market/indicator/summary-table-data/price_dollar_rl', { signal: AbortSignal.timeout(4500) });
+            if (tgjuRes.ok) {
+                const tgjuData = await tgjuRes.json();
+                if (tgjuData && Array.isArray(tgjuData.data) && tgjuData.data.length > 0) {
+                    const row = tgjuData.data[0];
+                    const priceRls = parseInt(String(row[3]).replace(/,/g, ''), 10);
+                    if (priceRls > 500000) {
+                        const priceTmn = Math.round(priceRls / 10);
+                        const highTmn = row[2] ? Math.round(parseInt(String(row[2]).replace(/,/g, ''), 10) / 10) : Math.round(priceTmn * 1.008);
+                        const lowTmn = row[1] ? Math.round(parseInt(String(row[1]).replace(/,/g, ''), 10) / 10) : Math.round(priceTmn * 0.992);
+                        const chStr = String(row[5] || '').replace(/<[^>]+>/g, '').replace('%', '').trim();
+                        const isDown = String(row[5] || '').includes('low') || String(row[5] || '').includes('danger');
+                        const chVal = parseFloat(chStr);
+
+                        const tmnTarget = this.assets.find(f => f.id === 'USDIRR');
+                        if (tmnTarget) {
+                            tmnTarget.price = priceTmn;
+                            tmnTarget.high = highTmn;
+                            tmnTarget.low = lowTmn;
+                            if (!isNaN(chVal)) {
+                                tmnTarget.change = isDown ? -Math.abs(chVal) : Math.abs(chVal);
+                            }
                         }
-                        tmnTarget.high = pairStats.dayHigh ? Math.round(parseFloat(pairStats.dayHigh) / 10) : Math.round(usdtToman * 1.008);
-                        tmnTarget.low = pairStats.dayLow ? Math.round(parseFloat(pairStats.dayLow) / 10) : Math.round(usdtToman * 0.992);
+                        irRateFetched = true;
                     }
-                    irRateFetched = true;
                 }
             }
-        } catch {}
+        } catch (_) {}
+
+        // Also fetch live Gold Ounce from TGJU if available
+        try {
+            const onsRes = await fetch('https://api.tgju.org/v1/market/indicator/summary-table-data/ons', { signal: AbortSignal.timeout(3500) });
+            if (onsRes.ok) {
+                const onsData = await onsRes.json();
+                if (onsData && Array.isArray(onsData.data) && onsData.data.length > 0) {
+                    const row = onsData.data[0];
+                    const goldVal = parseFloat(String(row[3]).replace(/,/g, ''));
+                    const goldTarget = this.assets.find(f => f.id === 'GOLD');
+                    if (goldTarget && goldVal > 1000) {
+                        goldTarget.price = goldVal;
+                        if (row[2]) goldTarget.high = parseFloat(String(row[2]).replace(/,/g, '')) || goldTarget.high;
+                        if (row[1]) goldTarget.low = parseFloat(String(row[1]).replace(/,/g, '')) || goldTarget.low;
+                    }
+                }
+            }
+        } catch (_) {}
+
+        if (!irRateFetched) {
+            try {
+                const nobitexRes = await fetch('https://api.nobitex.ir/market/stats?srcCurrency=usdt&dstCurrency=rls', { signal: AbortSignal.timeout(4000) });
+                if (nobitexRes.ok) {
+                    const nobitexData = await nobitexRes.json();
+                    const pairStats = (nobitexData && nobitexData.stats && nobitexData.stats['usdt-rls']) || (nobitexData && nobitexData['usdt-rls']);
+                    const usdtRial = pairStats && pairStats.latest ? parseFloat(pairStats.latest) : 0;
+                    if (usdtRial > 100000) {
+                        const usdtToman = Math.round(usdtRial / 10);
+                        const tmnTarget = this.assets.find(f => f.id === 'USDIRR');
+                        if (tmnTarget) {
+                            tmnTarget.price = usdtToman;
+                            if (pairStats.dayChange !== undefined) {
+                                tmnTarget.change = parseFloat(pairStats.dayChange) || tmnTarget.change;
+                            }
+                            tmnTarget.high = pairStats.dayHigh ? Math.round(parseFloat(pairStats.dayHigh) / 10) : Math.round(usdtToman * 1.008);
+                            tmnTarget.low = pairStats.dayLow ? Math.round(parseFloat(pairStats.dayLow) / 10) : Math.round(usdtToman * 0.992);
+                        }
+                        irRateFetched = true;
+                    }
+                }
+            } catch (_) {}
+        }
 
         if (!irRateFetched) {
             try {
@@ -296,28 +346,7 @@ export default class FinanceWidget extends BaseWidget {
                         irRateFetched = true;
                     }
                 }
-            } catch {}
-        }
-
-        if (!irRateFetched) {
-            try {
-                const wallexRes = await fetch('https://api.wallex.ir/v1/currencies/stats', { signal: AbortSignal.timeout(4000) });
-                if (wallexRes.ok) {
-                    const wData = await wallexRes.json();
-                    if (wData && wData.result && wData.result.currencies && wData.result.currencies.USDT) {
-                        const usdtPrice = parseFloat(wData.result.currencies.USDT.price);
-                        if (usdtPrice > 10000) {
-                            const tmnTarget = this.assets.find(f => f.id === 'USDIRR');
-                            if (tmnTarget) {
-                                tmnTarget.price = Math.round(usdtPrice);
-                                tmnTarget.high = Math.round(usdtPrice * 1.008);
-                                tmnTarget.low = Math.round(usdtPrice * 0.992);
-                            }
-                            irRateFetched = true;
-                        }
-                    }
-                }
-            } catch {}
+            } catch (_) {}
         }
 
         // 3. Update synthetic 24h history points from real prices

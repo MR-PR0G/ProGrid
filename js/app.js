@@ -173,8 +173,14 @@ function applyGlobalStyles() {
     }
 
     if (blurOverlay) {
-        blurOverlay.style.backdropFilter = `blur(${state.blurValue}px)`;
-        blurOverlay.style.webkitBackdropFilter = `blur(${state.blurValue}px)`;
+        const bv = (typeof state.blurValue === 'number') ? state.blurValue : 27;
+        if (bv > 0) {
+            blurOverlay.style.backdropFilter = `blur(${bv}px)`;
+            blurOverlay.style.webkitBackdropFilter = `blur(${bv}px)`;
+        } else {
+            blurOverlay.style.backdropFilter = 'none';
+            blurOverlay.style.webkitBackdropFilter = 'none';
+        }
     }
     const slider = document.getElementById('blur-slider');
     if (slider) slider.value = state.blurValue;
@@ -2400,8 +2406,8 @@ function setupSkinBackupModal() {
 
             const payload = {
                 version: "1.0",
-                prospaceVersion: "0.4.4",
-                progridVersion: "0.4.4",
+                prospaceVersion: "0.4.5",
+                progridVersion: "0.4.5",
                 exportedAt: new Date().toISOString(),
                 skinName: slotData.name || "Custom Skin",
                 widgets: slotData.widgets
@@ -3606,7 +3612,7 @@ function isNewerVersion(remote, current) {
     return false;
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.4.4') {
+function launchUpdateSplashScreen(targetVer = 'v0.4.5') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -3702,10 +3708,10 @@ function setupAboutModal() {
     if (aboutBtn) {
         aboutBtn.addEventListener('click', () => {
             const verBadge = document.getElementById('about-app-version');
-            if (verBadge) verBadge.textContent = 'v0.4.4';
+            if (verBadge) verBadge.textContent = 'v0.4.5';
             const subTitle = document.getElementById('update-status-sub');
-            if (subTitle && !subTitle.textContent.includes('v0.4.4')) {
-                subTitle.textContent = 'Running official v0.4.4 release';
+            if (subTitle && !subTitle.textContent.includes('v0.4.5')) {
+                subTitle.textContent = 'Running official v0.4.5 release';
             }
             aboutModal.style.display = 'flex';
         });
@@ -3728,7 +3734,7 @@ function setupAboutModal() {
 
             // Only launch splash screen if an actual new update was found and verified
             if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.4';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.5';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -3748,7 +3754,7 @@ function setupAboutModal() {
                 }
 
                 let remoteVersion = null;
-                const currentVersion = '0.4.4';
+                const currentVersion = '0.4.5';
 
                 // 1. Direct GitHub Releases API check (checks ProSpace with fallback to ProGrid)
                 try {
@@ -3823,7 +3829,7 @@ function setupAboutModal() {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Running standalone v0.4.4 release.';
+                if (updateSub) updateSub.textContent = 'Running standalone v0.4.5 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
                 checkUpdateBtn.setAttribute('data-action', 'check');
                 checkUpdateBtn.removeAttribute('data-target-ver');

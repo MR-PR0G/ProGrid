@@ -110,15 +110,12 @@ body.edit-mode.shelf-collapsed #app-container {
     height: 100vh;
     pointer-events: none;
     z-index: 1;
-    opacity: 0;
-    background: rgba(8, 10, 16, 0.35);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: opacity 0.22s ease;
+    background: transparent;
+    transition: background 0.25s ease;
 }
 
 body.edit-mode #blur-overlay {
-    opacity: 1;
+    background: rgba(8, 10, 16, 0.32);
 }
 
 #grid-scale-wrapper {
@@ -1721,11 +1718,6 @@ select.modal-input option,
 /* Floating Spotlight Search Bar & Trigger */
 /* Mobile and Touch Responsive Enhancements */
 @media (max-width: 768px) {
-    #blur-overlay {
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        background: rgba(8, 10, 16, 0.52);
-    }
     .widget-wrapper {
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
