@@ -188,25 +188,23 @@ export default class WeatherWidget extends BaseWidget {
             <style id="weather-widget-css">
                 .wtr-box {
                     width: 100%; height: 100%; box-sizing: border-box;
-                    padding: 8px 10px; display: flex; flex-direction: column;
+                    padding: 10px 12px; display: flex; flex-direction: column;
                     justify-content: space-between; overflow: hidden; position: relative;
                     user-select: none;
                 }
                 .wtr-top-bar {
                     display: flex; align-items: center; justify-content: space-between;
-                    min-height: 22px; width: 100%; flex-shrink: 0;
+                    min-height: 20px; width: 100%; flex-shrink: 0;
                 }
                 .wtr-loc-badge {
                     display: inline-flex; align-items: center; gap: 4px;
-                    padding: 2px 7px; border-radius: 7px;
-                    background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
-                    font-size: 11px; font-weight: 700; color: var(--text-primary);
-                    max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                    font-size: 11.5px; font-weight: 700; color: var(--text-primary);
+                    max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                    letter-spacing: -0.1px;
                 }
                 .wtr-icon-btn {
                     width: 22px; height: 22px; border-radius: 50%;
-                    background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08);
+                    background: rgba(255, 255, 255, 0.06); border: none;
                     color: var(--text-secondary); display: flex; align-items: center; justify-content: center;
                     cursor: pointer; transition: transform 0.2s, background 0.15s, color 0.15s;
                 }
@@ -217,56 +215,54 @@ export default class WeatherWidget extends BaseWidget {
                 /* Compact 1-row layout */
                 .wtr-compact-row {
                     display: flex; align-items: center; justify-content: space-between;
-                    width: 100%; flex: 1; padding: 2px 4px;
+                    width: 100%; flex: 1; padding: 2px 2px;
                 }
                 .wtr-compact-temp {
-                    font-size: 20px; font-weight: 800; color: var(--text-primary);
-                    line-height: 1; font-variant-numeric: tabular-nums;
+                    font-size: 22px; font-weight: 800; color: var(--text-primary);
+                    line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.5px;
                 }
                 .wtr-compact-meta {
-                    display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+                    display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
                 }
 
                 /* Hero Middle */
                 .wtr-hero-row {
                     display: flex; align-items: center; justify-content: space-between;
-                    margin: 2px 0 4px 0; gap: 6px;
+                    margin: 2px 0; gap: 6px;
                 }
                 .wtr-temp-hero {
                     font-size: 32px; font-weight: 800; color: var(--text-primary);
-                    line-height: 1; letter-spacing: -1px; font-variant-numeric: tabular-nums;
+                    line-height: 1; letter-spacing: -1.2px; font-variant-numeric: tabular-nums;
                 }
                 .wtr-desc-text {
-                    font-size: 11.5px; font-weight: 600; color: var(--text-secondary);
-                    margin-top: 2px;
+                    font-size: 11px; font-weight: 600; color: var(--text-secondary);
+                    margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
                 }
-                .wtr-metrics-pills {
-                    display: flex; align-items: center; gap: 6px; font-size: 9.5px; color: var(--text-secondary);
-                }
-                .wtr-metric-pill {
-                    display: inline-flex; align-items: center; gap: 3px;
-                    padding: 1.5px 5px; border-radius: 5px; background: rgba(0,0,0,0.18);
-                    border: 1px solid var(--panel-border); font-variant-numeric: tabular-nums;
+                .wtr-metrics-line {
+                    display: flex; align-items: center; gap: 8px;
+                    font-size: 9.5px; font-weight: 600; color: var(--text-secondary);
+                    opacity: 0.85; font-variant-numeric: tabular-nums;
+                    white-space: nowrap; overflow: hidden;
                 }
 
-                /* 5 to 7 Day Strip */
+                /* Minimalist Forecast Strip */
                 .wtr-forecast-strip {
                     display: flex; align-items: stretch; gap: 4px; width: 100%;
-                    padding-top: 4px; border-top: 1px solid var(--panel-border);
+                    padding-top: 5px; border-top: 1px solid rgba(255, 255, 255, 0.08);
                     margin-top: auto;
                 }
                 .wtr-forecast-day {
                     flex: 1; min-width: 0; display: flex; flex-direction: column;
-                    align-items: center; justify-content: space-between;
-                    padding: 2.5px 2px; border-radius: 6px;
-                    background: rgba(0, 0, 0, 0.14); font-size: 8.5px;
+                    align-items: center; justify-content: center; gap: 2px;
+                    padding: 3px 2px; border-radius: 8px;
+                    background: rgba(255, 255, 255, 0.04); font-size: 9px;
                 }
                 .wtr-day-label {
-                    font-weight: 600; color: var(--text-secondary); line-height: 1;
+                    font-weight: 600; color: var(--text-secondary); line-height: 1; font-size: 8.5px;
                 }
                 .wtr-day-temp {
-                    font-weight: 700; color: var(--text-primary); font-size: 9px;
-                    font-variant-numeric: tabular-nums; margin-top: 2px;
+                    font-weight: 700; color: var(--text-primary); font-size: 9.5px;
+                    font-variant-numeric: tabular-nums; line-height: 1;
                 }
 
                 /* Wide 4x2 Layout */
@@ -305,19 +301,19 @@ export default class WeatherWidget extends BaseWidget {
         // 1. Compact Mode (2x1)
         if (isCompact) {
             bodyHtml = `
-                <div class="wtr-compact-row">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="width:26px; height:26px; display:flex; align-items:center; justify-content:center;">
-                            ${weatherInfo.iconSvg}
+                <div class="wtr-compact-row" style="gap:6px; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:7px; min-width:0; flex:1;">
+                        <div style="width:24px; height:24px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            ${weatherInfo.iconSvg.replace(/width="\d+" height="\d+"/, 'width="24" height="24"')}
                         </div>
-                        <div>
+                        <div style="min-width:0; flex:1;">
                             <div class="wtr-compact-temp">${temp}${unitSymbol}</div>
-                            <div style="font-size:9.5px; color:var(--text-secondary); font-weight:600;">${weatherInfo.desc}</div>
+                            <div style="font-size:9.5px; color:var(--text-secondary); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${weatherInfo.desc}</div>
                         </div>
                     </div>
-                    <div class="wtr-compact-meta">
-                        <span style="font-size:10px; font-weight:700; color:var(--text-primary); font-variant-numeric:tabular-nums;">H: ${highToday}°</span>
-                        <span style="font-size:9.5px; color:var(--text-secondary); font-variant-numeric:tabular-nums;">L: ${lowToday}°</span>
+                    <div class="wtr-compact-meta" style="flex-shrink:0;">
+                        <span style="font-size:10px; font-weight:700; color:var(--text-primary); font-variant-numeric:tabular-nums;">H:${highToday}°</span>
+                        <span style="font-size:9.5px; color:var(--text-secondary); font-variant-numeric:tabular-nums;">L:${lowToday}°</span>
                     </div>
                 </div>
             `;

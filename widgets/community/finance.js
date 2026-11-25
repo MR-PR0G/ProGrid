@@ -17,7 +17,7 @@ const ASSET_SVGS = {
 };
 
 const ASSET_REGISTRY = [
-    { id: 'USDIRR', name: 'US Dollar', symbol: 'USD', price: 69500, change: 0.45, high: 69900, low: 69100, icon: ASSET_SVGS.USDIRR, type: 'forex', unit: 'Toman' },
+    { id: 'USDIRR', name: 'US Dollar', symbol: 'USD', price: 92000, change: 0.35, high: 92600, low: 91400, icon: ASSET_SVGS.USDIRR, type: 'forex', unit: 'Toman' },
     { id: 'GOLD', name: 'Gold (Ounce)', symbol: 'GOLD', price: 2684.5, change: 0.62, high: 2695.0, low: 2670.0, icon: ASSET_SVGS.GOLD, type: 'commodities', unit: '$' },
     { id: 'BTC', name: 'Bitcoin', symbol: 'BTC', price: 91450, change: 2.34, high: 92800, low: 89400, icon: ASSET_SVGS.BTC, type: 'crypto', unit: '$' },
     { id: 'ETH', name: 'Ethereum', symbol: 'ETH', price: 3120, change: -0.85, high: 3190, low: 3080, icon: ASSET_SVGS.ETH, type: 'crypto', unit: '$' },
@@ -36,17 +36,18 @@ export default class FinanceWidget extends BaseWidget {
             label: 'Markets & Crypto',
             icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>`,
             defaultW: 2, defaultH: 2,
-            minW: 2, minH: 1, maxW: 4, maxH: 3,
+            minW: 1, minH: 1, maxW: 4, maxH: 3,
             category: 'finance',
             author: 'MR Prog',
-            version: '1.6.0',
+            version: '1.7.0',
             downloads: '10.5k',
-            description: 'Professional financial tracker with live market rates, customizable base currency (USD/TMN), and dynamic responsive layouts.',
+            description: 'Professional financial tracker with live market rates, per-asset USD/TMN currency toggle, and responsive layouts.',
             defaultConfig: {
                 assets: ['USDIRR', 'GOLD'],
                 primaryAsset: 'USDIRR',
                 secondaryAsset: 'GOLD',
                 baseCurrency: 'IRT',
+                assetCurrencies: {},
                 showChart: true,
                 lastUpdate: Date.now(),
                 bg: '#ffffff'
@@ -72,10 +73,10 @@ export default class FinanceWidget extends BaseWidget {
                         if (a.id === 'USDIRR') {
                             a.name = 'US Dollar';
                             a.symbol = 'USD';
-                            if (a.price > 120000 || a.price < 30000) {
-                                a.price = 69500;
-                                a.high = 69900;
-                                a.low = 69100;
+                            if (a.price > 500000 || a.price < 30000) {
+                                a.price = 92000;
+                                a.high = 92600;
+                                a.low = 91400;
                             }
                         }
                         if (a.id === 'GOLD') {
@@ -122,7 +123,17 @@ export default class FinanceWidget extends BaseWidget {
 
     getUsdToTomanRate() {
         const usdirr = this.assets.find(a => a.id === 'USDIRR');
-        return (usdirr && usdirr.price >= 30000 && usdirr.price <= 120000) ? usdirr.price : 69500;
+        return (usdirr && usdirr.price >= 30000 && usdirr.price <= 500000) ? usdirr.price : 92000;
+    }
+
+    getAssetCurrency(asset) {
+        if (!asset) return this.config.baseCurrency || 'IRT';
+        if (asset.id === 'USDIRR') return 'IRT';
+        const map = this.config.assetCurrencies || {};
+        if (map[asset.id] === 'USD' || map[asset.id] === 'IRT') {
+            return map[asset.id];
+        }
+        return this.config.baseCurrency || 'IRT';
     }
 
     generateSynthetic24h(asset) {
@@ -245,25 +256,24 @@ export default class FinanceWidget extends BaseWidget {
             } catch {}
         }
 
-        // 2. Fetch Live USDIRR / Domestic Exchange Rates (Nobitex -> Wallex -> FawazAhmed CDN -> Open Exchange Rates)
+        // 2. Fetch Live USDIRR / Market Toman Rate (Nobitex -> TetherLand -> Wallex)
         let irRateFetched = false;
         try {
-            const nobitexRes = await fetch('https://api.nobitex.ir/market/stats', { signal: AbortSignal.timeout(3500) });
+            const nobitexRes = await fetch('https://api.nobitex.ir/market/stats?srcCurrency=usdt&dstCurrency=rls', { signal: AbortSignal.timeout(4000) });
             if (nobitexRes.ok) {
                 const nobitexData = await nobitexRes.json();
-                let usdtRial = 0;
-                if (nobitexData && nobitexData.global && nobitexData.global.usdt) {
-                    usdtRial = parseFloat(nobitexData.global.usdt);
-                } else if (nobitexData && nobitexData['usdt-rls'] && nobitexData['usdt-rls'].latest) {
-                    usdtRial = parseFloat(nobitexData['usdt-rls'].latest);
-                }
+                const pairStats = (nobitexData && nobitexData.stats && nobitexData.stats['usdt-rls']) || (nobitexData && nobitexData['usdt-rls']);
+                const usdtRial = pairStats && pairStats.latest ? parseFloat(pairStats.latest) : 0;
                 if (usdtRial > 100000) {
                     const usdtToman = Math.round(usdtRial / 10);
                     const tmnTarget = this.assets.find(f => f.id === 'USDIRR');
                     if (tmnTarget) {
                         tmnTarget.price = usdtToman;
-                        tmnTarget.high = Math.round(usdtToman * 1.008);
-                        tmnTarget.low = Math.round(usdtToman * 0.992);
+                        if (pairStats.dayChange !== undefined) {
+                            tmnTarget.change = parseFloat(pairStats.dayChange) || tmnTarget.change;
+                        }
+                        tmnTarget.high = pairStats.dayHigh ? Math.round(parseFloat(pairStats.dayHigh) / 10) : Math.round(usdtToman * 1.008);
+                        tmnTarget.low = pairStats.dayLow ? Math.round(parseFloat(pairStats.dayLow) / 10) : Math.round(usdtToman * 0.992);
                     }
                     irRateFetched = true;
                 }
@@ -272,7 +282,26 @@ export default class FinanceWidget extends BaseWidget {
 
         if (!irRateFetched) {
             try {
-                const wallexRes = await fetch('https://api.wallex.ir/v1/currencies/stats', { signal: AbortSignal.timeout(3500) });
+                const tlRes = await fetch('https://api.tetherland.com/currencies', { signal: AbortSignal.timeout(4000) });
+                if (tlRes.ok) {
+                    const tlData = await tlRes.json();
+                    const usdtPrice = tlData && tlData.data && tlData.data.currencies && tlData.data.currencies.USDT ? parseFloat(tlData.data.currencies.USDT.price) : 0;
+                    if (usdtPrice > 10000) {
+                        const tmnTarget = this.assets.find(f => f.id === 'USDIRR');
+                        if (tmnTarget) {
+                            tmnTarget.price = Math.round(usdtPrice);
+                            tmnTarget.high = Math.round(usdtPrice * 1.008);
+                            tmnTarget.low = Math.round(usdtPrice * 0.992);
+                        }
+                        irRateFetched = true;
+                    }
+                }
+            } catch {}
+        }
+
+        if (!irRateFetched) {
+            try {
+                const wallexRes = await fetch('https://api.wallex.ir/v1/currencies/stats', { signal: AbortSignal.timeout(4000) });
                 if (wallexRes.ok) {
                     const wData = await wallexRes.json();
                     if (wData && wData.result && wData.result.currencies && wData.result.currencies.USDT) {
@@ -283,48 +312,6 @@ export default class FinanceWidget extends BaseWidget {
                                 tmnTarget.price = Math.round(usdtPrice);
                                 tmnTarget.high = Math.round(usdtPrice * 1.008);
                                 tmnTarget.low = Math.round(usdtPrice * 0.992);
-                            }
-                            irRateFetched = true;
-                        }
-                    }
-                }
-            } catch {}
-        }
-
-        if (!irRateFetched) {
-            try {
-                const cdnRes = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json', { signal: AbortSignal.timeout(3500) });
-                if (cdnRes.ok) {
-                    const cdnData = await cdnRes.json();
-                    if (cdnData && cdnData.usd && cdnData.usd.irr) {
-                        const tomanRate = Math.round(cdnData.usd.irr / 10);
-                        if (tomanRate > 10000) {
-                            const tmnTarget = this.assets.find(f => f.id === 'USDIRR');
-                            if (tmnTarget) {
-                                tmnTarget.price = tomanRate;
-                                tmnTarget.high = Math.round(tomanRate * 1.008);
-                                tmnTarget.low = Math.round(tomanRate * 0.992);
-                            }
-                            irRateFetched = true;
-                        }
-                    }
-                }
-            } catch {}
-        }
-
-        if (!irRateFetched) {
-            try {
-                const erRes = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(3500) });
-                if (erRes.ok) {
-                    const erData = await erRes.json();
-                    if (erData && erData.rates && erData.rates.IRR) {
-                        const tomanRate = Math.round(erData.rates.IRR / 10);
-                        if (tomanRate > 10000) {
-                            const tmnTarget = this.assets.find(f => f.id === 'USDIRR');
-                            if (tmnTarget) {
-                                tmnTarget.price = tomanRate;
-                                tmnTarget.high = Math.round(tomanRate * 1.008);
-                                tmnTarget.low = Math.round(tomanRate * 0.992);
                             }
                             irRateFetched = true;
                         }
@@ -345,22 +332,19 @@ export default class FinanceWidget extends BaseWidget {
 
     formatPrice(val, asset, isCompact = false) {
         if (val === undefined || val === null || isNaN(val)) return '---';
-        const isIRT = (this.config.baseCurrency === 'IRT');
+        const isIRT = (this.getAssetCurrency(asset) === 'IRT');
         const usdToTmn = this.getUsdToTomanRate();
 
-        // Converted to Toman base currency
+        // Converted to Toman per-asset currency
         if (isIRT) {
-            let tomanVal;
-            if (asset.id === 'USDIRR' || asset.unit === 'Toman') {
-                tomanVal = val;
-            } else {
-                tomanVal = val * usdToTmn;
-            }
+            const tomanVal = (asset.id === 'USDIRR' || asset.unit === 'Toman') ? val : (val * usdToTmn);
 
             if (tomanVal >= 1e9) {
                 return `${(tomanVal / 1e9).toFixed(2)}B TMN`;
             } else if (tomanVal >= 1e6) {
                 return `${(tomanVal / 1e6).toFixed(1)}M TMN`;
+            } else if (!isCompact && tomanVal >= 1e3 && tomanVal < 1e6) {
+                return `${Math.round(tomanVal).toLocaleString('en-US')} TMN`;
             } else if (tomanVal >= 1e3) {
                 return `${(tomanVal / 1e3).toFixed(1)}k TMN`;
             }
@@ -485,11 +469,19 @@ export default class FinanceWidget extends BaseWidget {
                     letter-spacing: -0.2px; border-radius: 4px;
                 }
                 .fin-compact-price {
-                    font-size: 10.5px; font-weight: 800; color: var(--text-primary);
-                    white-space: nowrap; overflow: hidden; text-overflow: clip;
+                    font-size: clamp(9.5px, 2.5vw, 11px); font-weight: 800; color: var(--text-primary);
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
                     font-variant-numeric: tabular-nums; margin-top: 1px;
                     letter-spacing: -0.3px;
                 }
+                .fin-cur-toggle {
+                    font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 4px;
+                    background: rgba(59, 130, 246, 0.14); color: #60a5fa;
+                    border: 1px solid rgba(59, 130, 246, 0.25); cursor: pointer;
+                    transition: background 0.15s, transform 0.12s; line-height: 1.2; flex-shrink: 0;
+                }
+                .fin-cur-toggle:hover { background: rgba(59, 130, 246, 0.28); }
+                .fin-cur-toggle:active { transform: scale(0.92); }
                 .fin-compact-single {
                     flex: 1; display: flex; align-items: center; justify-content: space-between;
                     padding: 4px 10px; background: rgba(0, 0, 0, 0.18);
@@ -718,19 +710,19 @@ export default class FinanceWidget extends BaseWidget {
                     const isUp = asset.change >= 0;
                     const pts = this.historyCache[asset.id] || this.generateSynthetic24h(asset);
                     const chart = this.buildSmoothSvgPath(pts, 100, 24);
-                    const fullPriceStr = isIRT 
-                        ? `${Math.round(asset.id === 'USDIRR' ? asset.price : asset.price * usdToTmn).toLocaleString('en-US')} TMN`
-                        : (asset.id === 'USDIRR' ? '$1.00' : `$${asset.price.toLocaleString('en-US')}`);
+                    const fullPriceStr = this.formatPrice(asset.price, asset);
+                    const curBtn = asset.id === 'USDIRR' ? '' : `<button type="button" class="fin-cur-toggle" data-asset-id="${asset.id}" title="Switch USD / TMN">${this.getAssetCurrency(asset) === 'IRT' ? 'TMN' : 'USD'}</button>`;
                     cardsHtml += `
                         <div class="fin-dual-card" title="${asset.name || asset.symbol}: ${fullPriceStr}">
                             <div class="fin-dual-top">
-                                <div style="display:flex; align-items:center; gap:5px;">
+                                <div style="display:flex; align-items:center; gap:4px; min-width:0;">
                                     <span class="fin-asset-icon">${asset.icon}</span>
                                     <span class="fin-asset-sym">${asset.symbol}</span>
+                                    ${curBtn}
                                 </div>
                                 <span class="fin-change-chip ${isUp ? 'up' : 'down'}">${isUp ? '+' : ''}${asset.change.toFixed(1)}%</span>
                             </div>
-                            <div class="fin-dual-price">${this.formatPrice(asset.price, asset)}</div>
+                            <div class="fin-dual-price">${fullPriceStr}</div>
                             <svg class="fin-mini-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none">
                                 <path d="${chart.lineD}" fill="none" stroke="${isUp ? '#10b981' : '#ef4444'}" stroke-width="1.8" stroke-linecap="round"/>
                             </svg>
@@ -851,6 +843,22 @@ export default class FinanceWidget extends BaseWidget {
                 this.updateConfig({ lastUpdate: this.config.lastUpdate }, true);
             });
         }
+
+        // Per-asset currency toggle (USD <-> TMN)
+        box.querySelectorAll('.fin-cur-toggle').forEach(btn => {
+            btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const assetId = btn.getAttribute('data-asset-id');
+                if (!assetId) return;
+                const map = Object.assign({}, this.config.assetCurrencies || {});
+                const current = map[assetId] || this.config.baseCurrency || 'IRT';
+                map[assetId] = (current === 'IRT') ? 'USD' : 'IRT';
+                this.config.assetCurrencies = map;
+                this.updateConfig({ assetCurrencies: map }, true);
+                if (navigator.vibrate) try { navigator.vibrate(20); } catch(_) {}
+            });
+        });
 
         // Refresh button
         const refreshBtn = box.querySelector(`#fin-refresh-${id}`);

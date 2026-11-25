@@ -93,6 +93,7 @@ body.edit-mode #app-container {
     padding: 0 14px;
     overflow: visible;
     justify-content: flex-start;
+    touch-action: none !important;
 }
 
 body.edit-mode.shelf-collapsed #app-container {
@@ -110,9 +111,10 @@ body.edit-mode.shelf-collapsed #app-container {
     pointer-events: none;
     z-index: 1;
     opacity: 0;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    transition: opacity 0.25s ease;
+    background: rgba(8, 10, 16, 0.35);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: opacity 0.22s ease;
 }
 
 body.edit-mode #blur-overlay {
@@ -174,10 +176,9 @@ body.edit-mode .grid-cell-visual { display: block; }
 
 body.edit-mode .widget-wrapper {
     touch-action: none;
-    will-change: transform, left, top;
 }
 
-body.edit-mode .widget-wrapper:not(.dragging):not(.resizing) {
+body.edit-mode:not(.is-interacting) .widget-wrapper:not(.dragging):not(.resizing) {
     animation: widgetJiggle 0.25s ease-in-out infinite alternate;
 }
 
@@ -194,8 +195,9 @@ body.edit-mode .widget-content * {
 }
 
 .widget-wrapper.dragging, .widget-wrapper.resizing {
-    opacity: 0.95; z-index: 99999 !important;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    opacity: 0.96; z-index: 99999 !important;
+    will-change: transform;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.42);
     animation: none !important; transition: none !important;
 }
 .widget-wrapper.dragging {
@@ -225,7 +227,7 @@ body.edit-mode .widget-content * {
 #ghost-guide.active { display: block; }
 
 .resize-handle {
-    position: absolute; right: -8px; bottom: -8px; width: 32px; height: 32px;
+    position: absolute; right: -10px; bottom: -10px; width: 38px; height: 38px;
     cursor: se-resize; display: none; z-index: 35;
     background: var(--panel-bg); border: 1.5px solid var(--panel-border);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -1719,6 +1721,15 @@ select.modal-input option,
 /* Floating Spotlight Search Bar & Trigger */
 /* Mobile and Touch Responsive Enhancements */
 @media (max-width: 768px) {
+    #blur-overlay {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(8, 10, 16, 0.52);
+    }
+    .widget-wrapper {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
     body.edit-mode #app-container {
         top: max(38px, calc(env(safe-area-inset-top, 0px) + 28px));
         bottom: 302px;

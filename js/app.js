@@ -400,6 +400,7 @@ function attachInteractionEngine(el, w, instance) {
     let initialPointerX = 0;
     let initialPointerY = 0;
     let startW = 0, startH = 0;
+    let startLeft = 0, startTop = 0;
     let dragOffsetX = 0, dragOffsetY = 0;
     let isDragging = false;
     let isResizing = false;
@@ -409,6 +410,9 @@ function attachInteractionEngine(el, w, instance) {
     let widgetLongPressTimer = null;
     let cachedScale = 1;
     let cachedContainerBounds = null;
+    let cachedDeleteZoneRect = null;
+    let cachedMergeTargets = [];
+    let cachedSiblingDOMs = new Map();
     let lastComputedDragLayout = null;
     let lastTargetCol = -1;
     let lastTargetRow = -1;
@@ -441,6 +445,7 @@ function attachInteractionEngine(el, w, instance) {
         if (!isDragging && !isResizing) {
             if (moveDist > 5) {
                 hasMovedPastThreshold = true;
+                document.body.classList.add('is-interacting');
                 if (isPointerDownOnHandle) {
                     isResizing = true;
                     el.classList.add('resizing');
@@ -464,32 +469,35 @@ function attachInteractionEngine(el, w, instance) {
             if (!isDragging && !isResizing) return;
 
             const scale = cachedScale || 1;
-            const containerBounds = cachedContainerBounds || container.getBoundingClientRect();
             const step = grid.cellSize + grid.gap;
 
             if (isDragging) {
-                const targetLeft = ((e.clientX - containerBounds.left) / scale) - dragOffsetX;
-                const targetTop = ((e.clientY - containerBounds.top) / scale) - dragOffsetY;
+                const dx = (e.clientX - initialPointerX) / scale;
+                const dy = (e.clientY - initialPointerY) / scale;
+                const targetLeft = startLeft + dx;
+                const targetTop = startTop + dy;
 
-                el.style.left = `${targetLeft}px`;
-                el.style.top = `${targetTop}px`;
+                // GPU-composited drag movement (zero layout recalculation)
+                el.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(1.02)`;
 
-                const isOverDelete = checkCollisionWithDeleteZone(e.clientX, e.clientY);
+                let isOverDelete = false;
+                if (cachedDeleteZoneRect) {
+                    const fuzz = 22;
+                    isOverDelete = (
+                        e.clientX >= (cachedDeleteZoneRect.left - fuzz) &&
+                        e.clientX <= (cachedDeleteZoneRect.right + fuzz) &&
+                        e.clientY >= (cachedDeleteZoneRect.top - fuzz) &&
+                        e.clientY <= (cachedDeleteZoneRect.bottom + fuzz)
+                    );
+                }
+
                 if (isOverDelete) {
                     if (deleteZone) deleteZone.classList.add('hovered');
                     if (ghost) ghost.classList.remove('active');
-                    if (initialWidgetsState) {
-                        initialWidgetsState.forEach(tw => {
-                            if (tw.id !== w.id && !tw.isHidden) {
-                                const otherDOM = document.getElementById(tw.id);
-                                if (otherDOM && !otherDOM.classList.contains('dragging') && !otherDOM.classList.contains('resizing')) {
-                                    otherDOM.style.transition = 'left 0.2s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)';
-                                    otherDOM.style.left = `${tw.x * step}px`;
-                                    otherDOM.style.top = `${tw.y * step}px`;
-                                }
-                            }
-                        });
-                    }
+                    cachedSiblingDOMs.forEach((otherDOM) => {
+                        otherDOM.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)';
+                        otherDOM.style.transform = 'translate3d(0, 0, 0)';
+                    });
                     lastComputedDragLayout = null;
                     return;
                 } else {
@@ -505,22 +513,21 @@ function attachInteractionEngine(el, w, instance) {
                 const effH = Math.max(minH, w.h);
 
                 targetCol = Math.max(0, Math.min(targetCol, grid.columns - effW));
-                targetRow = Math.max(0, targetRow);
+                targetRow = Math.max(0, Math.min(targetRow, Math.max(0, grid.minRows - effH)));
 
-                // Shortcut merge into folder
+                // Shortcut merge into folder (only evaluated for shortcuts using cached rects)
                 potentialMergeTargetId = null;
-                document.querySelectorAll('.widget-wrapper:not(.dragging)').forEach(otherEl => {
-                    const r = otherEl.getBoundingClientRect();
-                    if (e.clientX > r.left && e.clientX < r.right && e.clientY > r.top && e.clientY < r.bottom) {
-                        const targetWidget = state.widgets.find(item => item.id === otherEl.id);
-                        if (targetWidget && (targetWidget.type === 'shortcut' || targetWidget.type === 'folder') && w.type === 'shortcut') {
-                            potentialMergeTargetId = targetWidget.id;
-                            otherEl.classList.add('folder-merge-glow');
+                if (w.type === 'shortcut' && cachedMergeTargets.length > 0) {
+                    for (let i = 0; i < cachedMergeTargets.length; i++) {
+                        const mt = cachedMergeTargets[i];
+                        if (e.clientX > mt.rect.left && e.clientX < mt.rect.right && e.clientY > mt.rect.top && e.clientY < mt.rect.bottom) {
+                            potentialMergeTargetId = mt.id;
+                            mt.el.classList.add('folder-merge-glow');
+                        } else {
+                            mt.el.classList.remove('folder-merge-glow');
                         }
-                    } else {
-                        otherEl.classList.remove('folder-merge-glow');
                     }
-                });
+                }
 
                 // Performance & Stability guard: Only recalculate layout & restyle siblings when the snap cell changes!
                 if (!potentialMergeTargetId && targetCol === lastTargetCol && targetRow === lastTargetRow) {
@@ -533,19 +540,18 @@ function attachInteractionEngine(el, w, instance) {
                     const layoutRes = grid.computeLiveDragLayout(w.id, targetCol, targetRow, effW, effH, initialWidgetsState);
                     updateGhost({ id: w.id, x: targetCol, y: targetRow, w: effW, h: effH });
 
-                    // Dynamically adapt grid container height if displacement expanded rows
-                    if (layoutRes.totalRows > grid.rowsCount) {
-                        container.style.height = `${layoutRes.totalRows * grid.cellSize + (layoutRes.totalRows - 1) * grid.gap}px`;
-                    }
-
-                    // Smoothly animate sibling widgets out of the way in real-time
+                    // Smoothly animate sibling widgets via GPU transform (zero layout thrashing)
                     layoutRes.widgets.forEach(lw => {
                         if (lw.id !== w.id && !lw.isHidden) {
-                            const otherDOM = document.getElementById(lw.id);
-                            if (otherDOM && !otherDOM.classList.contains('dragging') && !otherDOM.classList.contains('resizing')) {
-                                otherDOM.style.transition = 'left 0.25s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)';
-                                otherDOM.style.left = `${lw.x * step}px`;
-                                otherDOM.style.top = `${lw.y * step}px`;
+                            const entry = cachedSiblingDOMs.get(lw.id);
+                            if (entry) {
+                                const orig = initialWidgetsState.find(item => item.id === lw.id);
+                                if (orig) {
+                                    const shiftX = (lw.x - orig.x) * step;
+                                    const shiftY = (lw.y - orig.y) * step;
+                                    entry.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+                                    entry.style.transform = `translate3d(${shiftX}px, ${shiftY}px, 0)`;
+                                }
                             }
                         }
                     });
@@ -594,11 +600,15 @@ function attachInteractionEngine(el, w, instance) {
                     const layoutRes = grid.computeLiveDragLayout(w.id, w.x, w.y, gridW, gridH, initialWidgetsState);
                     layoutRes.widgets.forEach(lw => {
                         if (lw.id !== w.id && !lw.isHidden) {
-                            const otherDOM = document.getElementById(lw.id);
-                            if (otherDOM && !otherDOM.classList.contains('dragging') && !otherDOM.classList.contains('resizing')) {
-                                otherDOM.style.transition = 'left 0.25s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)';
-                                otherDOM.style.left = `${lw.x * step}px`;
-                                otherDOM.style.top = `${lw.y * step}px`;
+                            const entry = cachedSiblingDOMs.get(lw.id);
+                            if (entry) {
+                                const orig = initialWidgetsState.find(item => item.id === lw.id);
+                                if (orig) {
+                                    const shiftX = (lw.x - orig.x) * step;
+                                    const shiftY = (lw.y - orig.y) * step;
+                                    entry.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+                                    entry.style.transform = `translate3d(${shiftX}px, ${shiftY}px, 0)`;
+                                }
                             }
                         }
                     });
@@ -614,20 +624,25 @@ function attachInteractionEngine(el, w, instance) {
         window.removeEventListener('pointercancel', onGlobalPointerUp);
         window.removeEventListener('blur', onGlobalPointerUp);
 
+        document.body.classList.remove('is-interacting');
         if (widgetLongPressTimer) clearTimeout(widgetLongPressTimer);
         isPointerDownOnHandle = false;
         if (!state.editMode) return;
 
         const duration = Date.now() - pointerDownTime;
-        const wasTap = !hasMovedPastThreshold && !isDragging && !isResizing && duration < 280;
+        const wasTap = e.type !== 'pointercancel' && !hasMovedPastThreshold && !isDragging && !isResizing && duration < 280;
 
         el.classList.remove('dragging', 'resizing', 'burn-effect', 'max-limit-reached');
         if (ghost) ghost.classList.remove('active', 'max-limit-reached');
 
-        // Reset inline animation transitions on all sibling elements
+        // Reset inline GPU transforms & transitions on all sibling elements
         document.querySelectorAll('.widget-wrapper').forEach(wrapper => {
             wrapper.style.transition = '';
+            wrapper.style.transform = '';
+            wrapper.classList.remove('folder-merge-glow');
         });
+        cachedSiblingDOMs.clear();
+        cachedMergeTargets = [];
 
         if (wasTap) {
             if (Date.now() - (window.__lastDragEndTime || 0) > 350) {
@@ -752,12 +767,31 @@ function attachInteractionEngine(el, w, instance) {
         grid.updateMetrics();
         cachedScale = getWrapperScale() || 1;
         cachedContainerBounds = container.getBoundingClientRect();
+        cachedDeleteZoneRect = deleteZone ? deleteZone.getBoundingClientRect() : null;
         initialWidgetsState = JSON.parse(JSON.stringify(state.widgets));
         lastComputedDragLayout = null;
         lastTargetCol = -1;
         lastTargetRow = -1;
         lastGridW = -1;
         lastGridH = -1;
+
+        startLeft = parseFloat(el.style.left) || 0;
+        startTop = parseFloat(el.style.top) || 0;
+
+        // Cache sibling DOM elements & merge targets once to prevent layout thrashing during drag
+        cachedSiblingDOMs.clear();
+        cachedMergeTargets = [];
+        document.querySelectorAll('.widget-wrapper').forEach(otherEl => {
+            if (otherEl !== el) {
+                cachedSiblingDOMs.set(otherEl.id, otherEl);
+                if (w.type === 'shortcut') {
+                    const targetWidget = state.widgets.find(item => item.id === otherEl.id);
+                    if (targetWidget && (targetWidget.type === 'shortcut' || targetWidget.type === 'folder')) {
+                        cachedMergeTargets.push({ id: targetWidget.id, el: otherEl, rect: otherEl.getBoundingClientRect() });
+                    }
+                }
+            }
+        });
 
         isPointerDownOnHandle = !!(e.target && e.target.classList.contains('resize-handle'));
         if (isPointerDownOnHandle) {
@@ -773,6 +807,10 @@ function attachInteractionEngine(el, w, instance) {
         window.addEventListener('pointerup', onGlobalPointerUp);
         window.addEventListener('pointercancel', onGlobalPointerUp);
         window.addEventListener('blur', onGlobalPointerUp);
+
+        if (el.setPointerCapture && e.pointerId !== undefined) {
+            try { el.setPointerCapture(e.pointerId); } catch (_) {}
+        }
 
         e.stopPropagation();
     });
@@ -871,7 +909,7 @@ function setupGlobalLongPressSensor() {
             if (isTrackingLongPress && !state.editMode) {
                 handleLongPressTrigger(longPressStartX, longPressStartY, longPressTarget);
             }
-        }, 420);
+        }, 380);
     };
 
     const onMove = (clientX, clientY) => {
@@ -915,12 +953,12 @@ function setupGlobalLongPressSensor() {
     }, { passive: true });
 
     window.addEventListener('touchend', cancelGlobalLongPress, { passive: true });
-    window.addEventListener('touchcancel', cancelGlobalLongPress, { passive: true });
 
     // Native contextmenu event (Android long-press / desktop right click)
     window.addEventListener('contextmenu', (e) => {
         if (isInteractiveModalOrInput(e.target)) return;
         e.preventDefault();
+        if (state.editMode) return;
         e.stopPropagation();
         handleLongPressTrigger(e.clientX, e.clientY, e.target);
     }, true);
@@ -2362,8 +2400,8 @@ function setupSkinBackupModal() {
 
             const payload = {
                 version: "1.0",
-                prospaceVersion: "0.4.3",
-                progridVersion: "0.4.3",
+                prospaceVersion: "0.4.4",
+                progridVersion: "0.4.4",
                 exportedAt: new Date().toISOString(),
                 skinName: slotData.name || "Custom Skin",
                 widgets: slotData.widgets
@@ -3568,7 +3606,7 @@ function isNewerVersion(remote, current) {
     return false;
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.4.3') {
+function launchUpdateSplashScreen(targetVer = 'v0.4.4') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -3664,10 +3702,10 @@ function setupAboutModal() {
     if (aboutBtn) {
         aboutBtn.addEventListener('click', () => {
             const verBadge = document.getElementById('about-app-version');
-            if (verBadge) verBadge.textContent = 'v0.4.3';
+            if (verBadge) verBadge.textContent = 'v0.4.4';
             const subTitle = document.getElementById('update-status-sub');
-            if (subTitle && !subTitle.textContent.includes('v0.4.3')) {
-                subTitle.textContent = 'Running official v0.4.3 release';
+            if (subTitle && !subTitle.textContent.includes('v0.4.4')) {
+                subTitle.textContent = 'Running official v0.4.4 release';
             }
             aboutModal.style.display = 'flex';
         });
@@ -3690,7 +3728,7 @@ function setupAboutModal() {
 
             // Only launch splash screen if an actual new update was found and verified
             if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.3';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.4';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -3710,7 +3748,7 @@ function setupAboutModal() {
                 }
 
                 let remoteVersion = null;
-                const currentVersion = '0.4.3';
+                const currentVersion = '0.4.4';
 
                 // 1. Direct GitHub Releases API check (checks ProSpace with fallback to ProGrid)
                 try {
@@ -3785,7 +3823,7 @@ function setupAboutModal() {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Running standalone v0.4.3 release.';
+                if (updateSub) updateSub.textContent = 'Running standalone v0.4.4 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
                 checkUpdateBtn.setAttribute('data-action', 'check');
                 checkUpdateBtn.removeAttribute('data-target-ver');

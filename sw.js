@@ -1,12 +1,12 @@
-const CACHE_NAME = 'prospace-cache-v0.6.4';
+const CACHE_NAME = 'prospace-cache-v0.6.5';
 const urlsToCache = [
   './',
   './index.html',
   'index.html',
   './css/style.css',
-  './css/style.css?v=0.4.3',
+  './css/style.css?v=0.4.4',
   './js/app.js',
-  './js/app.js?v=0.4.3',
+  './js/app.js?v=0.4.4',
   './js/grid.js',
   './js/storage.js',
   './js/hub.js',
