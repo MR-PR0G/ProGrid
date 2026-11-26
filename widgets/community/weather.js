@@ -188,25 +188,32 @@ export default class WeatherWidget extends BaseWidget {
             <style id="weather-widget-css">
                 .wtr-box {
                     width: 100%; height: 100%; box-sizing: border-box;
-                    padding: 10px 12px; display: flex; flex-direction: column;
+                    padding: 7px 9px; display: flex; flex-direction: column;
                     justify-content: space-between; overflow: hidden; position: relative;
-                    user-select: none;
+                    user-select: none; min-height: 0; min-width: 0;
                 }
                 .wtr-top-bar {
                     display: flex; align-items: center; justify-content: space-between;
-                    min-height: 20px; width: 100%; flex-shrink: 0;
+                    min-height: 18px; height: 18px; width: 100%; flex-shrink: 0;
+                    margin-bottom: 2px;
                 }
                 .wtr-loc-badge {
                     display: inline-flex; align-items: center; gap: 4px;
-                    font-size: 11.5px; font-weight: 700; color: var(--text-primary);
-                    max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                    font-size: 11px; font-weight: 700; color: var(--text-primary);
+                    max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
                     letter-spacing: -0.1px;
                 }
+                .wtr-unit-badge {
+                    font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 4px;
+                    background: rgba(59, 130, 246, 0.15); color: #60a5fa;
+                    border: 1px solid rgba(59, 130, 246, 0.25); line-height: 1.2;
+                }
                 .wtr-icon-btn {
-                    width: 22px; height: 22px; border-radius: 50%;
+                    width: 20px; height: 20px; border-radius: 50%;
                     background: rgba(255, 255, 255, 0.06); border: none;
                     color: var(--text-secondary); display: flex; align-items: center; justify-content: center;
                     cursor: pointer; transition: transform 0.2s, background 0.15s, color 0.15s;
+                    flex-shrink: 0;
                 }
                 .wtr-icon-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.14); }
                 .wtr-icon-btn.spinning svg { animation: wtrSpin 0.75s linear infinite; }
@@ -215,60 +222,131 @@ export default class WeatherWidget extends BaseWidget {
                 /* Compact 1-row layout */
                 .wtr-compact-row {
                     display: flex; align-items: center; justify-content: space-between;
-                    width: 100%; flex: 1; padding: 2px 2px;
+                    width: 100%; flex: 1; gap: 6px; min-width: 0; overflow: hidden;
                 }
                 .wtr-compact-temp {
-                    font-size: 22px; font-weight: 800; color: var(--text-primary);
+                    font-size: 20px; font-weight: 800; color: var(--text-primary);
                     line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.5px;
                 }
                 .wtr-compact-meta {
-                    display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+                    display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0;
                 }
 
-                /* Hero Middle */
+                /* Hero Row in 2x2 */
                 .wtr-hero-row {
                     display: flex; align-items: center; justify-content: space-between;
-                    margin: 2px 0; gap: 6px;
+                    margin: 1px 0; gap: 4px; min-height: 0; flex-shrink: 0;
+                }
+                .wtr-hero-left {
+                    display: flex; flex-direction: column; min-width: 0; flex: 1;
                 }
                 .wtr-temp-hero {
-                    font-size: 32px; font-weight: 800; color: var(--text-primary);
-                    line-height: 1; letter-spacing: -1.2px; font-variant-numeric: tabular-nums;
+                    font-size: 26px; font-weight: 800; color: var(--text-primary);
+                    line-height: 1; letter-spacing: -0.8px; font-variant-numeric: tabular-nums;
                 }
                 .wtr-desc-text {
-                    font-size: 11px; font-weight: 600; color: var(--text-secondary);
-                    margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                    font-size: 10px; font-weight: 600; color: var(--text-secondary);
+                    margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
                 }
-                .wtr-metrics-line {
-                    display: flex; align-items: center; gap: 8px;
-                    font-size: 9.5px; font-weight: 600; color: var(--text-secondary);
-                    opacity: 0.85; font-variant-numeric: tabular-nums;
-                    white-space: nowrap; overflow: hidden;
+                .wtr-hl-text {
+                    font-size: 9px; font-weight: 700; color: var(--text-secondary);
+                    opacity: 0.85; margin-top: 1px; font-variant-numeric: tabular-nums;
+                    white-space: nowrap;
+                }
+                .wtr-hero-icon {
+                    width: 32px; height: 32px; display: flex; align-items: center;
+                    justify-content: center; flex-shrink: 0;
                 }
 
-                /* Minimalist Forecast Strip */
+                /* Metrics Pills */
+                .wtr-metrics-pills {
+                    display: flex; align-items: center; gap: 3px; width: 100%;
+                    margin: 2px 0; flex-shrink: 0; overflow: hidden;
+                }
+                .wtr-metric-pill {
+                    flex: 1; min-width: 0; display: inline-flex; align-items: center;
+                    justify-content: center; gap: 3px; padding: 2px 3px;
+                    border-radius: 6px; background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.07); color: var(--text-secondary);
+                    font-size: 8.5px; font-weight: 600; white-space: nowrap;
+                    text-overflow: ellipsis; overflow: hidden; font-variant-numeric: tabular-nums;
+                    line-height: 1.2;
+                }
+                .wtr-metric-pill svg { flex-shrink: 0; opacity: 0.8; }
+                .wtr-metric-pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+                /* Minimalist Forecast Strip in 2x2 */
                 .wtr-forecast-strip {
-                    display: flex; align-items: stretch; gap: 4px; width: 100%;
-                    padding-top: 5px; border-top: 1px solid rgba(255, 255, 255, 0.08);
-                    margin-top: auto;
+                    display: flex; align-items: stretch; gap: 2.5px; width: 100%;
+                    padding-top: 3px; border-top: 1px solid rgba(255, 255, 255, 0.07);
+                    margin-top: auto; flex-shrink: 0; overflow: hidden;
                 }
                 .wtr-forecast-day {
                     flex: 1; min-width: 0; display: flex; flex-direction: column;
-                    align-items: center; justify-content: center; gap: 2px;
-                    padding: 3px 2px; border-radius: 8px;
-                    background: rgba(255, 255, 255, 0.04); font-size: 9px;
+                    align-items: center; justify-content: center; gap: 1px;
+                    padding: 2px 1px; border-radius: 6px;
+                    background: rgba(255, 255, 255, 0.035); overflow: hidden;
                 }
                 .wtr-day-label {
-                    font-weight: 600; color: var(--text-secondary); line-height: 1; font-size: 8.5px;
+                    font-weight: 600; color: var(--text-secondary); line-height: 1; font-size: 8px;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+                }
+                .wtr-day-icon {
+                    width: 14px; height: 14px; display: flex; align-items: center;
+                    justify-content: center; margin: 1px 0; flex-shrink: 0;
                 }
                 .wtr-day-temp {
-                    font-weight: 700; color: var(--text-primary); font-size: 9.5px;
+                    font-weight: 700; color: var(--text-primary); font-size: 9px;
+                    font-variant-numeric: tabular-nums; line-height: 1;
+                }
+                .wtr-day-low {
+                    font-size: 7.5px; color: var(--text-secondary); opacity: 0.75;
                     font-variant-numeric: tabular-nums; line-height: 1;
                 }
 
-                /* Wide 4x2 Layout */
-                .wtr-wide-grid {
-                    display: grid; grid-template-columns: 1fr 1.3fr; gap: 10px;
-                    width: 100%; height: 100%;
+                /* Wide 4x2 Dashboard Layout */
+                .wtr-wide-dashboard {
+                    display: grid; grid-template-columns: minmax(130px, 1fr) 1.55fr;
+                    gap: 8px; width: 100%; height: calc(100% - 22px);
+                    min-height: 0; overflow: hidden;
+                }
+                .wtr-wide-left {
+                    display: flex; flex-direction: column; justify-content: space-between;
+                    min-width: 0; height: 100%;
+                }
+                .wtr-wide-hero {
+                    display: flex; align-items: center; gap: 8px; min-width: 0;
+                }
+                .wtr-wide-icon-box {
+                    width: 42px; height: 42px; display: flex; align-items: center;
+                    justify-content: center; flex-shrink: 0; border-radius: 10px;
+                    background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.07);
+                }
+                .wtr-wide-temp {
+                    font-size: 32px; font-weight: 800; color: var(--text-primary);
+                    line-height: 1; letter-spacing: -1px; font-variant-numeric: tabular-nums;
+                }
+                .wtr-wide-right {
+                    display: flex; flex-direction: column; justify-content: space-between;
+                    min-width: 0; height: 100%; background: rgba(0, 0, 0, 0.12);
+                    border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px;
+                    padding: 5px 6px; overflow: hidden;
+                }
+                .wtr-wide-right-head {
+                    display: flex; align-items: center; justify-content: space-between;
+                    padding-bottom: 3px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                    margin-bottom: 3px; font-size: 9px; font-weight: 700;
+                    color: var(--text-secondary); letter-spacing: 0.3px; text-transform: uppercase;
+                }
+                .wtr-wide-forecast-row {
+                    display: flex; align-items: stretch; gap: 3px; width: 100%;
+                    flex: 1; min-height: 0;
+                }
+                .wtr-wide-day-card {
+                    flex: 1; min-width: 0; display: flex; flex-direction: column;
+                    align-items: center; justify-content: space-around;
+                    padding: 3px 1px; border-radius: 6px;
+                    background: rgba(255, 255, 255, 0.035); overflow: hidden;
                 }
             </style>
         ` : '';
@@ -283,8 +361,8 @@ export default class WeatherWidget extends BaseWidget {
                     </svg>
                     <span>${city}</span>
                 </div>
-                <div style="display:flex; align-items:center; gap:5px;">
-                    <span style="font-size:9px; font-weight:700; padding:1px 4.5px; border-radius:4px; background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.25);">${unitSymbol}</span>
+                <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
+                    <span class="wtr-unit-badge">${unitSymbol}</span>
                     <button type="button" class="wtr-icon-btn" id="wtr-refresh-${id}" title="Refresh Weather" aria-label="Refresh">
                         <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="23 4 23 10 17 10"></polyline>
@@ -298,10 +376,10 @@ export default class WeatherWidget extends BaseWidget {
 
         let bodyHtml = '';
 
-        // 1. Compact Mode (2x1)
+        // 1. Compact Mode (2x1, 3x1, 4x1)
         if (isCompact) {
             bodyHtml = `
-                <div class="wtr-compact-row" style="gap:6px; min-width:0;">
+                <div class="wtr-compact-row">
                     <div style="display:flex; align-items:center; gap:7px; min-width:0; flex:1;">
                         <div style="width:24px; height:24px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                             ${weatherInfo.iconSvg.replace(/width="\d+" height="\d+"/, 'width="24" height="24"')}
@@ -311,18 +389,85 @@ export default class WeatherWidget extends BaseWidget {
                             <div style="font-size:9.5px; color:var(--text-secondary); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${weatherInfo.desc}</div>
                         </div>
                     </div>
-                    <div class="wtr-compact-meta" style="flex-shrink:0;">
+                    <div class="wtr-compact-meta">
                         <span style="font-size:10px; font-weight:700; color:var(--text-primary); font-variant-numeric:tabular-nums;">H:${highToday}°</span>
-                        <span style="font-size:9.5px; color:var(--text-secondary); font-variant-numeric:tabular-nums;">L:${lowToday}°</span>
+                        <span style="font-size:9px; color:var(--text-secondary); font-variant-numeric:tabular-nums;">L:${lowToday}°</span>
                     </div>
                 </div>
             `;
         } 
-        // 2. Standard / Wide Mode (2x2 or 4x2)
+        // 2. Wide Dashboard Mode (4x2 or larger wide layout)
+        else if (isWide) {
+            let wideForecastHtml = '';
+            if (daily && Array.isArray(daily.time)) {
+                const count = Math.min(7, daily.time.length);
+                for (let i = 0; i < count; i++) {
+                    const dateStr = daily.time[i];
+                    const dayDate = new Date(dateStr + 'T00:00:00');
+                    const dayName = (i === 0) ? 'Today' : dayDate.toLocaleDateString('en-US', { weekday: 'short' });
+                    const code = daily.weather_code ? daily.weather_code[i] : 0;
+                    const dayInfo = this.getWeatherInfo(code, 1);
+                    const maxT = Math.round(daily.temperature_2m_max[i] || temp);
+                    const minT = Math.round(daily.temperature_2m_min[i] || temp);
+
+                    wideForecastHtml += `
+                        <div class="wtr-wide-day-card" title="${dayName}: ${dayInfo.desc}, High: ${maxT}°, Low: ${minT}°">
+                            <span class="wtr-day-label">${dayName}</span>
+                            <div class="wtr-day-icon">
+                                ${dayInfo.iconSvg.replace(/width="\d+" height="\d+"/, 'width="15" height="15"')}
+                            </div>
+                            <span class="wtr-day-temp">${maxT}°</span>
+                            <span class="wtr-day-low">${minT}°</span>
+                        </div>
+                    `;
+                }
+            }
+
+            bodyHtml = `
+                <div class="wtr-wide-dashboard">
+                    <div class="wtr-wide-left">
+                        <div class="wtr-wide-hero">
+                            <div class="wtr-wide-icon-box">
+                                ${weatherInfo.iconSvg.replace(/width="\d+" height="\d+"/, 'width="30" height="30"')}
+                            </div>
+                            <div style="min-width:0; flex:1;">
+                                <div class="wtr-wide-temp">${temp}${unitSymbol}</div>
+                                <div class="wtr-desc-text" style="font-size:11px;">${weatherInfo.desc}</div>
+                                <div class="wtr-hl-text">H: ${highToday}° • L: ${lowToday}°</div>
+                            </div>
+                        </div>
+                        <div class="wtr-metrics-pills">
+                            <span class="wtr-metric-pill" title="Feels like">
+                                <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg>
+                                <span>${feelsLike}°</span>
+                            </span>
+                            <span class="wtr-metric-pill" title="Humidity">
+                                <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+                                <span>${humidity}%</span>
+                            </span>
+                            <span class="wtr-metric-pill" title="Wind">
+                                <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path></svg>
+                                <span>${wind} km/h</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="wtr-wide-right">
+                        <div class="wtr-wide-right-head">
+                            <span>7-Day Outlook</span>
+                            <span style="opacity:0.75; font-size:8px;">Forecast</span>
+                        </div>
+                        <div class="wtr-wide-forecast-row">
+                            ${wideForecastHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        // 3. Standard Medium Mode (2x2, 3x2)
         else {
-            // Build 5-day forecast cards
             let forecastCardsHtml = '';
-            const daysCount = isWide ? 7 : 5;
+            // In 2x2, 4 days fit perfectly without any horizontal cramping or text clipping
+            const daysCount = (coordsW >= 3) ? 5 : 4;
             if (daily && Array.isArray(daily.time)) {
                 for (let i = 0; i < Math.min(daysCount, daily.time.length); i++) {
                     const dateStr = daily.time[i];
@@ -336,11 +481,11 @@ export default class WeatherWidget extends BaseWidget {
                     forecastCardsHtml += `
                         <div class="wtr-forecast-day" title="${dayName}: ${dayInfo.desc}, Max: ${maxT}°, Min: ${minT}°">
                             <span class="wtr-day-label">${dayName}</span>
-                            <div style="width:18px; height:18px; display:flex; align-items:center; justify-content:center; margin:1px 0;">
-                                ${dayInfo.iconSvg.replace(/width="\d+" height="\d+"/, 'width="16" height="16"')}
+                            <div class="wtr-day-icon">
+                                ${dayInfo.iconSvg.replace(/width="\d+" height="\d+"/, 'width="14" height="14"')}
                             </div>
                             <span class="wtr-day-temp">${maxT}°</span>
-                            <span style="font-size:7.5px; color:var(--text-secondary); opacity:0.8; font-variant-numeric:tabular-nums;">${minT}°</span>
+                            <span class="wtr-day-low">${minT}°</span>
                         </div>
                     `;
                 }
@@ -348,26 +493,27 @@ export default class WeatherWidget extends BaseWidget {
 
             bodyHtml = `
                 <div class="wtr-hero-row">
-                    <div>
+                    <div class="wtr-hero-left">
                         <div class="wtr-temp-hero">${temp}${unitSymbol}</div>
                         <div class="wtr-desc-text">${weatherInfo.desc}</div>
+                        <div class="wtr-hl-text">H: ${highToday}° • L: ${lowToday}°</div>
                     </div>
-                    <div style="width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
-                        ${weatherInfo.iconSvg.replace(/width="\d+" height="\d+"/, 'width="38" height="38"')}
+                    <div class="wtr-hero-icon">
+                        ${weatherInfo.iconSvg.replace(/width="\d+" height="\d+"/, 'width="32" height="32"')}
                     </div>
                 </div>
                 <div class="wtr-metrics-pills">
                     <span class="wtr-metric-pill" title="Feels like temperature">
-                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg>
+                        <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg>
                         <span>${feelsLike}°</span>
                     </span>
                     <span class="wtr-metric-pill" title="Relative Humidity">
-                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+                        <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
                         <span>${humidity}%</span>
                     </span>
                     <span class="wtr-metric-pill" title="Wind Speed">
-                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path></svg>
-                        <span>${wind} km/h</span>
+                        <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path></svg>
+                        <span>${wind}k</span>
                     </span>
                 </div>
                 <div class="wtr-forecast-strip">
