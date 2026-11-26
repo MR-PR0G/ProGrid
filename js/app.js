@@ -34,6 +34,29 @@ let rAFActive = false;
 let currentColumnsCount = 8;
 let activeQuickMenuWidget = null;
 
+function getCenteredDefaultWidgets(cols = 4) {
+    if (cols <= 4) {
+        return [
+            { id: "w-clock-default", type: "clock", x: 0, y: 0, w: 4, h: 1, format24: true, showDate: true, calendarType: "gregorian", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 0, w: 4, h: 1, baseCols: 4 }, isHidden: false },
+            { id: "w-search-default", type: "search", x: 0, y: 1, w: 4, h: 1, engine: "google", placeholder: "Search web, apps & bookmarks...", searchShape: "pill", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 1, w: 4, h: 1, baseCols: 4 }, isHidden: false },
+            { id: "w-finance-default", type: "finance", x: 0, y: 2, w: 4, h: 2, assets: ["USDIRR", "GOLD_18K"], primaryAsset: "USDIRR", secondaryAsset: "GOLD_18K", baseCurrency: "IRT", showChart: true, isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 2, w: 4, h: 2, baseCols: 4 }, isHidden: false },
+            { id: "w-tasks-default", type: "checklist", x: 0, y: 4, w: 4, h: 2, isGlass: true, bg: "#ffffff", tasks: [{ id: 1, text: "Focus block", done: false }, { id: 2, text: "Daily review", done: false }], idealLayout: { x: 0, y: 4, w: 4, h: 2, baseCols: 4 }, isHidden: false }
+        ];
+    }
+
+    // Centered block for cols >= 6 (Tablets, Laptops & Desktop monitors)
+    const clusterW = Math.min(6, cols);
+    const startX = Math.max(0, Math.floor((cols - clusterW) / 2));
+    const halfW = 3; // 3 columns for tasks, 3 columns for finance (satisfies finance minW >= 3)
+
+    return [
+        { id: "w-clock-default", type: "clock", x: startX, y: 0, w: clusterW, h: 1, format24: true, showDate: true, calendarType: "gregorian", isGlass: true, bg: "#ffffff", idealLayout: { x: startX, y: 0, w: clusterW, h: 1, baseCols: cols }, isHidden: false },
+        { id: "w-search-default", type: "search", x: startX, y: 1, w: clusterW, h: 1, engine: "google", placeholder: "Search web, apps & bookmarks...", searchShape: "pill", isGlass: true, bg: "#ffffff", idealLayout: { x: startX, y: 1, w: clusterW, h: 1, baseCols: cols }, isHidden: false },
+        { id: "w-tasks-default", type: "checklist", x: startX, y: 2, w: halfW, h: 2, isGlass: true, bg: "#ffffff", tasks: [{ id: 1, text: "Focus block", done: false }, { id: 2, text: "Daily review", done: false }], idealLayout: { x: startX, y: 2, w: halfW, h: 2, baseCols: cols }, isHidden: false },
+        { id: "w-finance-default", type: "finance", x: startX + halfW, y: 2, w: clusterW - halfW, h: 2, assets: ["USDIRR", "GOLD_18K"], primaryAsset: "USDIRR", secondaryAsset: "GOLD_18K", baseCurrency: "IRT", showChart: true, isGlass: true, bg: "#ffffff", idealLayout: { x: startX + halfW, y: 2, w: clusterW - halfW, h: 2, baseCols: cols }, isHidden: false }
+    ];
+}
+
 async function init() {
     container = document.getElementById('grid-container');
     blurOverlay = document.getElementById('blur-overlay');
@@ -41,6 +64,9 @@ async function init() {
     deleteZone = document.getElementById('delete-zone');
     folderOverlay = document.getElementById('folder-overlay-view');
     dynamicBgLayer = document.getElementById('dynamic-bg-layer');
+
+    grid.updateMetrics();
+    currentColumnsCount = grid.columns;
 
     const loaded = StorageEngine.load();
     
@@ -51,35 +77,39 @@ async function init() {
         state.designTheme = (loaded.designTheme === 'liquid-glass') ? 'frosted-glass' : (loaded.designTheme || 'frosted-glass');
         state.customBg = loaded.customBg || null;
         state.widgets = (loaded.widgets || []).filter(w => w.type !== 'calculator');
-        // Ensure finance widgets on grid reflect the unified English Toman USD & Gold 18K setup
-        state.widgets.forEach(w => {
-            if (w.type === 'finance') {
-                if (!w.assets || (w.assets.length === 2 && (w.assets.includes('BTC') || w.assets.includes('GOLD'))) || (w.assets.length === 3 && w.assets.includes('BTC'))) {
-                    w.assets = ['USDIRR', 'GOLD_18K'];
-                    w.primaryAsset = 'USDIRR';
-                    w.secondaryAsset = 'GOLD_18K';
-                    w.baseCurrency = 'IRT';
+
+        // Check if user is on the unmodified default 4-widget workspace -> center intelligently
+        const defaultIds = ['w-clock-default', 'w-search-default', 'w-tasks-default', 'w-finance-default'];
+        const isDefaultSetup = state.widgets.length === 4 && state.widgets.every(w => defaultIds.includes(w.id));
+        if (isDefaultSetup) {
+            state.widgets = getCenteredDefaultWidgets(currentColumnsCount);
+        } else {
+            // Ensure finance widgets on grid reflect min width 3 and current assets
+            state.widgets.forEach(w => {
+                if (w.type === 'finance') {
+                    if (currentColumnsCount >= 3 && (w.w < 3 || !w.w)) {
+                        w.w = 3;
+                    }
+                    if (!w.assets || (w.assets.length === 2 && (w.assets.includes('BTC') || w.assets.includes('GOLD'))) || (w.assets.length === 3 && w.assets.includes('BTC'))) {
+                        w.assets = ['USDIRR', 'GOLD_18K'];
+                        w.primaryAsset = 'USDIRR';
+                        w.secondaryAsset = 'GOLD_18K';
+                        w.baseCurrency = 'IRT';
+                    }
                 }
-            }
-        });
+            });
+        }
     } else {
         state.blurValue = 27;
         state.presetBg = "1";
         state.theme = "dark";
         state.designTheme = "frosted-glass";
-        state.widgets = [
-            { id: "w-clock-default", type: "clock", x: 0, y: 0, w: 4, h: 1, format24: true, showDate: true, calendarType: "gregorian", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 0, w: 4, h: 1, baseCols: 4 }, isHidden: false },
-            { id: "w-search-default", type: "search", x: 0, y: 1, w: 4, h: 1, engine: "google", placeholder: "Search web, apps & bookmarks...", searchShape: "pill", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 1, w: 4, h: 1, baseCols: 4 }, isHidden: false },
-            { id: "w-tasks-default", type: "checklist", x: 0, y: 2, w: 2, h: 2, isGlass: true, bg: "#ffffff", tasks: [{ id: 1, text: "Focus block", done: false }, { id: 2, text: "Daily review", done: false }], idealLayout: { x: 0, y: 2, w: 2, h: 2, baseCols: 4 }, isHidden: false },
-            { id: "w-finance-default", type: "finance", x: 2, y: 2, w: 2, h: 2, assets: ["USDIRR", "GOLD_18K"], primaryAsset: "USDIRR", secondaryAsset: "GOLD_18K", baseCurrency: "IRT", showChart: true, isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 2, w: 2, h: 2, baseCols: 4 }, isHidden: false }
-        ];
+        state.widgets = getCenteredDefaultWidgets(currentColumnsCount);
     }
 
     // Apply global background & theme immediately - eliminate any white flash!
     applyGlobalStyles();
 
-    grid.updateMetrics();
-    currentColumnsCount = grid.columns;
     state.widgets.forEach(w => {
         if (w.w > currentColumnsCount) {
             w.w = currentColumnsCount;
@@ -437,7 +467,10 @@ function attachInteractionEngine(el, w, instance) {
     if (w.type === 'search') {
         meta.minW = 2; meta.maxH = 1; meta.minH = 1; meta.maxW = 99;
     }
-    const minW = meta.minW || 1;
+    if (w.type === 'finance') {
+        meta.minW = 3; meta.minH = 1;
+    }
+    const minW = Math.min(meta.minW || 1, grid.columns);
     const minH = meta.minH || 1;
 
     // Context menu / long-press handler
@@ -1033,6 +1066,13 @@ function setupGlobalEvents() {
         if (isInputActive) return;
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
+            const defaultIds = ['w-clock-default', 'w-search-default', 'w-tasks-default', 'w-finance-default'];
+            const isDefaultSetup = state.widgets && state.widgets.length === 4 && state.widgets.every(w => defaultIds.includes(w.id));
+            if (isDefaultSetup) {
+                grid.updateMetrics();
+                currentColumnsCount = grid.columns;
+                state.widgets = getCenteredDefaultWidgets(currentColumnsCount);
+            }
             renderGrid();
         }, 120);
     });
@@ -2126,33 +2166,9 @@ const WORKSPACE_PRESETS = {
     default: {
         id: 'default',
         name: 'Default Workspace',
-        widgets: [
-            { id: "w-clock-default", type: "clock", x: 0, y: 0, w: 4, h: 1, format24: true, showDate: true, calendarType: "gregorian", isGlass: true, bg: "#ffffff" },
-            { id: "w-search-default", type: "search", x: 0, y: 1, w: 4, h: 1, engine: "google", placeholder: "Search web, apps & bookmarks...", searchShape: "pill", isGlass: true, bg: "#ffffff" },
-            {
-                id: "w-tasks-default",
-                type: "checklist",
-                x: 0, y: 2, w: 2, h: 2,
-                isGlass: true,
-                bg: "#ffffff",
-                tasks: [
-                    { id: 1, text: "Focus block", done: false },
-                    { id: 2, text: "Daily review", done: false }
-                ]
-            },
-            {
-                id: "w-finance-default",
-                type: "finance",
-                x: 2, y: 2, w: 2, h: 2,
-                assets: ["USDIRR", "GOLD"],
-                primaryAsset: "USDIRR",
-                secondaryAsset: "GOLD",
-                baseCurrency: "IRT",
-                showChart: true,
-                isGlass: true,
-                bg: "#ffffff"
-            }
-        ]
+        get widgets() {
+            return getCenteredDefaultWidgets(grid ? grid.columns : 4);
+        }
     }
 };
 
@@ -2175,7 +2191,11 @@ function applyWorkspacePreset(presetId) {
     let targetWidgets = null;
     let name = '';
 
-    if (WORKSPACE_PRESETS[presetId]) {
+    if (presetId === 'default') {
+        grid.updateMetrics();
+        targetWidgets = getCenteredDefaultWidgets(grid.columns);
+        name = 'Default Workspace';
+    } else if (WORKSPACE_PRESETS[presetId]) {
         targetWidgets = JSON.parse(JSON.stringify(WORKSPACE_PRESETS[presetId].widgets));
         name = WORKSPACE_PRESETS[presetId].name;
     } else {
@@ -2463,8 +2483,8 @@ function setupSkinBackupModal() {
 
             const payload = {
                 version: "1.0",
-                prospaceVersion: "0.4.9",
-                progridVersion: "0.4.9",
+                prospaceVersion: "0.5.0",
+                progridVersion: "0.5.0",
                 exportedAt: new Date().toISOString(),
                 skinName: slotData.name || "Custom Skin",
                 widgets: slotData.widgets
@@ -3669,7 +3689,7 @@ function isNewerVersion(remote, current) {
     return false;
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.4.9') {
+function launchUpdateSplashScreen(targetVer = 'v0.5.0') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -3765,10 +3785,10 @@ function setupAboutModal() {
     if (aboutBtn) {
         aboutBtn.addEventListener('click', () => {
             const verBadge = document.getElementById('about-app-version');
-            if (verBadge) verBadge.textContent = 'v0.4.9';
+            if (verBadge) verBadge.textContent = 'v0.5.0';
             const subTitle = document.getElementById('update-status-sub');
-            if (subTitle && !subTitle.textContent.includes('v0.4.9')) {
-                subTitle.textContent = 'Running official v0.4.9 release';
+            if (subTitle && !subTitle.textContent.includes('v0.5.0')) {
+                subTitle.textContent = 'Running official v0.5.0 release';
             }
             aboutModal.style.display = 'flex';
         });
@@ -3791,7 +3811,7 @@ function setupAboutModal() {
 
             // Only launch splash screen if an actual new update was found and verified
             if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.9';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.5.0';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -3811,7 +3831,7 @@ function setupAboutModal() {
                 }
 
                 let remoteVersion = null;
-                const currentVersion = '0.4.9';
+                const currentVersion = '0.5.0';
 
                 // 1. Direct GitHub Releases API check (checks ProSpace with fallback to ProGrid)
                 try {
@@ -3886,7 +3906,7 @@ function setupAboutModal() {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Running standalone v0.4.9 release.';
+                if (updateSub) updateSub.textContent = 'Running standalone v0.5.0 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
                 checkUpdateBtn.setAttribute('data-action', 'check');
                 checkUpdateBtn.removeAttribute('data-target-ver');

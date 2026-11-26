@@ -104,6 +104,10 @@ const FINANCE_STYLES_CSS = `
         justify-content: center; gap: 1px; overflow: hidden;
         box-sizing: border-box;
     }
+    body.light-mode .fin-compact-card,
+    body.light-mode .fin-compact-single {
+        background: rgba(0, 0, 0, 0.04);
+    }
     .fin-compact-head {
         display: flex; align-items: center; justify-content: space-between;
         gap: 2px; min-width: 0; width: 100%;
@@ -264,8 +268,8 @@ export default class FinanceWidget extends BaseWidget {
             type: 'finance',
             label: 'Markets & Crypto',
             icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>`,
-            defaultW: 2, defaultH: 2,
-            minW: 1, minH: 1, maxW: 4, maxH: 3,
+            defaultW: 3, defaultH: 2,
+            minW: 3, minH: 1, maxW: 4, maxH: 3,
             category: 'finance',
             author: 'MR Prog',
             version: '1.8.0',
@@ -849,7 +853,7 @@ export default class FinanceWidget extends BaseWidget {
         const count = trackedAssets.length;
         const isIRT = this.config.baseCurrency === 'IRT';
         const usdToTmn = this.getUsdToTomanRate();
-        const coordsH = (this.config.h !== undefined) ? this.config.h : (this.config.defaultH || 1);
+        const coordsH = (this.config.h !== undefined) ? this.config.h : (this.config.defaultH || 2);
         const isCompact = (coordsH === 1);
         ensureFinanceStyles();
 

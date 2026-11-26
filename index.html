@@ -16,9 +16,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
-    <link rel="preload" href="css/style.css?v=0.4.9" as="style">
-    <link rel="modulepreload" href="js/app.js?v=0.4.9">
-    <link rel="stylesheet" href="css/style.css?v=0.4.9">
+    <link rel="preload" href="css/style.css?v=0.5.0" as="style">
+    <link rel="modulepreload" href="js/app.js?v=0.5.0">
+    <link rel="stylesheet" href="css/style.css?v=0.5.0">
     <link rel="manifest" href="manifest.json">
     <style>
         html, body {
@@ -48,7 +48,7 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js?v=0.4.9').then(reg => {
+                navigator.serviceWorker.register('sw.js?v=0.5.0').then(reg => {
                     reg.update();
                     if (reg.waiting) {
                         reg.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -441,19 +441,23 @@
                 <input type="text" class="modal-input" id="edit-search-placeholder" dir="auto">
             </div>
             <div class="modal-field id-search-only" style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="color: var(--text-secondary); font-size: 12px;">Bar Aesthetic Layout</label>
-                <div class="search-shape-options" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
-                    <button type="button" class="search-shape-btn" data-shape="pill" title="Rounded Capsule Pill">
-                        <span style="display:block; width:28px; height:14px; border:1.5px solid var(--text-primary); border-radius:10px; margin:auto;"></span>
+                <label style="color: var(--text-secondary); font-size: 12px;">Bar Aesthetic Layout & Theme</label>
+                <div class="search-shape-options" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+                    <button type="button" class="search-shape-btn" data-shape="pill" title="Rounded Capsule Pill (Default)">
+                        <span style="display:block; width:26px; height:13px; border:1.5px solid var(--text-primary); border-radius:10px; margin:auto;"></span>
                         <span style="font-size:10px; color:var(--text-secondary); margin-top:4px; display:block;">Pill</span>
                     </button>
-                    <button type="button" class="search-shape-btn" data-shape="spotlight" title="Command Spotlight">
-                        <span style="display:block; width:28px; height:14px; border:1.5px solid #38bdf8; box-shadow:0 0 6px rgba(56,189,248,0.6); border-radius:5px; margin:auto;"></span>
-                        <span style="font-size:10px; color:#38bdf8; margin-top:4px; display:block; font-weight:600;">Spotlight</span>
+                    <button type="button" class="search-shape-btn" data-shape="spotlight" title="Cyber Glow & Neon">
+                        <span style="display:block; width:26px; height:13px; border:1.5px solid #38bdf8; box-shadow:0 0 6px rgba(56,189,248,0.7); border-radius:5px; margin:auto;"></span>
+                        <span style="font-size:10px; color:#38bdf8; margin-top:4px; display:block; font-weight:600;">Cyber</span>
                     </button>
-                    <button type="button" class="search-shape-btn" data-shape="minimal" title="Full Fluid Minimal">
-                        <span style="display:block; width:28px; height:14px; border:1.5px solid var(--text-primary); border-radius:6px; margin:auto;"></span>
+                    <button type="button" class="search-shape-btn" data-shape="minimal" title="Clean Floating Zen">
+                        <span style="display:block; width:26px; height:13px; border:1px solid rgba(255,255,255,0.3); border-radius:4px; margin:auto;"></span>
                         <span style="font-size:10px; color:var(--text-secondary); margin-top:4px; display:block;">Minimal</span>
+                    </button>
+                    <button type="button" class="search-shape-btn" data-shape="prism" title="Liquid Chromatic Squircle">
+                        <span style="display:block; width:26px; height:13px; border:1.5px solid #a855f7; box-shadow:0 0 6px rgba(168,85,247,0.7); border-radius:7px; margin:auto;"></span>
+                        <span style="font-size:10px; color:#c084fc; margin-top:4px; display:block; font-weight:600;">Liquid</span>
                     </button>
                 </div>
             </div>
@@ -731,7 +735,7 @@
                 <div class="about-title-block">
                     <h3 class="about-name">ProSpace Workspace</h3>
                     <div class="about-badge-row">
-                        <span class="about-version-badge" id="about-app-version">v0.4.9</span>
+                        <span class="about-version-badge" id="about-app-version">v0.5.0</span>
                         <span class="about-license-badge">GNU GPLv3</span>
                     </div>
                 </div>
@@ -765,7 +769,7 @@
                     <div class="update-indicator-dot" id="update-indicator-dot"></div>
                     <div class="update-info-text">
                         <span class="update-title" id="update-status-title">System Up to Date</span>
-                        <span class="update-sub" id="update-status-sub">Running official v0.4.9 release</span>
+                        <span class="update-sub" id="update-status-sub">Running official v0.5.0 release</span>
                     </div>
                 </div>
                 <button id="about-check-update-btn" class="about-update-action-btn">
@@ -968,7 +972,7 @@
             <div class="update-splash-bar-track">
                 <div id="update-splash-bar-progress" class="update-splash-bar-fill"></div>
             </div>
-            <span id="update-splash-ver" class="update-splash-version">Upgrading to v0.4.9</span>
+            <span id="update-splash-ver" class="update-splash-version">Upgrading to v0.5.0</span>
         </div>
     </div>
 
@@ -977,7 +981,7 @@
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
-        <span id="update-toast-text">ProSpace updated to v0.4.9 successfully</span>
+        <span id="update-toast-text">ProSpace updated to v0.5.0 successfully</span>
     </div>
 
     <script type="text/javascript">
@@ -1001,6 +1005,6 @@
             }
         };
     </script>
-    <script type="module" src="js/app.js?v=0.4.9"></script>
+    <script type="module" src="js/app.js?v=0.5.0"></script>
 </body>
 </html>

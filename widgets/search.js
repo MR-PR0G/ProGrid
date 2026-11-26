@@ -84,14 +84,555 @@ function fetchGoogleSuggestions(query, callback) {
     }, 2000);
 }
 
+const SEARCH_INTERNAL_CSS = `
+    .search-widget-container {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        padding: 8px 12px; box-sizing: border-box;
+        position: relative;
+    }
+    .search-form {
+        width: 100%; height: 48px;
+        display: flex; align-items: center;
+        padding: 0 6px 0 14px;
+        gap: 8px;
+        box-sizing: border-box;
+        backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, border-radius 0.2s;
+    }
+
+    /* -------------------------------------------------------------------------
+       4 Distinct Aesthetic Styles
+       1. shape-pill: Capsule Classic (Default)
+       2. shape-spotlight: Cyber Glow & Neon
+       3. shape-minimal: Clean Floating Zen
+       4. shape-prism: Liquid Chromatic Squircle
+       ------------------------------------------------------------------------- */
+
+    /* 1. Capsule Pill (Default) */
+    .search-form.shape-pill {
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+    }
+    .search-form.shape-pill:focus-within {
+        border-color: #3b82f6;
+        background: rgba(255, 255, 255, 0.13);
+        box-shadow: 0 0 18px rgba(59, 130, 246, 0.38);
+    }
+    .search-form.shape-pill .search-submit-btn {
+        border-radius: 50%;
+        background: #3b82f6;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+    }
+    .search-form.shape-pill .search-submit-btn:hover { background: #2563eb; }
+
+    /* 2. Cyber Glow & Spotlight */
+    .search-form.shape-spotlight {
+        border-radius: 14px;
+        border: 1.5px solid rgba(56, 189, 248, 0.65);
+        background: rgba(10, 16, 28, 0.82);
+        box-shadow: 0 0 16px rgba(56, 189, 248, 0.24), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+    }
+    .search-form.shape-spotlight:focus-within {
+        border-color: #38bdf8;
+        box-shadow: 0 0 24px rgba(56, 189, 248, 0.48), inset 0 1px 2px rgba(255, 255, 255, 0.22);
+        background: rgba(14, 22, 38, 0.94);
+    }
+    .search-form.shape-spotlight .search-leading-icon {
+        color: #38bdf8;
+        opacity: 1;
+    }
+    .search-form.shape-spotlight .search-submit-btn {
+        border-radius: 10px;
+        background: linear-gradient(135deg, #0284c7, #38bdf8);
+        box-shadow: 0 2px 10px rgba(56, 189, 248, 0.45);
+    }
+    .search-form.shape-spotlight .search-submit-btn:hover {
+        background: linear-gradient(135deg, #0369a1, #0284c7);
+    }
+
+    /* 3. Clean Floating Zen (Minimal) */
+    .search-form.shape-minimal {
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: rgba(0, 0, 0, 0.22);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    .search-form.shape-minimal:focus-within {
+        border-color: rgba(255, 255, 255, 0.24);
+        background: rgba(0, 0, 0, 0.38);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+    .search-form.shape-minimal .search-submit-btn {
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        box-shadow: none;
+    }
+    .search-form.shape-minimal .search-submit-btn:hover {
+        background: rgba(255, 255, 255, 0.18);
+    }
+
+    /* 4. Liquid Chromatic Squircle (Prism) */
+    .search-form.shape-prism {
+        border-radius: 18px;
+        border: 1.5px solid rgba(255, 255, 255, 0.24);
+        background: rgba(255, 255, 255, 0.07);
+        backdrop-filter: blur(28px) saturate(200%);
+        -webkit-backdrop-filter: blur(28px) saturate(200%);
+        box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.35), inset 0 -1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+    .search-form.shape-prism:focus-within {
+        border-color: rgba(167, 139, 250, 0.85);
+        box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.45), 0 0 20px rgba(167, 139, 250, 0.38);
+        background: rgba(255, 255, 255, 0.12);
+    }
+    .search-form.shape-prism .search-leading-icon {
+        color: #c084fc;
+        opacity: 1;
+    }
+    .search-form.shape-prism .search-submit-btn {
+        border-radius: 12px;
+        background: linear-gradient(135deg, #6366f1, #a855f7);
+        box-shadow: 0 3px 12px rgba(139, 92, 246, 0.45);
+    }
+    .search-form.shape-prism .search-submit-btn:hover {
+        background: linear-gradient(135deg, #4f46e5, #9333ea);
+    }
+
+    /* -------------------------------------------------------------------------
+       Light Mode Universal Adaptation
+       ------------------------------------------------------------------------- */
+    body.light-mode .search-form.shape-pill {
+        background: rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    }
+    body.light-mode .search-form.shape-pill:focus-within {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: #3b82f6;
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
+    }
+
+    body.light-mode .search-form.shape-spotlight {
+        background: rgba(240, 249, 255, 0.94);
+        border: 1.5px solid rgba(2, 132, 199, 0.65);
+        box-shadow: 0 0 14px rgba(2, 132, 199, 0.18);
+    }
+    body.light-mode .search-form.shape-spotlight:focus-within {
+        border-color: #0284c7;
+        box-shadow: 0 0 20px rgba(2, 132, 199, 0.32);
+        background: #ffffff;
+    }
+    body.light-mode .search-form.shape-spotlight .search-leading-icon {
+        color: #0284c7;
+    }
+
+    body.light-mode .search-form.shape-minimal {
+        background: rgba(0, 0, 0, 0.035);
+        border: 1px solid rgba(0, 0, 0, 0.07);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    }
+    body.light-mode .search-form.shape-minimal:focus-within {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: rgba(0, 0, 0, 0.16);
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+    }
+    body.light-mode .search-form.shape-minimal .search-submit-btn {
+        background: rgba(0, 0, 0, 0.06);
+        color: var(--text-primary);
+    }
+    body.light-mode .search-form.shape-minimal .search-submit-btn:hover {
+        background: rgba(0, 0, 0, 0.12);
+    }
+
+    body.light-mode .search-form.shape-prism {
+        background: rgba(255, 255, 255, 0.78);
+        border: 1.5px solid rgba(255, 255, 255, 0.9);
+        box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.9), 0 8px 24px -4px rgba(99, 102, 241, 0.15);
+    }
+    body.light-mode .search-form.shape-prism:focus-within {
+        background: #ffffff;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 18px rgba(139, 92, 246, 0.3);
+    }
+    body.light-mode .search-form.shape-prism .search-leading-icon {
+        color: #7c3aed;
+    }
+
+    /* -------------------------------------------------------------------------
+       Material Design 3 Adaptive Tones (Preserves chosen layout & geometry)
+       ------------------------------------------------------------------------- */
+    body.theme-material3 .search-form {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    /* M3 Dark Mode */
+    body.theme-material3 .search-form.shape-pill {
+        background: #282a32 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+    }
+    body.theme-material3 .search-form.shape-pill:focus-within {
+        background: #32353f !important;
+        border-color: #a8c7fa !important;
+        box-shadow: 0 4px 16px rgba(168, 199, 250, 0.25) !important;
+    }
+    body.theme-material3 .search-form.shape-pill .search-submit-btn {
+        background: #a8c7fa !important;
+        color: #042e6f !important;
+    }
+
+    body.theme-material3 .search-form.shape-spotlight {
+        background: #19202c !important;
+        border: 1.5px solid #78d9ff !important;
+        box-shadow: 0 0 16px rgba(120, 217, 255, 0.22) !important;
+    }
+    body.theme-material3 .search-form.shape-spotlight:focus-within {
+        background: #202a3a !important;
+        border-color: #a5e5ff !important;
+        box-shadow: 0 0 22px rgba(120, 217, 255, 0.4) !important;
+    }
+    body.theme-material3 .search-form.shape-spotlight .search-submit-btn {
+        background: #78d9ff !important;
+        color: #003549 !important;
+    }
+
+    body.theme-material3 .search-form.shape-minimal {
+        background: #202229 !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+    }
+    body.theme-material3 .search-form.shape-minimal:focus-within {
+        background: #282a32 !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
+    }
+    body.theme-material3 .search-form.shape-minimal .search-submit-btn {
+        background: rgba(255, 255, 255, 0.08) !important;
+        color: #e3e2e6 !important;
+    }
+
+    body.theme-material3 .search-form.shape-prism {
+        background: #292435 !important;
+        border: 1.5px solid #d0bcff !important;
+        box-shadow: 0 4px 16px rgba(208, 188, 255, 0.18) !important;
+    }
+    body.theme-material3 .search-form.shape-prism:focus-within {
+        background: #342e44 !important;
+        border-color: #e8ddff !important;
+        box-shadow: 0 0 20px rgba(208, 188, 255, 0.35) !important;
+    }
+    body.theme-material3 .search-form.shape-prism .search-submit-btn {
+        background: #d0bcff !important;
+        color: #381e72 !important;
+    }
+
+    /* M3 Light Mode */
+    body.theme-material3.light-mode .search-form.shape-pill {
+        background: #eaedf6 !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    }
+    body.theme-material3.light-mode .search-form.shape-pill:focus-within {
+        background: #ffffff !important;
+        border-color: #0b57d0 !important;
+        box-shadow: 0 4px 16px rgba(11, 87, 208, 0.2) !important;
+    }
+    body.theme-material3.light-mode .search-form.shape-pill .search-submit-btn {
+        background: #0b57d0 !important;
+        color: #ffffff !important;
+    }
+
+    body.theme-material3.light-mode .search-form.shape-spotlight {
+        background: #e1f0ff !important;
+        border: 1.5px solid #00668b !important;
+        box-shadow: 0 0 14px rgba(0, 102, 139, 0.16) !important;
+    }
+    body.theme-material3.light-mode .search-form.shape-spotlight:focus-within {
+        background: #ffffff !important;
+        border-color: #004d6a !important;
+        box-shadow: 0 0 20px rgba(0, 102, 139, 0.3) !important;
+    }
+    body.theme-material3.light-mode .search-form.shape-spotlight .search-submit-btn {
+        background: #00668b !important;
+        color: #ffffff !important;
+    }
+
+    body.theme-material3.light-mode .search-form.shape-minimal {
+        background: #f0f2f8 !important;
+        border: 1px solid rgba(0, 0, 0, 0.06) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03) !important;
+    }
+    body.theme-material3.light-mode .search-form.shape-minimal:focus-within {
+        background: #ffffff !important;
+        border-color: rgba(0, 0, 0, 0.15) !important;
+    }
+    body.theme-material3.light-mode .search-form.shape-minimal .search-submit-btn {
+        background: rgba(0, 0, 0, 0.06) !important;
+        color: #191c20 !important;
+    }
+
+    body.theme-material3.light-mode .search-form.shape-prism {
+        background: #f6eeff !important;
+        border: 1.5px solid #6750a4 !important;
+        box-shadow: 0 4px 14px rgba(103, 80, 164, 0.14) !important;
+    }
+    body.theme-material3.light-mode .search-form.shape-prism:focus-within {
+        background: #ffffff !important;
+        border-color: #4f378b !important;
+        box-shadow: 0 0 18px rgba(103, 80, 164, 0.28) !important;
+    }
+    body.theme-material3.light-mode .search-form.shape-prism .search-submit-btn {
+        background: #6750a4 !important;
+        color: #ffffff !important;
+    }
+
+    body.theme-material3.light-mode .search-input-field {
+        color: #191c20 !important;
+    }
+    body.theme-material3.light-mode .search-input-field::placeholder {
+        color: #74777f !important;
+    }
+
+    /* Common Fields & Controls */
+    .search-leading-icon {
+        width: 18px; height: 18px;
+        color: var(--text-secondary);
+        opacity: 0.8;
+        flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .search-input-field {
+        flex: 1; height: 100%;
+        background: none; border: none;
+        color: var(--text-primary);
+        font-size: 15px;
+        font-weight: 500;
+        outline: none;
+        padding: 0 4px;
+        min-width: 0;
+        text-align: start;
+        direction: auto;
+        unicode-bidi: plaintext;
+    }
+    .search-input-field::placeholder {
+        color: var(--text-secondary);
+        opacity: 0.65;
+        font-size: 13.5px;
+    }
+    .search-clear-btn {
+        width: 22px; height: 22px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 10px;
+        line-height: 1;
+        flex-shrink: 0;
+        padding: 0;
+        transition: background 0.15s, color 0.15s;
+    }
+    .search-clear-btn:hover {
+        background: rgba(255, 255, 255, 0.22);
+        color: var(--text-primary);
+    }
+    body.light-mode .search-clear-btn {
+        background: rgba(0, 0, 0, 0.08);
+    }
+    body.light-mode .search-clear-btn:hover {
+        background: rgba(0, 0, 0, 0.15);
+    }
+
+    .search-submit-btn {
+        width: 34px; height: 34px;
+        background: #3b82f6;
+        border: none;
+        color: white; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 50%;
+        transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+        flex-shrink: 0; padding: 0;
+    }
+    .search-submit-btn:active { transform: scale(0.92); }
+    .search-submit-btn svg { width: 15px; height: 15px; stroke: currentColor; }
+
+    /* Live Suggestions & History Dropdown */
+    .search-dropdown-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 4px;
+        right: 4px;
+        background: rgba(13, 16, 26, 0.95);
+        backdrop-filter: blur(36px) saturate(200%);
+        -webkit-backdrop-filter: blur(36px) saturate(200%);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 16px;
+        box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.3);
+        max-height: 280px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        z-index: 9999;
+        padding: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        animation: searchDropFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .search-dropdown-menu::-webkit-scrollbar {
+        width: 5px;
+    }
+    .search-dropdown-menu::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .search-dropdown-menu::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+    }
+    .search-dropdown-menu::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.35);
+    }
+    @keyframes searchDropFade {
+        from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    body.light-mode .search-dropdown-menu {
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        box-shadow: 0 14px 36px rgba(0, 0, 0, 0.12);
+    }
+
+    .search-suggest-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        color: var(--text-primary);
+        font-size: 13.5px;
+        transition: background 0.12s, color 0.12s;
+        user-select: none;
+        text-decoration: none;
+    }
+    .search-suggest-item:hover, .search-suggest-item.selected {
+        background: rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+    }
+    body.light-mode .search-suggest-item:hover, body.light-mode .search-suggest-item.selected {
+        background: rgba(59, 130, 246, 0.1);
+        color: #2563eb;
+    }
+
+    .suggest-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+        min-width: 0;
+    }
+    .suggest-icon {
+        width: 15px;
+        height: 15px;
+        opacity: 0.65;
+        flex-shrink: 0;
+    }
+    .suggest-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 500;
+    }
+    .suggest-del-btn {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        opacity: 0.5;
+        cursor: pointer;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: opacity 0.15s, background 0.15s;
+    }
+    .suggest-del-btn:hover {
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.15);
+        color: var(--text-primary);
+    }
+    body.light-mode .suggest-del-btn:hover {
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    .suggest-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 10px 2px 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+    body.light-mode .suggest-footer {
+        border-top-color: rgba(0, 0, 0, 0.08);
+    }
+    .suggest-clear-history-btn {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 11px;
+        text-decoration: underline;
+        opacity: 0.7;
+        transition: opacity 0.15s, color 0.15s;
+    }
+    .suggest-clear-history-btn:hover {
+        opacity: 1;
+        color: #ef4444;
+    }
+
+    /* Focus & Edit Mode Safety */
+    .widget-wrapper.search-focused {
+        z-index: 950 !important;
+        overflow: visible !important;
+    }
+    .widget-wrapper.search-focused .widget-content {
+        overflow: visible !important;
+        contain: none !important;
+    }
+    body.edit-mode .search-dropdown-menu { display: none !important; }
+    body.edit-mode .search-input-field { pointer-events: none; }
+`;
+
+function ensureSearchStyles() {
+    if (document.getElementById('search-internal-w-css')) return;
+    const styleEl = document.createElement('style');
+    styleEl.id = 'search-internal-w-css';
+    styleEl.textContent = SEARCH_INTERNAL_CSS;
+    document.head.appendChild(styleEl);
+}
+
 export default class SearchWidget extends BaseWidget {
     static getMetadata() {
         return {
             type: 'search',
             label: 'Search Bar',
             author: 'ProSpace',
-            version: '1.5.0',
-            description: 'Multi-engine web search with live Google autocomplete, search history, RTL support, and 4 aesthetic layouts.',
+            version: '1.6.0',
+            description: 'Multi-engine web search with live Google autocomplete, search history, RTL support, and 4 aesthetic layouts (Pill, Cyber, Minimal, Liquid).',
             icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`,
             defaultW: 3, defaultH: 1,
             minW: 2, minH: 1, maxW: 8, maxH: 1,
@@ -116,318 +657,9 @@ export default class SearchWidget extends BaseWidget {
             ? this.config.placeholder
             : `Search with ${engineName}...`;
 
-        const injectStyles = !document.getElementById('search-internal-w-css') ? `
-            <style id="search-internal-w-css">
-                .search-widget-container {
-                    width: 100%; height: 100%;
-                    display: flex; align-items: center; justify-content: center;
-                    padding: 8px 12px; box-sizing: border-box;
-                    position: relative;
-                }
-                .search-form {
-                    width: 100%; height: 48px;
-                    display: flex; align-items: center;
-                    background: rgba(255, 255, 255, 0.08);
-                    border: 1px solid rgba(255, 255, 255, 0.16);
-                    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-                    padding: 0 6px 0 14px;
-                    gap: 8px;
-                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
-                    box-sizing: border-box;
-                    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, border-radius 0.2s;
-                }
-                /* Shape & Layout Variants */
-                .search-form.shape-pill {
-                    border-radius: 28px;
-                }
-                .search-form.shape-spotlight {
-                    border-radius: 14px;
-                    border: 1.5px solid rgba(56, 189, 248, 0.55);
-                    box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
-                    background: rgba(14, 18, 28, 0.75);
-                }
-                .search-form.shape-minimal,
-                .search-form.shape-full,
-                .search-form.shape-frameless {
-                    border-radius: 12px;
-                    border: 1px solid rgba(255, 255, 255, 0.12);
-                    background: rgba(0, 0, 0, 0.2);
-                }
-
-                /* Material 3 System Support */
-                body.theme-material3 .search-form {
-                    border-radius: 28px !important;
-                    background: #282a32 !important;
-                    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-                    backdrop-filter: none !important;
-                    -webkit-backdrop-filter: none !important;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
-                }
-                body.theme-material3 .search-form:focus-within {
-                    background: #32353f !important;
-                    border-color: #a8c7fa !important;
-                    box-shadow: 0 4px 16px rgba(168, 199, 250, 0.25) !important;
-                }
-                body.theme-material3.light-mode .search-form {
-                    background: #eaedf6 !important;
-                    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
-                }
-                body.theme-material3.light-mode .search-form:focus-within {
-                    background: #ffffff !important;
-                    border-color: #0b57d0 !important;
-                    box-shadow: 0 4px 16px rgba(11, 87, 208, 0.2) !important;
-                }
-                body.theme-material3.light-mode .search-input {
-                    color: #191c20 !important;
-                }
-                body.theme-material3.light-mode .search-input::placeholder {
-                    color: #74777f !important;
-                }
-                body.theme-material3.light-mode .search-leading-icon {
-                    color: #0b57d0 !important;
-                }
-
-                .search-form:focus-within {
-                    border-color: #3b82f6;
-                    background: rgba(255, 255, 255, 0.13);
-                    box-shadow: 0 0 18px rgba(59, 130, 246, 0.38);
-                }
-                body.light-mode .search-form {
-                    background: rgba(0, 0, 0, 0.05);
-                    border: 1px solid rgba(0, 0, 0, 0.1);
-                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-                }
-                body.light-mode .search-form:focus-within {
-                    background: rgba(255, 255, 255, 0.95);
-                    border-color: #3b82f6;
-                    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
-                }
-
-                .search-leading-icon {
-                    width: 18px; height: 18px;
-                    color: var(--text-secondary);
-                    opacity: 0.8;
-                    flex-shrink: 0;
-                    display: flex; align-items: center; justify-content: center;
-                }
-                .search-input-field {
-                    flex: 1; height: 100%;
-                    background: none; border: none;
-                    color: var(--text-primary);
-                    font-size: 15px;
-                    font-weight: 500;
-                    outline: none;
-                    padding: 0 4px;
-                    min-width: 0;
-                    text-align: start;
-                    direction: auto;
-                    unicode-bidi: plaintext;
-                }
-                .search-input-field::placeholder {
-                    color: var(--text-secondary);
-                    opacity: 0.65;
-                    font-size: 13.5px;
-                }
-                .search-clear-btn {
-                    width: 22px; height: 22px;
-                    border-radius: 50%;
-                    background: rgba(255, 255, 255, 0.1);
-                    border: none;
-                    color: var(--text-secondary);
-                    cursor: pointer;
-                    display: flex; align-items: center; justify-content: center;
-                    font-size: 10px;
-                    line-height: 1;
-                    flex-shrink: 0;
-                    padding: 0;
-                    transition: background 0.15s, color 0.15s;
-                }
-                .search-clear-btn:hover {
-                    background: rgba(255, 255, 255, 0.22);
-                    color: var(--text-primary);
-                }
-                body.light-mode .search-clear-btn {
-                    background: rgba(0, 0, 0, 0.08);
-                }
-                body.light-mode .search-clear-btn:hover {
-                    background: rgba(0, 0, 0, 0.15);
-                }
-
-                .search-submit-btn {
-                    width: 34px; height: 34px;
-                    background: #3b82f6;
-                    border: none;
-                    color: white; cursor: pointer;
-                    display: flex; align-items: center; justify-content: center;
-                    border-radius: 50%;
-                    transition: background 0.15s, transform 0.1s;
-                    flex-shrink: 0; padding: 0;
-                    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-                }
-                .search-submit-btn:hover { background: #2563eb; }
-                .search-submit-btn:active { transform: scale(0.92); }
-                .search-submit-btn svg { width: 15px; height: 15px; stroke: currentColor; }
-
-                /* Live Suggestions & History Dropdown */
-                .search-dropdown-menu {
-                    position: absolute;
-                    top: calc(100% + 6px);
-                    left: 4px;
-                    right: 4px;
-                    background: rgba(13, 16, 26, 0.95);
-                    backdrop-filter: blur(36px) saturate(200%);
-                    -webkit-backdrop-filter: blur(36px) saturate(200%);
-                    border: 1px solid rgba(255, 255, 255, 0.16);
-                    border-radius: 16px;
-                    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.3);
-                    max-height: 280px;
-                    overflow-y: auto;
-                    overflow-x: hidden;
-                    scroll-behavior: smooth;
-                    -webkit-overflow-scrolling: touch;
-                    overscroll-behavior: contain;
-                    z-index: 9999;
-                    padding: 6px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 2px;
-                    animation: searchDropFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                }
-                .search-dropdown-menu::-webkit-scrollbar {
-                    width: 5px;
-                }
-                .search-dropdown-menu::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .search-dropdown-menu::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.2);
-                    border-radius: 4px;
-                }
-                .search-dropdown-menu::-webkit-scrollbar-thumb:hover {
-                    background: rgba(255, 255, 255, 0.35);
-                }
-                @keyframes searchDropFade {
-                    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
-                    to { opacity: 1; transform: translateY(0) scale(1); }
-                }
-
-                body.light-mode .search-dropdown-menu {
-                    background: rgba(255, 255, 255, 0.95);
-                    border: 1px solid rgba(0, 0, 0, 0.12);
-                    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.12);
-                }
-
-                .search-suggest-item {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    padding: 8px 12px;
-                    border-radius: 10px;
-                    cursor: pointer;
-                    color: var(--text-primary);
-                    font-size: 13.5px;
-                    transition: background 0.12s, color 0.12s;
-                    user-select: none;
-                    text-decoration: none;
-                }
-                .search-suggest-item:hover, .search-suggest-item.selected {
-                    background: rgba(59, 130, 246, 0.2);
-                    color: #60a5fa;
-                }
-                body.light-mode .search-suggest-item:hover, body.light-mode .search-suggest-item.selected {
-                    background: rgba(59, 130, 246, 0.1);
-                    color: #2563eb;
-                }
-
-                .suggest-left {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    flex: 1;
-                    min-width: 0;
-                }
-                .suggest-icon {
-                    width: 15px;
-                    height: 15px;
-                    opacity: 0.65;
-                    flex-shrink: 0;
-                }
-                .suggest-text {
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                    font-weight: 500;
-                }
-                .suggest-del-btn {
-                    width: 22px;
-                    height: 22px;
-                    border-radius: 50%;
-                    background: none;
-                    border: none;
-                    color: var(--text-secondary);
-                    opacity: 0.5;
-                    cursor: pointer;
-                    font-size: 11px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    flex-shrink: 0;
-                    transition: opacity 0.15s, background 0.15s;
-                }
-                .suggest-del-btn:hover {
-                    opacity: 1;
-                    background: rgba(255, 255, 255, 0.15);
-                    color: var(--text-primary);
-                }
-                body.light-mode .suggest-del-btn:hover {
-                    background: rgba(0, 0, 0, 0.1);
-                }
-
-                .suggest-footer {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    padding: 6px 10px 2px 10px;
-                    border-top: 1px solid rgba(255, 255, 255, 0.08);
-                    font-size: 11px;
-                    color: var(--text-secondary);
-                    margin-top: 2px;
-                }
-                body.light-mode .suggest-footer {
-                    border-top-color: rgba(0, 0, 0, 0.08);
-                }
-                .suggest-clear-history-btn {
-                    background: none;
-                    border: none;
-                    color: var(--text-secondary);
-                    cursor: pointer;
-                    font-size: 11px;
-                    text-decoration: underline;
-                    opacity: 0.7;
-                    transition: opacity 0.15s, color 0.15s;
-                }
-                .suggest-clear-history-btn:hover {
-                    opacity: 1;
-                    color: #ef4444;
-                }
-
-                /* Focus & Edit Mode Safety */
-                .widget-wrapper.search-focused {
-                    z-index: 950 !important;
-                    overflow: visible !important;
-                }
-                .widget-wrapper.search-focused .widget-content {
-                    overflow: visible !important;
-                    contain: none !important;
-                }
-                body.edit-mode .search-dropdown-menu { display: none !important; }
-                body.edit-mode .search-input-field { pointer-events: none; }
-            </style>
-        ` : '';
+        ensureSearchStyles();
 
         return `
-            ${injectStyles}
             <div class="search-widget-container" id="container-${id}">
                 <form class="search-form shape-${shape}" id="form-${id}" action="${actionUrl}" method="get" target="_blank" autocomplete="off">
                     <span class="search-leading-icon" title="${engineName}">

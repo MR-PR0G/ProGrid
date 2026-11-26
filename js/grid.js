@@ -308,8 +308,8 @@ export class GridEngine {
 
         // Clamp boundaries strictly within screen columns & locked rows capacity
         visible.forEach(w => {
-            const minW = w.type === 'search' ? 2 : 1;
             const meta = window.WidgetGlobals ? window.WidgetGlobals.getMetadata(w.type) : null;
+            const minW = w.type === 'search' ? 2 : (w.type === 'finance' ? Math.min(3, this.cols) : Math.min((meta && meta.minW) || 1, this.cols));
             const maxW = w.type === 'search' ? this.cols : Math.min((meta && meta.maxW) || 4, this.cols);
             const maxH = Math.min((meta && meta.maxH) || 4, this.minRows);
             w.w = Math.max(minW, Math.min(w.w || 1, maxW));
