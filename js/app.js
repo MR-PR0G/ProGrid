@@ -2406,8 +2406,8 @@ function setupSkinBackupModal() {
 
             const payload = {
                 version: "1.0",
-                prospaceVersion: "0.4.6",
-                progridVersion: "0.4.6",
+                prospaceVersion: "0.4.7",
+                progridVersion: "0.4.7",
                 exportedAt: new Date().toISOString(),
                 skinName: slotData.name || "Custom Skin",
                 widgets: slotData.widgets
@@ -3612,7 +3612,7 @@ function isNewerVersion(remote, current) {
     return false;
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.4.6') {
+function launchUpdateSplashScreen(targetVer = 'v0.4.7') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -3708,10 +3708,10 @@ function setupAboutModal() {
     if (aboutBtn) {
         aboutBtn.addEventListener('click', () => {
             const verBadge = document.getElementById('about-app-version');
-            if (verBadge) verBadge.textContent = 'v0.4.6';
+            if (verBadge) verBadge.textContent = 'v0.4.7';
             const subTitle = document.getElementById('update-status-sub');
-            if (subTitle && !subTitle.textContent.includes('v0.4.6')) {
-                subTitle.textContent = 'Running official v0.4.6 release';
+            if (subTitle && !subTitle.textContent.includes('v0.4.7')) {
+                subTitle.textContent = 'Running official v0.4.7 release';
             }
             aboutModal.style.display = 'flex';
         });
@@ -3734,7 +3734,7 @@ function setupAboutModal() {
 
             // Only launch splash screen if an actual new update was found and verified
             if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.6';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.7';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -3754,7 +3754,7 @@ function setupAboutModal() {
                 }
 
                 let remoteVersion = null;
-                const currentVersion = '0.4.6';
+                const currentVersion = '0.4.7';
 
                 // 1. Direct GitHub Releases API check (checks ProSpace with fallback to ProGrid)
                 try {
@@ -3829,7 +3829,7 @@ function setupAboutModal() {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Running standalone v0.4.6 release.';
+                if (updateSub) updateSub.textContent = 'Running standalone v0.4.7 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
                 checkUpdateBtn.setAttribute('data-action', 'check');
                 checkUpdateBtn.removeAttribute('data-target-ver');
