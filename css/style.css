@@ -51,14 +51,16 @@ body, html {
 
 .bg-layer {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    width: 100vw; height: 100vh;
+    top: -24px; left: -24px; right: -24px; bottom: -24px;
+    width: calc(100vw + 48px); height: calc(100vh + 48px);
     z-index: 0;
     background-size: cover !important;
     background-position: center center !important;
     background-repeat: no-repeat !important;
     pointer-events: none;
     transform: translateZ(0);
+    will-change: filter, transform;
+    transition: filter 0.18s ease-out;
 }
 
 .bg-dynamic {
@@ -173,10 +175,17 @@ body.edit-mode .grid-cell-visual { display: block; }
 
 body.edit-mode .widget-wrapper {
     touch-action: none;
+    will-change: transform;
 }
 
 body.edit-mode:not(.is-interacting) .widget-wrapper:not(.dragging):not(.resizing) {
-    animation: widgetJiggle 0.25s ease-in-out infinite alternate;
+    animation: widgetJiggle 0.28s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.edit-mode:not(.is-interacting) .widget-wrapper:not(.dragging):not(.resizing) {
+        animation: none !important;
+    }
 }
 
 .widget-content {
@@ -295,7 +304,7 @@ body.edit-mode.shelf-collapsed #done-btn {
     position: fixed; bottom: -450px; left: 50%; transform: translateX(-50%);
     width: 580px; max-width: calc(100% - 24px);
     background: var(--panel-bg); border: 1px solid var(--panel-border);
-    backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border-radius: 22px; padding: 10px 14px; z-index: 2000;
     box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.35);
     transition: bottom 0.35s cubic-bezier(0.25, 1, 0.5, 1), height 0.28s cubic-bezier(0.25, 1, 0.5, 1);
@@ -1956,7 +1965,7 @@ body.edit-mode .web-install-banner {
 #folder-popup-card {
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
-    backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     padding: 26px 20px;
     border-radius: 28px;
     width: 370px;
@@ -2036,7 +2045,7 @@ body.edit-mode .web-install-banner {
     position: fixed;
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
-    backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border-radius: 18px;
     padding: 6px;
     display: none;

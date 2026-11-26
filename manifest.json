@@ -2,7 +2,7 @@
   "name": "ProSpace Workspace",
   "short_name": "ProSpace",
   "id": "prospace-workspace-app",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "description": "Ultra-fast, modular Frosted Glass & Material 3 Workspace & New Tab Dashboard by MR Prog",
   "start_url": "index.html",
   "scope": "./",

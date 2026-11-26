@@ -172,15 +172,19 @@ function applyGlobalStyles() {
         m3LightBtn.classList.toggle('active', isLight);
     }
 
-    if (blurOverlay) {
-        const bv = (typeof state.blurValue === 'number') ? state.blurValue : 27;
+    const bv = (typeof state.blurValue === 'number') ? state.blurValue : 27;
+    if (dynamicBgLayer) {
         if (bv > 0) {
-            blurOverlay.style.backdropFilter = `blur(${bv}px)`;
-            blurOverlay.style.webkitBackdropFilter = `blur(${bv}px)`;
+            dynamicBgLayer.style.filter = `blur(${bv}px)`;
+            dynamicBgLayer.style.transform = 'scale(1.06) translateZ(0)';
         } else {
-            blurOverlay.style.backdropFilter = 'none';
-            blurOverlay.style.webkitBackdropFilter = 'none';
+            dynamicBgLayer.style.filter = 'none';
+            dynamicBgLayer.style.transform = 'scale(1) translateZ(0)';
         }
+    }
+    if (blurOverlay) {
+        blurOverlay.style.backdropFilter = 'none';
+        blurOverlay.style.webkitBackdropFilter = 'none';
     }
     const slider = document.getElementById('blur-slider');
     if (slider) slider.value = state.blurValue;
@@ -235,15 +239,17 @@ function renderGrid() {
     });
 
     document.querySelectorAll('.grid-cell-visual').forEach(c => c.remove());
-    for (let r = 0; r < grid.rowsCount; r++) {
-        for (let c = 0; c < grid.columns; c++) {
-            const cell = document.createElement('div');
-            cell.className = 'grid-cell-visual';
-            cell.style.width = `${grid.cellSize}px`;
-            cell.style.height = `${grid.cellSize}px`;
-            cell.style.left = `${c * (grid.cellSize + grid.gap)}px`;
-            cell.style.top = `${r * (grid.cellSize + grid.gap)}px`;
-            container.appendChild(cell);
+    if (state.editMode) {
+        for (let r = 0; r < grid.rowsCount; r++) {
+            for (let c = 0; c < grid.columns; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell-visual';
+                cell.style.width = `${grid.cellSize}px`;
+                cell.style.height = `${grid.cellSize}px`;
+                cell.style.left = `${c * (grid.cellSize + grid.gap)}px`;
+                cell.style.top = `${r * (grid.cellSize + grid.gap)}px`;
+                container.appendChild(cell);
+            }
         }
     }
 
@@ -285,18 +291,20 @@ function createWidgetDOM(w) {
     const isGlass = currentTheme !== 'material3';
     const isLightMode = state.theme === 'light';
 
+    const isMobile = window.innerWidth <= 768;
+
     if (isGlass) {
         if (currentTheme === 'liquid-glass') {
             wrapper.style.background = hexToRgba(w.bg || '#ffffff', 0.12);
-            wrapper.style.backdropFilter = 'blur(20px)';
-            wrapper.style.webkitBackdropFilter = 'blur(20px)';
+            wrapper.style.backdropFilter = isMobile ? 'blur(10px)' : 'blur(16px)';
+            wrapper.style.webkitBackdropFilter = isMobile ? 'blur(10px)' : 'blur(16px)';
             wrapper.style.border = '1px solid var(--panel-border)';
             wrapper.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.35)';
         } else {
             // frosted-glass (default & refined)
             wrapper.style.background = hexToRgba(w.bg || '#ffffff', 0.08);
-            wrapper.style.backdropFilter = 'blur(35px) saturate(180%)';
-            wrapper.style.webkitBackdropFilter = 'blur(35px) saturate(180%)';
+            wrapper.style.backdropFilter = isMobile ? 'blur(12px) saturate(140%)' : 'blur(18px) saturate(160%)';
+            wrapper.style.webkitBackdropFilter = isMobile ? 'blur(12px) saturate(140%)' : 'blur(18px) saturate(160%)';
             wrapper.style.border = '1px solid rgba(255, 255, 255, 0.14)';
             wrapper.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.28)';
         }
@@ -846,6 +854,20 @@ function isInteractiveModalOrInput(target) {
     );
 }
 
+let activeMovePointerHandler = null;
+let activeMoveTouchHandler = null;
+
+function detachLongPressMoveListeners() {
+    if (activeMovePointerHandler) {
+        window.removeEventListener('pointermove', activeMovePointerHandler);
+        activeMovePointerHandler = null;
+    }
+    if (activeMoveTouchHandler) {
+        window.removeEventListener('touchmove', activeMoveTouchHandler);
+        activeMoveTouchHandler = null;
+    }
+}
+
 function cancelGlobalLongPress() {
     if (globalLongPressTimer) {
         clearTimeout(globalLongPressTimer);
@@ -853,6 +875,7 @@ function cancelGlobalLongPress() {
     }
     isTrackingLongPress = false;
     longPressTarget = null;
+    detachLongPressMoveListeners();
 }
 
 function handleLongPressTrigger(clientX, clientY, target) {
@@ -901,6 +924,14 @@ function setupGlobalLongPressSensor() {
     }, true);
 
     // 2. Core long-press start and move handlers
+    const onMove = (clientX, clientY) => {
+        if (!isTrackingLongPress || state.editMode) return;
+        const dist = Math.hypot(clientX - longPressStartX, clientY - longPressStartY);
+        if (dist > 18) {
+            cancelGlobalLongPress();
+        }
+    };
+
     const onStart = (clientX, clientY, target) => {
         if (state.editMode) return;
         if (isInteractiveModalOrInput(target)) return;
@@ -910,6 +941,23 @@ function setupGlobalLongPressSensor() {
         longPressTarget = target;
         isTrackingLongPress = true;
 
+        // Dynamically listen to moves ONLY while tracking a potential long-press hold
+        if (!activeMovePointerHandler) {
+            activeMovePointerHandler = (e) => {
+                if (e.pointerType === 'touch') return;
+                onMove(e.clientX, e.clientY);
+            };
+            window.addEventListener('pointermove', activeMovePointerHandler, { passive: true });
+        }
+        if (!activeMoveTouchHandler) {
+            activeMoveTouchHandler = (e) => {
+                if (e.touches && e.touches[0]) {
+                    onMove(e.touches[0].clientX, e.touches[0].clientY);
+                }
+            };
+            window.addEventListener('touchmove', activeMoveTouchHandler, { passive: true });
+        }
+
         if (globalLongPressTimer) clearTimeout(globalLongPressTimer);
         globalLongPressTimer = setTimeout(() => {
             if (isTrackingLongPress && !state.editMode) {
@@ -918,24 +966,11 @@ function setupGlobalLongPressSensor() {
         }, 380);
     };
 
-    const onMove = (clientX, clientY) => {
-        if (!isTrackingLongPress || state.editMode) return;
-        const dist = Math.hypot(clientX - longPressStartX, clientY - longPressStartY);
-        if (dist > 18) {
-            cancelGlobalLongPress();
-        }
-    };
-
     // Pointer events (Desktop mouse only - touch is handled cleanly by touchstart)
     window.addEventListener('pointerdown', (e) => {
         if (e.pointerType === 'touch') return;
         if (e.pointerType === 'mouse' && e.button !== 0) return;
         onStart(e.clientX, e.clientY, e.target);
-    }, { passive: true });
-
-    window.addEventListener('pointermove', (e) => {
-        if (e.pointerType === 'touch') return;
-        onMove(e.clientX, e.clientY);
     }, { passive: true });
 
     window.addEventListener('pointerup', (e) => {
@@ -949,12 +984,6 @@ function setupGlobalLongPressSensor() {
             onStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
         } else {
             cancelGlobalLongPress();
-        }
-    }, { passive: true });
-
-    window.addEventListener('touchmove', (e) => {
-        if (e.touches && e.touches[0]) {
-            onMove(e.touches[0].clientX, e.touches[0].clientY);
         }
     }, { passive: true });
 
@@ -1372,13 +1401,41 @@ function setupGlobalEvents() {
     });
 }
 
+function renderSingleWidget(w, wrapper) {
+    if (!wrapper) wrapper = document.getElementById(w.id);
+    if (!wrapper) return;
+    const content = wrapper.querySelector('.widget-content');
+    if (!content) return;
+
+    if (wrapper._widgetInstance && wrapper._widgetInstance.onDestroy) {
+        try { wrapper._widgetInstance.onDestroy(wrapper); } catch (e) { console.error(e); }
+    }
+
+    const WidgetClass = window.WidgetGlobals ? window.WidgetGlobals.get(w.type) : null;
+    if (WidgetClass) {
+        const instance = new WidgetClass(w);
+        wrapper._widgetInstance = instance;
+        content.innerHTML = instance.render();
+        if (instance.postRender) {
+            instance.postRender(wrapper);
+        }
+    }
+}
+window.renderSingleWidget = renderSingleWidget;
+
 window.updateWidgetConfigDirectly = function(id, partialConfig, shouldRender = true) {
     const w = state.widgets.find(item => item.id === id);
     if (w) {
         Object.assign(w, partialConfig);
         StorageEngine.save(state);
         if (shouldRender) {
-            renderGrid();
+            const wrapper = document.getElementById(id);
+            const hasGeometryChange = ('x' in partialConfig) || ('y' in partialConfig) || ('w' in partialConfig) || ('h' in partialConfig);
+            if (wrapper && !hasGeometryChange) {
+                renderSingleWidget(w, wrapper);
+            } else {
+                renderGrid();
+            }
         }
     }
 };
@@ -2406,8 +2463,8 @@ function setupSkinBackupModal() {
 
             const payload = {
                 version: "1.0",
-                prospaceVersion: "0.4.8",
-                progridVersion: "0.4.8",
+                prospaceVersion: "0.4.9",
+                progridVersion: "0.4.9",
                 exportedAt: new Date().toISOString(),
                 skinName: slotData.name || "Custom Skin",
                 widgets: slotData.widgets
@@ -3612,7 +3669,7 @@ function isNewerVersion(remote, current) {
     return false;
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.4.8') {
+function launchUpdateSplashScreen(targetVer = 'v0.4.9') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -3708,10 +3765,10 @@ function setupAboutModal() {
     if (aboutBtn) {
         aboutBtn.addEventListener('click', () => {
             const verBadge = document.getElementById('about-app-version');
-            if (verBadge) verBadge.textContent = 'v0.4.8';
+            if (verBadge) verBadge.textContent = 'v0.4.9';
             const subTitle = document.getElementById('update-status-sub');
-            if (subTitle && !subTitle.textContent.includes('v0.4.8')) {
-                subTitle.textContent = 'Running official v0.4.8 release';
+            if (subTitle && !subTitle.textContent.includes('v0.4.9')) {
+                subTitle.textContent = 'Running official v0.4.9 release';
             }
             aboutModal.style.display = 'flex';
         });
@@ -3734,7 +3791,7 @@ function setupAboutModal() {
 
             // Only launch splash screen if an actual new update was found and verified
             if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.8';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.9';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -3754,7 +3811,7 @@ function setupAboutModal() {
                 }
 
                 let remoteVersion = null;
-                const currentVersion = '0.4.8';
+                const currentVersion = '0.4.9';
 
                 // 1. Direct GitHub Releases API check (checks ProSpace with fallback to ProGrid)
                 try {
@@ -3829,7 +3886,7 @@ function setupAboutModal() {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Running standalone v0.4.8 release.';
+                if (updateSub) updateSub.textContent = 'Running standalone v0.4.9 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
                 checkUpdateBtn.setAttribute('data-action', 'check');
                 checkUpdateBtn.removeAttribute('data-target-ver');

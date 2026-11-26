@@ -44,6 +44,268 @@ const WEATHER_SVGS = {
     'fog': `<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="20" y2="8"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="16" x2="20" y2="16"></line><line x1="7" y1="20" x2="17" y2="20"></line></svg>`
 };
 
+const WEATHER_STYLES_CSS = `
+    .wtr-box {
+        width: 100%; height: 100%; box-sizing: border-box;
+        padding: 7px 9px; display: flex; flex-direction: column;
+        justify-content: space-between; overflow: hidden; position: relative;
+        user-select: none; min-height: 0; min-width: 0;
+    }
+    .wtr-top-bar {
+        display: flex; align-items: center; justify-content: space-between;
+        min-height: 18px; height: 18px; width: 100%; flex-shrink: 0;
+        margin-bottom: 2px;
+    }
+    .wtr-loc-badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 11px; font-weight: 700; color: var(--text-primary);
+        max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        letter-spacing: -0.1px;
+    }
+    .wtr-unit-badge {
+        font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 4px;
+        background: rgba(59, 130, 246, 0.15); color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.25); line-height: 1.2;
+    }
+    .wtr-icon-btn {
+        width: 20px; height: 20px; border-radius: 50%;
+        background: rgba(255, 255, 255, 0.06); border: none;
+        color: var(--text-secondary); display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: transform 0.2s, background 0.15s, color 0.15s;
+        flex-shrink: 0;
+    }
+    .wtr-icon-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.14); }
+    .wtr-icon-btn.spinning svg { animation: wtrSpin 0.75s linear infinite; }
+    @keyframes wtrSpin { 100% { transform: rotate(360deg); } }
+
+    /* Compact 1-row layout */
+    .wtr-compact-row {
+        display: flex; align-items: center; justify-content: space-between;
+        width: 100%; flex: 1; gap: 6px; min-width: 0; overflow: hidden;
+    }
+    .wtr-compact-temp {
+        font-size: 20px; font-weight: 800; color: var(--text-primary);
+        line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.5px;
+    }
+    .wtr-compact-meta {
+        display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0;
+    }
+
+    /* Hero Row in 2x2 */
+    .wtr-hero-row {
+        display: flex; align-items: center; justify-content: space-between;
+        margin: 1px 0; gap: 4px; min-height: 0; flex-shrink: 0;
+    }
+    .wtr-hero-left {
+        display: flex; flex-direction: column; min-width: 0; flex: 1;
+    }
+    .wtr-temp-hero {
+        font-size: 26px; font-weight: 800; color: var(--text-primary);
+        line-height: 1; letter-spacing: -0.8px; font-variant-numeric: tabular-nums;
+    }
+    .wtr-desc-text {
+        font-size: 10px; font-weight: 600; color: var(--text-secondary);
+        margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .wtr-hl-text {
+        font-size: 9px; font-weight: 700; color: var(--text-secondary);
+        opacity: 0.85; margin-top: 1px; font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    .wtr-hero-icon {
+        width: 32px; height: 32px; display: flex; align-items: center;
+        justify-content: center; flex-shrink: 0;
+    }
+
+    /* Metrics Pills */
+    .wtr-metrics-pills {
+        display: flex; align-items: center; gap: 3px; width: 100%;
+        margin: 2px 0; flex-shrink: 0; overflow: hidden;
+    }
+    .wtr-metric-pill {
+        flex: 1; min-width: 0; display: inline-flex; align-items: center;
+        justify-content: center; gap: 3px; padding: 2px 3px;
+        border-radius: 6px; background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.07); color: var(--text-secondary);
+        font-size: 8.5px; font-weight: 600; white-space: nowrap;
+        text-overflow: ellipsis; overflow: hidden; font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+    }
+    .wtr-metric-pill svg { flex-shrink: 0; opacity: 0.8; }
+    .wtr-metric-pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Minimalist Forecast Strip in 2x2 */
+    .wtr-forecast-strip {
+        display: flex; align-items: stretch; gap: 2.5px; width: 100%;
+        padding-top: 3px; border-top: 1px solid rgba(255, 255, 255, 0.07);
+        margin-top: auto; flex-shrink: 0; overflow: hidden;
+    }
+    .wtr-forecast-day {
+        flex: 1; min-width: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 1px;
+        padding: 2px 1px; border-radius: 6px;
+        background: rgba(255, 255, 255, 0.035); overflow: hidden;
+    }
+    .wtr-day-label {
+        font-weight: 600; color: var(--text-secondary); line-height: 1; font-size: 8px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+    }
+    .wtr-day-icon {
+        width: 14px; height: 14px; display: flex; align-items: center;
+        justify-content: center; margin: 1px 0; flex-shrink: 0;
+    }
+    .wtr-day-temp {
+        font-weight: 700; color: var(--text-primary); font-size: 9px;
+        font-variant-numeric: tabular-nums; line-height: 1;
+    }
+    .wtr-day-low {
+        font-size: 7.5px; color: var(--text-secondary); opacity: 0.75;
+        font-variant-numeric: tabular-nums; line-height: 1;
+    }
+
+    /* Wide 4x2 Dashboard Layout */
+    .wtr-wide-dashboard {
+        display: grid; grid-template-columns: minmax(130px, 1fr) 1.55fr;
+        gap: 8px; width: 100%; height: calc(100% - 22px);
+        min-height: 0; overflow: hidden;
+    }
+    .wtr-wide-left {
+        display: flex; flex-direction: column; justify-content: space-between;
+        min-width: 0; height: 100%;
+    }
+    .wtr-wide-hero {
+        display: flex; align-items: center; gap: 8px; min-width: 0;
+    }
+    .wtr-wide-icon-box {
+        width: 42px; height: 42px; display: flex; align-items: center;
+        justify-content: center; flex-shrink: 0; border-radius: 10px;
+        background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .wtr-wide-temp {
+        font-size: 32px; font-weight: 800; color: var(--text-primary);
+        line-height: 1; letter-spacing: -1px; font-variant-numeric: tabular-nums;
+    }
+    .wtr-wide-right {
+        display: flex; flex-direction: column; justify-content: space-between;
+        min-width: 0; height: 100%; background: rgba(0, 0, 0, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px;
+        padding: 5px 6px; overflow: hidden;
+    }
+    .wtr-wide-right-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding-bottom: 3px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        margin-bottom: 3px; font-size: 9px; font-weight: 700;
+        color: var(--text-secondary); letter-spacing: 0.3px; text-transform: uppercase;
+    }
+    .wtr-wide-forecast-row {
+        display: flex; align-items: stretch; gap: 3px; width: 100%;
+        flex: 1; min-height: 0;
+    }
+    .wtr-wide-day-card {
+        flex: 1; min-width: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: space-around;
+        padding: 3px 1px; border-radius: 6px;
+        background: rgba(255, 255, 255, 0.035); overflow: hidden;
+    }
+
+    /* Weather Detail Interactive Modal */
+    .wtr-modal-overlay {
+        position: fixed; inset: 0; z-index: 99999;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(10, 15, 29, 0.72);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        padding: 16px; box-sizing: border-box;
+        animation: wtrFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes wtrFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .wtr-modal-sheet {
+        width: 100%; max-width: 440px; max-height: 88vh;
+        background: rgba(20, 25, 42, 0.94);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 22px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        color: var(--text-primary, #f8fafc);
+        display: flex; flex-direction: column;
+        overflow-y: auto; overflow-x: hidden;
+        user-select: none;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+        font-family: system-ui, -apple-system, sans-serif;
+    }
+    .wtr-modal-sheet::-webkit-scrollbar { width: 4px; }
+    .wtr-modal-sheet::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15); border-radius: 4px;
+    }
+    .wtr-modal-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 16px 18px 12px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        position: sticky; top: 0; background: rgba(20, 25, 42, 0.96);
+        backdrop-filter: blur(12px); z-index: 2;
+    }
+    .wtr-modal-hero {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .wtr-modal-hero-left {
+        display: flex; flex-direction: column; gap: 2px;
+    }
+    .wtr-modal-temp-huge {
+        font-size: 38px; font-weight: 800; color: #fff;
+        line-height: 1; letter-spacing: -1.5px; font-variant-numeric: tabular-nums;
+    }
+    .wtr-modal-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+        padding: 14px 18px;
+    }
+    .wtr-modal-grid-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 12px; padding: 10px 12px;
+        display: flex; flex-direction: column; gap: 4px;
+    }
+    .wtr-modal-hourly-sec {
+        padding: 12px 18px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .wtr-modal-track {
+        display: flex; align-items: stretch; gap: 8px;
+        overflow-x: auto; padding-bottom: 6px; margin-top: 8px;
+        scrollbar-width: none;
+    }
+    .wtr-modal-track::-webkit-scrollbar { display: none; }
+    .wtr-modal-hour-pill {
+        flex-shrink: 0; min-width: 52px; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 4px;
+        padding: 8px 6px; border-radius: 10px;
+        background: rgba(255, 255, 255, 0.035);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .wtr-modal-daily-sec {
+        padding: 12px 18px 18px 18px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .wtr-modal-daily-item {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 7px 10px; border-radius: 9px;
+        background: rgba(255, 255, 255, 0.025);
+        margin-bottom: 5px; font-size: 11.5px;
+    }
+`;
+
+function ensureWeatherStyles() {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('weather-widget-css')) return;
+    const s = document.createElement('style');
+    s.id = 'weather-widget-css';
+    s.textContent = WEATHER_STYLES_CSS;
+    document.head.appendChild(s);
+}
+
 export default class WeatherWidget extends BaseWidget {
     static getMetadata() {
         return {
@@ -183,261 +445,7 @@ export default class WeatherWidget extends BaseWidget {
         const coordsW = (this.config.w !== undefined) ? this.config.w : 2;
         const isCompact = (coordsH === 1);
         const isWide = (coordsW >= 4 && coordsH >= 2);
-
-        const injectStyles = !document.getElementById('weather-widget-css') ? `
-            <style id="weather-widget-css">
-                .wtr-box {
-                    width: 100%; height: 100%; box-sizing: border-box;
-                    padding: 7px 9px; display: flex; flex-direction: column;
-                    justify-content: space-between; overflow: hidden; position: relative;
-                    user-select: none; min-height: 0; min-width: 0;
-                }
-                .wtr-top-bar {
-                    display: flex; align-items: center; justify-content: space-between;
-                    min-height: 18px; height: 18px; width: 100%; flex-shrink: 0;
-                    margin-bottom: 2px;
-                }
-                .wtr-loc-badge {
-                    display: inline-flex; align-items: center; gap: 4px;
-                    font-size: 11px; font-weight: 700; color: var(--text-primary);
-                    max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-                    letter-spacing: -0.1px;
-                }
-                .wtr-unit-badge {
-                    font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 4px;
-                    background: rgba(59, 130, 246, 0.15); color: #60a5fa;
-                    border: 1px solid rgba(59, 130, 246, 0.25); line-height: 1.2;
-                }
-                .wtr-icon-btn {
-                    width: 20px; height: 20px; border-radius: 50%;
-                    background: rgba(255, 255, 255, 0.06); border: none;
-                    color: var(--text-secondary); display: flex; align-items: center; justify-content: center;
-                    cursor: pointer; transition: transform 0.2s, background 0.15s, color 0.15s;
-                    flex-shrink: 0;
-                }
-                .wtr-icon-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.14); }
-                .wtr-icon-btn.spinning svg { animation: wtrSpin 0.75s linear infinite; }
-                @keyframes wtrSpin { 100% { transform: rotate(360deg); } }
-
-                /* Compact 1-row layout */
-                .wtr-compact-row {
-                    display: flex; align-items: center; justify-content: space-between;
-                    width: 100%; flex: 1; gap: 6px; min-width: 0; overflow: hidden;
-                }
-                .wtr-compact-temp {
-                    font-size: 20px; font-weight: 800; color: var(--text-primary);
-                    line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.5px;
-                }
-                .wtr-compact-meta {
-                    display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0;
-                }
-
-                /* Hero Row in 2x2 */
-                .wtr-hero-row {
-                    display: flex; align-items: center; justify-content: space-between;
-                    margin: 1px 0; gap: 4px; min-height: 0; flex-shrink: 0;
-                }
-                .wtr-hero-left {
-                    display: flex; flex-direction: column; min-width: 0; flex: 1;
-                }
-                .wtr-temp-hero {
-                    font-size: 26px; font-weight: 800; color: var(--text-primary);
-                    line-height: 1; letter-spacing: -0.8px; font-variant-numeric: tabular-nums;
-                }
-                .wtr-desc-text {
-                    font-size: 10px; font-weight: 600; color: var(--text-secondary);
-                    margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-                }
-                .wtr-hl-text {
-                    font-size: 9px; font-weight: 700; color: var(--text-secondary);
-                    opacity: 0.85; margin-top: 1px; font-variant-numeric: tabular-nums;
-                    white-space: nowrap;
-                }
-                .wtr-hero-icon {
-                    width: 32px; height: 32px; display: flex; align-items: center;
-                    justify-content: center; flex-shrink: 0;
-                }
-
-                /* Metrics Pills */
-                .wtr-metrics-pills {
-                    display: flex; align-items: center; gap: 3px; width: 100%;
-                    margin: 2px 0; flex-shrink: 0; overflow: hidden;
-                }
-                .wtr-metric-pill {
-                    flex: 1; min-width: 0; display: inline-flex; align-items: center;
-                    justify-content: center; gap: 3px; padding: 2px 3px;
-                    border-radius: 6px; background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(255, 255, 255, 0.07); color: var(--text-secondary);
-                    font-size: 8.5px; font-weight: 600; white-space: nowrap;
-                    text-overflow: ellipsis; overflow: hidden; font-variant-numeric: tabular-nums;
-                    line-height: 1.2;
-                }
-                .wtr-metric-pill svg { flex-shrink: 0; opacity: 0.8; }
-                .wtr-metric-pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-                /* Minimalist Forecast Strip in 2x2 */
-                .wtr-forecast-strip {
-                    display: flex; align-items: stretch; gap: 2.5px; width: 100%;
-                    padding-top: 3px; border-top: 1px solid rgba(255, 255, 255, 0.07);
-                    margin-top: auto; flex-shrink: 0; overflow: hidden;
-                }
-                .wtr-forecast-day {
-                    flex: 1; min-width: 0; display: flex; flex-direction: column;
-                    align-items: center; justify-content: center; gap: 1px;
-                    padding: 2px 1px; border-radius: 6px;
-                    background: rgba(255, 255, 255, 0.035); overflow: hidden;
-                }
-                .wtr-day-label {
-                    font-weight: 600; color: var(--text-secondary); line-height: 1; font-size: 8px;
-                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
-                }
-                .wtr-day-icon {
-                    width: 14px; height: 14px; display: flex; align-items: center;
-                    justify-content: center; margin: 1px 0; flex-shrink: 0;
-                }
-                .wtr-day-temp {
-                    font-weight: 700; color: var(--text-primary); font-size: 9px;
-                    font-variant-numeric: tabular-nums; line-height: 1;
-                }
-                .wtr-day-low {
-                    font-size: 7.5px; color: var(--text-secondary); opacity: 0.75;
-                    font-variant-numeric: tabular-nums; line-height: 1;
-                }
-
-                /* Wide 4x2 Dashboard Layout */
-                .wtr-wide-dashboard {
-                    display: grid; grid-template-columns: minmax(130px, 1fr) 1.55fr;
-                    gap: 8px; width: 100%; height: calc(100% - 22px);
-                    min-height: 0; overflow: hidden;
-                }
-                .wtr-wide-left {
-                    display: flex; flex-direction: column; justify-content: space-between;
-                    min-width: 0; height: 100%;
-                }
-                .wtr-wide-hero {
-                    display: flex; align-items: center; gap: 8px; min-width: 0;
-                }
-                .wtr-wide-icon-box {
-                    width: 42px; height: 42px; display: flex; align-items: center;
-                    justify-content: center; flex-shrink: 0; border-radius: 10px;
-                    background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.07);
-                }
-                .wtr-wide-temp {
-                    font-size: 32px; font-weight: 800; color: var(--text-primary);
-                    line-height: 1; letter-spacing: -1px; font-variant-numeric: tabular-nums;
-                }
-                .wtr-wide-right {
-                    display: flex; flex-direction: column; justify-content: space-between;
-                    min-width: 0; height: 100%; background: rgba(0, 0, 0, 0.12);
-                    border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px;
-                    padding: 5px 6px; overflow: hidden;
-                }
-                .wtr-wide-right-head {
-                    display: flex; align-items: center; justify-content: space-between;
-                    padding-bottom: 3px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-                    margin-bottom: 3px; font-size: 9px; font-weight: 700;
-                    color: var(--text-secondary); letter-spacing: 0.3px; text-transform: uppercase;
-                }
-                .wtr-wide-forecast-row {
-                    display: flex; align-items: stretch; gap: 3px; width: 100%;
-                    flex: 1; min-height: 0;
-                }
-                .wtr-wide-day-card {
-                    flex: 1; min-width: 0; display: flex; flex-direction: column;
-                    align-items: center; justify-content: space-around;
-                    padding: 3px 1px; border-radius: 6px;
-                    background: rgba(255, 255, 255, 0.035); overflow: hidden;
-                }
-
-                /* Weather Detail Interactive Modal */
-                .wtr-modal-overlay {
-                    position: fixed; inset: 0; z-index: 99999;
-                    display: flex; align-items: center; justify-content: center;
-                    background: rgba(10, 15, 29, 0.72);
-                    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-                    padding: 16px; box-sizing: border-box;
-                    animation: wtrFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-                }
-                @keyframes wtrFadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                .wtr-modal-sheet {
-                    width: 100%; max-width: 440px; max-height: 88vh;
-                    background: rgba(20, 25, 42, 0.94);
-                    border: 1px solid rgba(255, 255, 255, 0.14);
-                    border-radius: 22px;
-                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-                    color: var(--text-primary, #f8fafc);
-                    display: flex; flex-direction: column;
-                    overflow-y: auto; overflow-x: hidden;
-                    user-select: none;
-                    scrollbar-width: thin;
-                    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
-                    font-family: system-ui, -apple-system, sans-serif;
-                }
-                .wtr-modal-sheet::-webkit-scrollbar { width: 4px; }
-                .wtr-modal-sheet::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.15); border-radius: 4px;
-                }
-                .wtr-modal-head {
-                    display: flex; align-items: center; justify-content: space-between;
-                    padding: 16px 18px 12px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-                    position: sticky; top: 0; background: rgba(20, 25, 42, 0.96);
-                    backdrop-filter: blur(12px); z-index: 2;
-                }
-                .wtr-modal-hero {
-                    display: flex; align-items: center; justify-content: space-between;
-                    padding: 16px 20px;
-                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-                }
-                .wtr-modal-hero-left {
-                    display: flex; flex-direction: column; gap: 2px;
-                }
-                .wtr-modal-temp-huge {
-                    font-size: 38px; font-weight: 800; color: #fff;
-                    line-height: 1; letter-spacing: -1.5px; font-variant-numeric: tabular-nums;
-                }
-                .wtr-modal-grid {
-                    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-                    padding: 14px 18px;
-                }
-                .wtr-modal-grid-card {
-                    background: rgba(255, 255, 255, 0.04);
-                    border: 1px solid rgba(255, 255, 255, 0.07);
-                    border-radius: 12px; padding: 10px 12px;
-                    display: flex; flex-direction: column; gap: 4px;
-                }
-                .wtr-modal-hourly-sec {
-                    padding: 12px 18px;
-                    border-top: 1px solid rgba(255, 255, 255, 0.06);
-                }
-                .wtr-modal-track {
-                    display: flex; align-items: stretch; gap: 8px;
-                    overflow-x: auto; padding-bottom: 6px; margin-top: 8px;
-                    scrollbar-width: none;
-                }
-                .wtr-modal-track::-webkit-scrollbar { display: none; }
-                .wtr-modal-hour-pill {
-                    flex-shrink: 0; min-width: 52px; display: flex; flex-direction: column;
-                    align-items: center; justify-content: center; gap: 4px;
-                    padding: 8px 6px; border-radius: 10px;
-                    background: rgba(255, 255, 255, 0.035);
-                    border: 1px solid rgba(255, 255, 255, 0.06);
-                }
-                .wtr-modal-daily-sec {
-                    padding: 12px 18px 18px 18px;
-                    border-top: 1px solid rgba(255, 255, 255, 0.06);
-                }
-                .wtr-modal-daily-item {
-                    display: flex; align-items: center; justify-content: space-between;
-                    padding: 7px 10px; border-radius: 9px;
-                    background: rgba(255, 255, 255, 0.025);
-                    margin-bottom: 5px; font-size: 11.5px;
-                }
-            </style>
-        ` : '';
+        ensureWeatherStyles();
 
         // Universal Top Bar
         const topBarHtml = `
@@ -611,7 +619,6 @@ export default class WeatherWidget extends BaseWidget {
         }
 
         return `
-            ${injectStyles}
             <div class="wtr-box" id="wtr-box-${id}">
                 ${topBarHtml}
                 ${bodyHtml}

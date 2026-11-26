@@ -35,6 +35,229 @@ const ASSET_REGISTRY = [
     { id: 'GBPUSD', name: 'British Pound', symbol: 'GBP', price: 1.268, change: 0.15, high: 1.272, low: 1.264, icon: ASSET_SVGS.GBPUSD, type: 'forex', unit: '$' }
 ];
 
+const FINANCE_STYLES_CSS = `
+    .fin-w-box {
+        width: 100%; height: 100%; box-sizing: border-box;
+        padding: 7px 9px; display: flex; flex-direction: column;
+        justify-content: space-between; overflow: hidden; position: relative;
+        user-select: none;
+    }
+    .fin-top-bar {
+        display: flex; align-items: center; justify-content: space-between;
+        min-height: 22px; width: 100%; flex-shrink: 0;
+    }
+    .fin-asset-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 2.5px 7px; border-radius: 7px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .fin-asset-icon {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 16px; height: 16px; flex-shrink: 0;
+    }
+    .fin-asset-icon svg { width: 16px; height: 16px; display: block; }
+    .fin-asset-sym {
+        font-size: 11px; font-weight: 700; color: var(--text-primary);
+    }
+    .fin-asset-fullname {
+        font-size: 9.5px; color: var(--text-secondary); max-width: 85px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .fin-currency-indicator {
+        font-size: 9px; font-weight: 700; padding: 1px 4.5px; border-radius: 4px;
+        background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.25);
+    }
+    .fin-controls-right {
+        display: flex; align-items: center; gap: 5px;
+    }
+    .fin-diag-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+        transition: background 0.2s, box-shadow 0.2s;
+    }
+    .fin-diag-dot.warn {
+        background: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+    }
+    .fin-diag-dot.error {
+        background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+    }
+    .fin-icon-btn {
+        width: 22px; height: 22px; border-radius: 50%;
+        background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--text-secondary); display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: transform 0.2s, background 0.15s, color 0.15s;
+    }
+    .fin-icon-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.14); }
+    .fin-icon-btn.spinning svg { animation: finSpin 0.75s linear infinite; }
+    @keyframes finSpin { 100% { transform: rotate(360deg); } }
+
+    /* Compact Horizontal 1-Row Layout */
+    .fin-compact-row {
+        display: flex; align-items: stretch; gap: 4px; width: 100%;
+        flex: 1; min-height: 0; margin-top: 2px;
+    }
+    .fin-compact-card {
+        flex: 1; min-width: 0; background: rgba(0, 0, 0, 0.18);
+        border: 1px solid var(--panel-border); border-radius: 8px;
+        padding: 2.5px 4.5px; display: flex; flex-direction: column;
+        justify-content: center; gap: 1px; overflow: hidden;
+        box-sizing: border-box;
+    }
+    .fin-compact-head {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 2px; min-width: 0; width: 100%;
+    }
+    .fin-compact-sym {
+        font-size: 9px; font-weight: 700; color: var(--text-primary);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .fin-mini-chip {
+        font-size: 7.5px !important; padding: 0.5px 2px !important; line-height: 1.1;
+        letter-spacing: -0.2px; border-radius: 4px;
+    }
+    .fin-compact-price {
+        font-size: clamp(9.5px, 2.5vw, 11px); font-weight: 800; color: var(--text-primary);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        font-variant-numeric: tabular-nums; margin-top: 1px;
+        letter-spacing: -0.3px;
+    }
+    .fin-cur-toggle {
+        font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 4px;
+        background: rgba(59, 130, 246, 0.14); color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.25); cursor: pointer;
+        transition: background 0.15s, transform 0.12s; line-height: 1.2; flex-shrink: 0;
+    }
+    .fin-cur-toggle:hover { background: rgba(59, 130, 246, 0.28); }
+    .fin-cur-toggle:active { transform: scale(0.92); }
+    .fin-compact-single {
+        flex: 1; display: flex; align-items: center; justify-content: space-between;
+        padding: 4px 10px; background: rgba(0, 0, 0, 0.18);
+        border: 1px solid var(--panel-border); border-radius: 9px; margin-top: 3px;
+    }
+
+    /* Hero Single Mode */
+    .fin-hero-section {
+        display: flex; flex-direction: column; gap: 2px; margin: 2px 0;
+    }
+    .fin-price-large {
+        font-size: 20px; font-weight: 800; color: var(--text-primary);
+        letter-spacing: -0.4px; line-height: 1.15;
+        font-variant-numeric: tabular-nums;
+    }
+    .fin-hero-meta {
+        display: flex; align-items: center; gap: 6px; font-size: 10px;
+    }
+    .fin-change-chip {
+        font-size: 9.5px; font-weight: 700; padding: 1.5px 5.5px; border-radius: 5px;
+        display: inline-flex; align-items: center; gap: 2px; font-variant-numeric: tabular-nums;
+    }
+    .fin-change-chip.up { background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.28); }
+    .fin-change-chip.down { background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.28); }
+    .fin-hl-text {
+        color: var(--text-secondary); font-size: 9.5px;
+    }
+
+    /* Chart Canvas */
+    .fin-chart-wrap {
+        flex: 1; width: 100%; min-height: 44px; position: relative;
+        margin-top: 3px; display: flex; align-items: flex-end;
+    }
+    .fin-chart-svg {
+        width: 100%; height: 100%; overflow: visible;
+    }
+    .fin-tooltip-tag {
+        position: absolute; top: -14px; right: 0;
+        font-size: 9px; font-weight: 600; color: #94a3b8;
+        background: rgba(0, 0, 0, 0.4); padding: 1px 5px; border-radius: 4px;
+        opacity: 0; transition: opacity 0.15s;
+    }
+    .fin-chart-wrap:hover .fin-tooltip-tag { opacity: 1; }
+
+    /* Dual Cards Mode (2 assets) */
+    .fin-dual-grid {
+        flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+        align-items: stretch; margin-top: 4px;
+    }
+    .fin-dual-card {
+        background: rgba(0, 0, 0, 0.18); border: 1px solid var(--panel-border);
+        border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column;
+        justify-content: space-between; overflow: hidden; position: relative;
+    }
+    .fin-dual-top {
+        display: flex; align-items: center; justify-content: space-between; gap: 4px;
+    }
+    .fin-dual-price {
+        font-size: 12.5px; font-weight: 700; color: var(--text-primary);
+        margin: 2px 0 3px 0; font-variant-numeric: tabular-nums;
+    }
+    .fin-mini-sparkline {
+        width: 100%; height: 24px;
+    }
+
+    /* Tri-Asset Mode (3 assets, Expanded) */
+    .fin-tri-container {
+        flex: 1; display: grid; grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto 1fr; gap: 6px; margin-top: 4px; overflow: hidden;
+    }
+    .fin-tri-featured {
+        grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between;
+        padding: 6px 9px; border-radius: 9px;
+        background: rgba(0, 0, 0, 0.22); border: 1px solid var(--panel-border);
+        gap: 8px;
+    }
+    .fin-tri-featured-left {
+        display: flex; flex-direction: column; gap: 1px;
+    }
+    .fin-tri-featured-right {
+        display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+    }
+    .fin-tri-subcard {
+        background: rgba(0, 0, 0, 0.16); border: 1px solid var(--panel-border);
+        border-radius: 9px; padding: 5px 7px; display: flex; flex-direction: column;
+        justify-content: space-between; overflow: hidden; min-width: 0;
+    }
+    .fin-tri-subcard-top {
+        display: flex; align-items: center; justify-content: space-between; gap: 4px;
+    }
+    .fin-tri-subcard-price {
+        font-size: 11.5px; font-weight: 700; color: var(--text-primary);
+        margin: 2px 0 1px 0; font-variant-numeric: tabular-nums;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* Quad Grid Mode (4 assets, Expanded) */
+    .fin-quad-grid {
+        flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+        gap: 5px; margin-top: 4px;
+    }
+    .fin-quad-card {
+        background: rgba(0, 0, 0, 0.18); border: 1px solid var(--panel-border);
+        border-radius: 8px; padding: 4px 6px; display: flex; flex-direction: column;
+        justify-content: space-between; overflow: hidden;
+    }
+    .fin-quad-top {
+        display: flex; align-items: center; justify-content: space-between; gap: 2px;
+    }
+    .fin-quad-price {
+        font-size: 11px; font-weight: 700; color: var(--text-primary);
+        margin: 1px 0; font-variant-numeric: tabular-nums; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis;
+    }
+    .fin-quad-sparkline {
+        width: 100%; height: 16px;
+    }
+`;
+
+function ensureFinanceStyles() {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('finance-widget-css')) return;
+    const s = document.createElement('style');
+    s.id = 'finance-widget-css';
+    s.textContent = FINANCE_STYLES_CSS;
+    document.head.appendChild(s);
+}
+
 export default class FinanceWidget extends BaseWidget {
     static getMetadata() {
         return {
@@ -628,222 +851,7 @@ export default class FinanceWidget extends BaseWidget {
         const usdToTmn = this.getUsdToTomanRate();
         const coordsH = (this.config.h !== undefined) ? this.config.h : (this.config.defaultH || 1);
         const isCompact = (coordsH === 1);
-
-        const injectStyles = !document.getElementById('finance-widget-css') ? `
-            <style id="finance-widget-css">
-                .fin-w-box {
-                    width: 100%; height: 100%; box-sizing: border-box;
-                    padding: 7px 9px; display: flex; flex-direction: column;
-                    justify-content: space-between; overflow: hidden; position: relative;
-                    user-select: none;
-                }
-                .fin-top-bar {
-                    display: flex; align-items: center; justify-content: space-between;
-                    min-height: 22px; width: 100%; flex-shrink: 0;
-                }
-                .fin-asset-badge {
-                    display: inline-flex; align-items: center; gap: 5px;
-                    padding: 2.5px 7px; border-radius: 7px;
-                    background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
-                }
-                .fin-asset-icon {
-                    display: inline-flex; align-items: center; justify-content: center;
-                    width: 16px; height: 16px; flex-shrink: 0;
-                }
-                .fin-asset-icon svg { width: 16px; height: 16px; display: block; }
-                .fin-asset-sym {
-                    font-size: 11px; font-weight: 700; color: var(--text-primary);
-                }
-                .fin-asset-fullname {
-                    font-size: 9.5px; color: var(--text-secondary); max-width: 85px;
-                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-                }
-                .fin-currency-indicator {
-                    font-size: 9px; font-weight: 700; padding: 1px 4.5px; border-radius: 4px;
-                    background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.25);
-                }
-                .fin-controls-right {
-                    display: flex; align-items: center; gap: 5px;
-                }
-                .fin-diag-dot {
-                    width: 6px; height: 6px; border-radius: 50%;
-                    background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
-                    transition: background 0.2s, box-shadow 0.2s;
-                }
-                .fin-diag-dot.warn {
-                    background: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
-                }
-                .fin-diag-dot.error {
-                    background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
-                }
-                .fin-icon-btn {
-                    width: 22px; height: 22px; border-radius: 50%;
-                    background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08);
-                    color: var(--text-secondary); display: flex; align-items: center; justify-content: center;
-                    cursor: pointer; transition: transform 0.2s, background 0.15s, color 0.15s;
-                }
-                .fin-icon-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.14); }
-                .fin-icon-btn.spinning svg { animation: finSpin 0.75s linear infinite; }
-                @keyframes finSpin { 100% { transform: rotate(360deg); } }
-
-                /* Compact Horizontal 1-Row Layout */
-                .fin-compact-row {
-                    display: flex; align-items: stretch; gap: 4px; width: 100%;
-                    flex: 1; min-height: 0; margin-top: 2px;
-                }
-                .fin-compact-card {
-                    flex: 1; min-width: 0; background: rgba(0, 0, 0, 0.18);
-                    border: 1px solid var(--panel-border); border-radius: 8px;
-                    padding: 2.5px 4.5px; display: flex; flex-direction: column;
-                    justify-content: center; gap: 1px; overflow: hidden;
-                    box-sizing: border-box;
-                }
-                .fin-compact-head {
-                    display: flex; align-items: center; justify-content: space-between;
-                    gap: 2px; min-width: 0; width: 100%;
-                }
-                .fin-compact-sym {
-                    font-size: 9px; font-weight: 700; color: var(--text-primary);
-                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-                }
-                .fin-mini-chip {
-                    font-size: 7.5px !important; padding: 0.5px 2px !important; line-height: 1.1;
-                    letter-spacing: -0.2px; border-radius: 4px;
-                }
-                .fin-compact-price {
-                    font-size: clamp(9.5px, 2.5vw, 11px); font-weight: 800; color: var(--text-primary);
-                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-                    font-variant-numeric: tabular-nums; margin-top: 1px;
-                    letter-spacing: -0.3px;
-                }
-                .fin-cur-toggle {
-                    font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 4px;
-                    background: rgba(59, 130, 246, 0.14); color: #60a5fa;
-                    border: 1px solid rgba(59, 130, 246, 0.25); cursor: pointer;
-                    transition: background 0.15s, transform 0.12s; line-height: 1.2; flex-shrink: 0;
-                }
-                .fin-cur-toggle:hover { background: rgba(59, 130, 246, 0.28); }
-                .fin-cur-toggle:active { transform: scale(0.92); }
-                .fin-compact-single {
-                    flex: 1; display: flex; align-items: center; justify-content: space-between;
-                    padding: 4px 10px; background: rgba(0, 0, 0, 0.18);
-                    border: 1px solid var(--panel-border); border-radius: 9px; margin-top: 3px;
-                }
-
-                /* Hero Single Mode */
-                .fin-hero-section {
-                    display: flex; flex-direction: column; gap: 2px; margin: 2px 0;
-                }
-                .fin-price-large {
-                    font-size: 20px; font-weight: 800; color: var(--text-primary);
-                    letter-spacing: -0.4px; line-height: 1.15;
-                    font-variant-numeric: tabular-nums;
-                }
-                .fin-hero-meta {
-                    display: flex; align-items: center; gap: 6px; font-size: 10px;
-                }
-                .fin-change-chip {
-                    font-size: 9.5px; font-weight: 700; padding: 1.5px 5.5px; border-radius: 5px;
-                    display: inline-flex; align-items: center; gap: 2px; font-variant-numeric: tabular-nums;
-                }
-                .fin-change-chip.up { background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.28); }
-                .fin-change-chip.down { background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.28); }
-                .fin-hl-text {
-                    color: var(--text-secondary); font-size: 9.5px;
-                }
-
-                /* Chart Canvas */
-                .fin-chart-wrap {
-                    flex: 1; width: 100%; min-height: 44px; position: relative;
-                    margin-top: 3px; display: flex; align-items: flex-end;
-                }
-                .fin-chart-svg {
-                    width: 100%; height: 100%; overflow: visible;
-                }
-                .fin-tooltip-tag {
-                    position: absolute; top: -14px; right: 0;
-                    font-size: 9px; font-weight: 600; color: #94a3b8;
-                    background: rgba(0, 0, 0, 0.4); padding: 1px 5px; border-radius: 4px;
-                    opacity: 0; transition: opacity 0.15s;
-                }
-                .fin-chart-wrap:hover .fin-tooltip-tag { opacity: 1; }
-
-                /* Dual Cards Mode (2 assets) */
-                .fin-dual-grid {
-                    flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
-                    align-items: stretch; margin-top: 4px;
-                }
-                .fin-dual-card {
-                    background: rgba(0, 0, 0, 0.18); border: 1px solid var(--panel-border);
-                    border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column;
-                    justify-content: space-between; overflow: hidden; position: relative;
-                }
-                .fin-dual-top {
-                    display: flex; align-items: center; justify-content: space-between; gap: 4px;
-                }
-                .fin-dual-price {
-                    font-size: 12.5px; font-weight: 700; color: var(--text-primary);
-                    margin: 2px 0 3px 0; font-variant-numeric: tabular-nums;
-                }
-                .fin-mini-sparkline {
-                    width: 100%; height: 24px;
-                }
-
-                /* Tri-Asset Mode (3 assets, Expanded) */
-                .fin-tri-container {
-                    flex: 1; display: grid; grid-template-columns: 1fr 1fr;
-                    grid-template-rows: auto 1fr; gap: 6px; margin-top: 4px; overflow: hidden;
-                }
-                .fin-tri-featured {
-                    grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between;
-                    padding: 6px 9px; border-radius: 9px;
-                    background: rgba(0, 0, 0, 0.22); border: 1px solid var(--panel-border);
-                    gap: 8px;
-                }
-                .fin-tri-featured-left {
-                    display: flex; flex-direction: column; gap: 1px;
-                }
-                .fin-tri-featured-right {
-                    display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
-                }
-                .fin-tri-subcard {
-                    background: rgba(0, 0, 0, 0.16); border: 1px solid var(--panel-border);
-                    border-radius: 9px; padding: 5px 7px; display: flex; flex-direction: column;
-                    justify-content: space-between; overflow: hidden; min-width: 0;
-                }
-                .fin-tri-subcard-top {
-                    display: flex; align-items: center; justify-content: space-between; gap: 4px;
-                }
-                .fin-tri-subcard-price {
-                    font-size: 11.5px; font-weight: 700; color: var(--text-primary);
-                    margin: 2px 0 1px 0; font-variant-numeric: tabular-nums;
-                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-                }
-
-                /* Quad Grid Mode (4 assets, Expanded) */
-                .fin-quad-grid {
-                    flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
-                    gap: 5px; margin-top: 4px;
-                }
-                .fin-quad-card {
-                    background: rgba(0, 0, 0, 0.18); border: 1px solid var(--panel-border);
-                    border-radius: 8px; padding: 4px 6px; display: flex; flex-direction: column;
-                    justify-content: space-between; overflow: hidden;
-                }
-                .fin-quad-top {
-                    display: flex; align-items: center; justify-content: space-between; gap: 2px;
-                }
-                .fin-quad-price {
-                    font-size: 11px; font-weight: 700; color: var(--text-primary);
-                    margin: 1px 0; font-variant-numeric: tabular-nums; white-space: nowrap;
-                    overflow: hidden; text-overflow: ellipsis;
-                }
-                .fin-quad-sparkline {
-                    width: 100%; height: 16px;
-                }
-            </style>
-        ` : '';
+        ensureFinanceStyles();
 
         // Universal Top Bar
         const topBarHtml = `
@@ -1049,7 +1057,6 @@ export default class FinanceWidget extends BaseWidget {
         }
 
         return `
-            ${injectStyles}
             <div class="fin-w-box" id="fin-w-${id}">
                 ${topBarHtml}
                 ${bodyHtml}
