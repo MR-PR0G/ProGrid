@@ -51,13 +51,13 @@ async function init() {
         state.designTheme = (loaded.designTheme === 'liquid-glass') ? 'frosted-glass' : (loaded.designTheme || 'frosted-glass');
         state.customBg = loaded.customBg || null;
         state.widgets = (loaded.widgets || []).filter(w => w.type !== 'calculator');
-        // Ensure finance widgets on grid reflect the unified English Toman USD & Gold setup
+        // Ensure finance widgets on grid reflect the unified English Toman USD & Gold 18K setup
         state.widgets.forEach(w => {
             if (w.type === 'finance') {
-                if (!w.assets || (w.assets.length === 2 && w.assets.includes('BTC')) || (w.assets.length === 3 && w.assets.includes('BTC'))) {
-                    w.assets = ['USDIRR', 'GOLD'];
+                if (!w.assets || (w.assets.length === 2 && (w.assets.includes('BTC') || w.assets.includes('GOLD'))) || (w.assets.length === 3 && w.assets.includes('BTC'))) {
+                    w.assets = ['USDIRR', 'GOLD_18K'];
                     w.primaryAsset = 'USDIRR';
-                    w.secondaryAsset = 'GOLD';
+                    w.secondaryAsset = 'GOLD_18K';
                     w.baseCurrency = 'IRT';
                 }
             }
@@ -71,7 +71,7 @@ async function init() {
             { id: "w-clock-default", type: "clock", x: 0, y: 0, w: 4, h: 1, format24: true, showDate: true, calendarType: "gregorian", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 0, w: 4, h: 1, baseCols: 4 }, isHidden: false },
             { id: "w-search-default", type: "search", x: 0, y: 1, w: 4, h: 1, engine: "google", placeholder: "Search web, apps & bookmarks...", searchShape: "pill", isGlass: true, bg: "#ffffff", idealLayout: { x: 0, y: 1, w: 4, h: 1, baseCols: 4 }, isHidden: false },
             { id: "w-tasks-default", type: "checklist", x: 0, y: 2, w: 2, h: 2, isGlass: true, bg: "#ffffff", tasks: [{ id: 1, text: "Focus block", done: false }, { id: 2, text: "Daily review", done: false }], idealLayout: { x: 0, y: 2, w: 2, h: 2, baseCols: 4 }, isHidden: false },
-            { id: "w-finance-default", type: "finance", x: 2, y: 2, w: 2, h: 2, assets: ["USDIRR", "GOLD"], primaryAsset: "USDIRR", secondaryAsset: "GOLD", baseCurrency: "IRT", showChart: true, isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 2, w: 2, h: 2, baseCols: 4 }, isHidden: false }
+            { id: "w-finance-default", type: "finance", x: 2, y: 2, w: 2, h: 2, assets: ["USDIRR", "GOLD_18K"], primaryAsset: "USDIRR", secondaryAsset: "GOLD_18K", baseCurrency: "IRT", showChart: true, isGlass: true, bg: "#ffffff", idealLayout: { x: 2, y: 2, w: 2, h: 2, baseCols: 4 }, isHidden: false }
         ];
     }
 
@@ -2406,8 +2406,8 @@ function setupSkinBackupModal() {
 
             const payload = {
                 version: "1.0",
-                prospaceVersion: "0.4.7",
-                progridVersion: "0.4.7",
+                prospaceVersion: "0.4.8",
+                progridVersion: "0.4.8",
                 exportedAt: new Date().toISOString(),
                 skinName: slotData.name || "Custom Skin",
                 widgets: slotData.widgets
@@ -3612,7 +3612,7 @@ function isNewerVersion(remote, current) {
     return false;
 }
 
-function launchUpdateSplashScreen(targetVer = 'v0.4.7') {
+function launchUpdateSplashScreen(targetVer = 'v0.4.8') {
     const splash = document.getElementById('update-splash-screen');
     const stepEl = document.getElementById('update-splash-step');
     const fillEl = document.getElementById('update-splash-bar-progress');
@@ -3708,10 +3708,10 @@ function setupAboutModal() {
     if (aboutBtn) {
         aboutBtn.addEventListener('click', () => {
             const verBadge = document.getElementById('about-app-version');
-            if (verBadge) verBadge.textContent = 'v0.4.7';
+            if (verBadge) verBadge.textContent = 'v0.4.8';
             const subTitle = document.getElementById('update-status-sub');
-            if (subTitle && !subTitle.textContent.includes('v0.4.7')) {
-                subTitle.textContent = 'Running official v0.4.7 release';
+            if (subTitle && !subTitle.textContent.includes('v0.4.8')) {
+                subTitle.textContent = 'Running official v0.4.8 release';
             }
             aboutModal.style.display = 'flex';
         });
@@ -3734,7 +3734,7 @@ function setupAboutModal() {
 
             // Only launch splash screen if an actual new update was found and verified
             if (checkUpdateBtn.getAttribute('data-action') === 'apply-update') {
-                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.7';
+                const targetVer = checkUpdateBtn.getAttribute('data-target-ver') || 'v0.4.8';
                 aboutModal.style.display = 'none';
                 launchUpdateSplashScreen(targetVer);
                 return;
@@ -3754,7 +3754,7 @@ function setupAboutModal() {
                 }
 
                 let remoteVersion = null;
-                const currentVersion = '0.4.7';
+                const currentVersion = '0.4.8';
 
                 // 1. Direct GitHub Releases API check (checks ProSpace with fallback to ProGrid)
                 try {
@@ -3829,7 +3829,7 @@ function setupAboutModal() {
                 console.warn('Update check error:', err);
                 if (updateDot) updateDot.className = 'update-indicator-dot';
                 if (updateTitle) updateTitle.textContent = 'Up to Date (Offline)';
-                if (updateSub) updateSub.textContent = 'Running standalone v0.4.7 release.';
+                if (updateSub) updateSub.textContent = 'Running standalone v0.4.8 release.';
                 if (btnLabel) btnLabel.textContent = 'Check Updates';
                 checkUpdateBtn.setAttribute('data-action', 'check');
                 checkUpdateBtn.removeAttribute('data-target-ver');

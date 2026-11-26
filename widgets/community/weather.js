@@ -58,9 +58,9 @@ export default class WeatherWidget extends BaseWidget {
             maxH: 3,
             category: 'lifestyle',
             author: 'MR Prog',
-            version: '1.0.0',
+            version: '1.1.0',
             downloads: '42',
-            description: 'Open-Meteo live weather tracker with 7-day offline storage, worldwide city search, hourly preview, and Breezy Weather accuracy.',
+            description: 'Open-Meteo live weather tracker with interactive details popup, 7-day offline storage, hourly preview, and high accuracy.',
             defaultConfig: {
                 city: 'Tehran',
                 country: 'Iran',
@@ -348,6 +348,94 @@ export default class WeatherWidget extends BaseWidget {
                     padding: 3px 1px; border-radius: 6px;
                     background: rgba(255, 255, 255, 0.035); overflow: hidden;
                 }
+
+                /* Weather Detail Interactive Modal */
+                .wtr-modal-overlay {
+                    position: fixed; inset: 0; z-index: 99999;
+                    display: flex; align-items: center; justify-content: center;
+                    background: rgba(10, 15, 29, 0.72);
+                    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+                    padding: 16px; box-sizing: border-box;
+                    animation: wtrFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                @keyframes wtrFadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                .wtr-modal-sheet {
+                    width: 100%; max-width: 440px; max-height: 88vh;
+                    background: rgba(20, 25, 42, 0.94);
+                    border: 1px solid rgba(255, 255, 255, 0.14);
+                    border-radius: 22px;
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+                    color: var(--text-primary, #f8fafc);
+                    display: flex; flex-direction: column;
+                    overflow-y: auto; overflow-x: hidden;
+                    user-select: none;
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+                    font-family: system-ui, -apple-system, sans-serif;
+                }
+                .wtr-modal-sheet::-webkit-scrollbar { width: 4px; }
+                .wtr-modal-sheet::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.15); border-radius: 4px;
+                }
+                .wtr-modal-head {
+                    display: flex; align-items: center; justify-content: space-between;
+                    padding: 16px 18px 12px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                    position: sticky; top: 0; background: rgba(20, 25, 42, 0.96);
+                    backdrop-filter: blur(12px); z-index: 2;
+                }
+                .wtr-modal-hero {
+                    display: flex; align-items: center; justify-content: space-between;
+                    padding: 16px 20px;
+                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                }
+                .wtr-modal-hero-left {
+                    display: flex; flex-direction: column; gap: 2px;
+                }
+                .wtr-modal-temp-huge {
+                    font-size: 38px; font-weight: 800; color: #fff;
+                    line-height: 1; letter-spacing: -1.5px; font-variant-numeric: tabular-nums;
+                }
+                .wtr-modal-grid {
+                    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+                    padding: 14px 18px;
+                }
+                .wtr-modal-grid-card {
+                    background: rgba(255, 255, 255, 0.04);
+                    border: 1px solid rgba(255, 255, 255, 0.07);
+                    border-radius: 12px; padding: 10px 12px;
+                    display: flex; flex-direction: column; gap: 4px;
+                }
+                .wtr-modal-hourly-sec {
+                    padding: 12px 18px;
+                    border-top: 1px solid rgba(255, 255, 255, 0.06);
+                }
+                .wtr-modal-track {
+                    display: flex; align-items: stretch; gap: 8px;
+                    overflow-x: auto; padding-bottom: 6px; margin-top: 8px;
+                    scrollbar-width: none;
+                }
+                .wtr-modal-track::-webkit-scrollbar { display: none; }
+                .wtr-modal-hour-pill {
+                    flex-shrink: 0; min-width: 52px; display: flex; flex-direction: column;
+                    align-items: center; justify-content: center; gap: 4px;
+                    padding: 8px 6px; border-radius: 10px;
+                    background: rgba(255, 255, 255, 0.035);
+                    border: 1px solid rgba(255, 255, 255, 0.06);
+                }
+                .wtr-modal-daily-sec {
+                    padding: 12px 18px 18px 18px;
+                    border-top: 1px solid rgba(255, 255, 255, 0.06);
+                }
+                .wtr-modal-daily-item {
+                    display: flex; align-items: center; justify-content: space-between;
+                    padding: 7px 10px; border-radius: 9px;
+                    background: rgba(255, 255, 255, 0.025);
+                    margin-bottom: 5px; font-size: 11.5px;
+                }
             </style>
         ` : '';
 
@@ -545,6 +633,23 @@ export default class WeatherWidget extends BaseWidget {
             });
         }
 
+        // Tap/click on widget to open interactive details popup modal (especially valuable for 2x1 & 2x2)
+        box.style.cursor = 'pointer';
+        let pointerDownPos = null;
+        box.addEventListener('pointerdown', (e) => {
+            pointerDownPos = { x: e.clientX, y: e.clientY };
+        });
+        box.addEventListener('click', (e) => {
+            if (e.target.closest(`#wtr-refresh-${id}`)) return;
+            if (document.body.classList.contains('edit-mode') || window.isEditMode) return;
+            // Prevent accidental opening when dragging
+            if (pointerDownPos) {
+                const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+                if (dist > 8) return;
+            }
+            this.openDetailModal();
+        });
+
         // Refresh button
         const refreshBtn = box.querySelector(`#wtr-refresh-${id}`);
         if (refreshBtn) {
@@ -563,6 +668,219 @@ export default class WeatherWidget extends BaseWidget {
                 if (navigator.vibrate) navigator.vibrate(30);
             });
         }
+    }
+
+    openDetailModal() {
+        const existing = document.getElementById('wtr-detail-modal');
+        if (existing) existing.remove();
+
+        const city = this.config.city || 'Tehran';
+        const country = this.config.country || this.config.countryCode || 'Iran';
+        const unitSymbol = this.config.unit === 'F' ? '°F' : '°C';
+        const data = this.cachedData || this.loadCachedWeather();
+        const current = data.current || {};
+        const daily = data.daily || {};
+        const hourly = data.hourly || null;
+
+        const temp = (current.temperature_2m !== undefined) ? Math.round(current.temperature_2m) : '--';
+        const feelsLike = (current.apparent_temperature !== undefined) ? Math.round(current.apparent_temperature) : temp;
+        const humidity = current.relative_humidity_2m || 0;
+        const wind = current.wind_speed_10m || 0;
+        const precip = current.precipitation !== undefined ? current.precipitation : 0.0;
+        const isDay = current.is_day !== undefined ? current.is_day : 1;
+        const weatherInfo = this.getWeatherInfo(current.weather_code || 0, isDay);
+
+        const highToday = (daily.temperature_2m_max && daily.temperature_2m_max[0] !== undefined) ? Math.round(daily.temperature_2m_max[0]) : temp;
+        const lowToday = (daily.temperature_2m_min && daily.temperature_2m_min[0] !== undefined) ? Math.round(daily.temperature_2m_min[0]) : temp;
+
+        // Build 24-hour hourly track
+        let hourlyPills = '';
+        if (hourly && Array.isArray(hourly.time) && hourly.time.length > 0) {
+            const nowIsoHour = new Date().toISOString().slice(0, 13);
+            let startIdx = hourly.time.findIndex(t => t.startsWith(nowIsoHour));
+            if (startIdx === -1) startIdx = 0;
+            const count = Math.min(24, hourly.time.length - startIdx);
+            for (let i = startIdx; i < startIdx + count; i++) {
+                const tStr = hourly.time[i];
+                const hourNum = parseInt(tStr.split('T')[1].split(':')[0], 10);
+                const isNow = (i === startIdx);
+                const label = isNow ? 'Now' : `${hourNum}:00`;
+                const code = hourly.weather_code ? hourly.weather_code[i] : 0;
+                const isD = (hourNum >= 6 && hourNum < 18) ? 1 : 0;
+                const info = this.getWeatherInfo(code, isD);
+                const tVal = Math.round(hourly.temperature_2m[i] || temp);
+
+                hourlyPills += `
+                    <div class="wtr-modal-hour-pill" style="${isNow ? 'background:rgba(59,130,246,0.18); border-color:rgba(59,130,246,0.35);' : ''}">
+                        <span style="font-size:10px; font-weight:600; color:${isNow ? '#60a5fa' : '#94a3b8'};">${label}</span>
+                        <div style="width:20px; height:20px; display:flex; align-items:center; justify-content:center;">
+                            ${info.iconSvg.replace(/width="\d+" height="\d+"/, 'width="18" height="18"')}
+                        </div>
+                        <span style="font-size:11px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums;">${tVal}°</span>
+                    </div>
+                `;
+            }
+        } else {
+            // Synthetic 12h preview when hourly is not in cache yet
+            for (let h = 0; h < 12; h++) {
+                const hourTime = new Date(Date.now() + h * 3600000);
+                const hourNum = hourTime.getHours();
+                const label = (h === 0) ? 'Now' : `${hourNum}:00`;
+                const approxT = Math.round(temp + Math.sin(h / 3) * 2);
+                hourlyPills += `
+                    <div class="wtr-modal-hour-pill" style="${h === 0 ? 'background:rgba(59,130,246,0.18); border-color:rgba(59,130,246,0.35);' : ''}">
+                        <span style="font-size:10px; font-weight:600; color:${h === 0 ? '#60a5fa' : '#94a3b8'};">${label}</span>
+                        <div style="width:20px; height:20px; display:flex; align-items:center; justify-content:center;">
+                            ${weatherInfo.iconSvg.replace(/width="\d+" height="\d+"/, 'width="18" height="18"')}
+                        </div>
+                        <span style="font-size:11px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums;">${approxT}°</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Build 7-day daily forecast list
+        let dailyItems = '';
+        if (daily && Array.isArray(daily.time)) {
+            for (let i = 0; i < Math.min(7, daily.time.length); i++) {
+                const dateStr = daily.time[i];
+                const dayDate = new Date(dateStr + 'T00:00:00');
+                const dayName = (i === 0) ? 'Today' : dayDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                const code = daily.weather_code ? daily.weather_code[i] : 0;
+                const dayInfo = this.getWeatherInfo(code, 1);
+                const maxT = Math.round(daily.temperature_2m_max[i] || temp);
+                const minT = Math.round(daily.temperature_2m_min[i] || temp);
+                const prob = daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : 0;
+
+                dailyItems += `
+                    <div class="wtr-modal-daily-item">
+                        <div style="display:flex; align-items:center; gap:8px; min-width:115px;">
+                            <div style="width:22px; height:22px; display:flex; align-items:center; justify-content:center;">
+                                ${dayInfo.iconSvg.replace(/width="\d+" height="\d+"/, 'width="20" height="20"')}
+                            </div>
+                            <span style="font-weight:700; color:#fff;">${dayName}</span>
+                        </div>
+                        <span style="color:#94a3b8; font-size:11px; flex:1; text-align:left; padding:0 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${dayInfo.desc}</span>
+                        <div style="display:flex; align-items:center; gap:8px; font-variant-numeric:tabular-nums;">
+                            ${prob > 15 ? `<span style="font-size:9.5px; color:#60a5fa; font-weight:600;">💧${prob}%</span>` : ''}
+                            <span style="font-weight:700; color:#fff; font-size:12px;">${maxT}°</span>
+                            <span style="color:#64748b; font-size:11px;">${minT}°</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        const modal = document.createElement('div');
+        modal.id = 'wtr-detail-modal';
+        modal.innerHTML = `
+            <div class="wtr-modal-overlay">
+                <div class="wtr-modal-sheet">
+                    <!-- Modal Header -->
+                    <div class="wtr-modal-head">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#60a5fa" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <span style="font-size:14px; font-weight:700; letter-spacing:-0.2px;">${city}, ${country}</span>
+                            <span class="wtr-unit-badge" style="margin-left:4px;">${unitSymbol}</span>
+                        </div>
+                        <button type="button" class="wtr-modal-close" style="background:rgba(255,255,255,0.08); border:none; color:#94a3b8; width:26px; height:26px; border-radius:50%; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s, color 0.15s;">✕</button>
+                    </div>
+
+                    <!-- Hero Section -->
+                    <div class="wtr-modal-hero">
+                        <div class="wtr-modal-hero-left">
+                            <div class="wtr-modal-temp-huge">${temp}${unitSymbol}</div>
+                            <div style="font-size:13px; font-weight:600; color:#cbd5e1; margin-top:2px;">${weatherInfo.desc}</div>
+                            <div style="font-size:11px; font-weight:600; color:#94a3b8; margin-top:1px;">High: ${highToday}° • Low: ${lowToday}°</div>
+                        </div>
+                        <div style="width:56px; height:56px; display:flex; align-items:center; justify-content:center; border-radius:14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08);">
+                            ${weatherInfo.iconSvg.replace(/width="\d+" height="\d+"/, 'width="42" height="42"')}
+                        </div>
+                    </div>
+
+                    <!-- 4-Card Detailed Metrics Grid -->
+                    <div class="wtr-modal-grid">
+                        <div class="wtr-modal-grid-card">
+                            <div style="display:flex; align-items:center; gap:5px; color:#94a3b8; font-size:10px; font-weight:600; text-transform:uppercase;">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg>
+                                <span>Feels Like</span>
+                            </div>
+                            <div style="font-size:15px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums;">${feelsLike}${unitSymbol}</div>
+                        </div>
+                        <div class="wtr-modal-grid-card">
+                            <div style="display:flex; align-items:center; gap:5px; color:#94a3b8; font-size:10px; font-weight:600; text-transform:uppercase;">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+                                <span>Humidity</span>
+                            </div>
+                            <div style="font-size:15px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums;">${humidity}%</div>
+                        </div>
+                        <div class="wtr-modal-grid-card">
+                            <div style="display:flex; align-items:center; gap:5px; color:#94a3b8; font-size:10px; font-weight:600; text-transform:uppercase;">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path></svg>
+                                <span>Wind Speed</span>
+                            </div>
+                            <div style="font-size:15px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums;">${wind} km/h</div>
+                        </div>
+                        <div class="wtr-modal-grid-card">
+                            <div style="display:flex; align-items:center; gap:5px; color:#94a3b8; font-size:10px; font-weight:600; text-transform:uppercase;">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"></path></svg>
+                                <span>Precipitation</span>
+                            </div>
+                            <div style="font-size:15px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums;">${precip} mm</div>
+                        </div>
+                    </div>
+
+                    <!-- 24-Hour Hourly Timeline -->
+                    <div class="wtr-modal-hourly-sec">
+                        <div style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.4px;">
+                            24-Hour Hourly Forecast
+                        </div>
+                        <div class="wtr-modal-track">
+                            ${hourlyPills}
+                        </div>
+                    </div>
+
+                    <!-- 7-Day Outlook -->
+                    <div class="wtr-modal-daily-sec">
+                        <div style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:8px;">
+                            7-Day Extended Forecast
+                        </div>
+                        <div style="display:flex; flex-direction:column;">
+                            ${dailyItems}
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="padding:10px 18px 16px 18px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.06); font-size:10px; color:#64748b;">
+                        <span>Open-Meteo High-Resolution Model</span>
+                        <button type="button" class="wtr-modal-done" style="padding:6px 14px; border-radius:8px; background:rgba(255,255,255,0.08); color:#f8fafc; font-size:11px; font-weight:600; border:1px solid rgba(255,255,255,0.1); cursor:pointer;">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const closeModal = () => {
+            modal.style.opacity = '0';
+            modal.style.transition = 'opacity 0.15s ease';
+            setTimeout(() => modal.remove(), 150);
+            document.removeEventListener('keydown', handleKey);
+        };
+
+        const handleKey = (e) => {
+            if (e.key === 'Escape') closeModal();
+        };
+
+        modal.querySelector('.wtr-modal-close').addEventListener('click', closeModal);
+        modal.querySelector('.wtr-modal-done').addEventListener('click', closeModal);
+        modal.querySelector('.wtr-modal-overlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeModal();
+        });
+
+        document.addEventListener('keydown', handleKey);
+        document.body.appendChild(modal);
     }
 }
 

@@ -3,7 +3,7 @@
   <p>An ultra-fluid, customizable, offline-first dashboard & workspace for Desktop, Mobile, and Browser Extensions.</p>
 
   <p>
-    <a href="https://github.com/MR-PR0G/ProSpace/releases"><img src="https://img.shields.io/badge/Version-0.4.7-3b82f6.svg?style=flat-square" alt="Version"></a>
+    <a href="https://github.com/MR-PR0G/ProSpace/releases"><img src="https://img.shields.io/badge/Version-0.4.8-3b82f6.svg?style=flat-square" alt="Version"></a>
     <img src="https://img.shields.io/badge/Platform-PWA%20%7C%20Extension-10b981.svg?style=flat-square" alt="Platform">
     <img src="https://img.shields.io/badge/License-GPL--3.0-06b6d4.svg?style=flat-square" alt="License">
   </p>
